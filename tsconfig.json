@@ -15,5 +15,6 @@
     "jsxImportSource": "remix/ui",
     "noEmit": true
   },
+  "include": ["app", "scripts", "worker.ts", "worker-configuration.d.ts"],
   "exclude": ["dist"]
 }

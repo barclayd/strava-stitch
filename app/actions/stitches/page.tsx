@@ -32,7 +32,12 @@ export function StitchPage(
         .map((p) => [p.lat, p.lon] as [number, number]),
     }))
     return (
-      <Shell firstname={firstname} csrf={csrf} title={j.title + ' — Stitch'}>
+      <Shell
+        firstname={firstname}
+        csrf={csrf}
+        title={j.title + ' — Stitch'}
+        clientFeatures="preview"
+      >
         <main id="main" class="main-content review-main">
           <a class="back-link" href={routes.home.href()}>
             ← Choose activities

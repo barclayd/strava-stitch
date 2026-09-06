@@ -415,3 +415,29 @@ test('a forged deauthorization notification cannot erase a connected athlete', a
   assert.equal(response.status, 200)
   assert.ok(await account(4))
 })
+
+test('local pages, authenticated previews, downloads, and errors stay out of search', async () => {
+  const c = new Client()
+  for (const path of [
+    '/',
+    '/privacy',
+    '/guides/merge-strava-activities',
+    '/example',
+    '/example/download',
+    '/missing',
+    '/stitches/private-id',
+  ]) {
+    const response = await c.request(path)
+    assert.match(response.headers.get('x-robots-tag')!, /noindex/)
+    if (response.headers.get('content-type')?.includes('text/html'))
+      assert.match(await response.text(), /name="robots" content="noindex, nofollow"/)
+  }
+  const guide = await c.page('/guides/merge-strava-activities')
+  assert.equal(guide.response.status, 200)
+  assert.doesNotMatch(guide.text, /type="module"|modulepreload/)
+  assert.match(guide.text, /href="https:\/\/stravastitch.com\/guides\/merge-strava-activities"/)
+  const xml = await c.request('/sitemap.xml')
+  assert.equal(xml.headers.get('set-cookie'), null)
+  assert.doesNotMatch(await xml.text(), /<loc>/)
+  assert.match(await (await c.request('/robots.txt')).text(), /Disallow: \//)
+})

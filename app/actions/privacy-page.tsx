@@ -1,8 +1,9 @@
 import type { Handle } from 'remix/ui'
 import { Shell } from '../ui/shell.tsx'
 import { routes } from '../routes.ts'
+import type { PageSeo } from '../seo.ts'
 
-export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string }>) {
+export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; seo: PageSeo }>) {
   return () => (
     <Shell {...handle.props} title="Your data — Stitch">
       <main id="main" class="prose-page">
