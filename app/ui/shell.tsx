@@ -1,6 +1,7 @@
 import type { Handle, RemixNode } from 'remix/ui'
 import { routes } from '../routes.ts'
 import { Document } from '../actions/document.tsx'
+import { StravaConnect } from './strava.tsx'
 
 export function Shell(
   handle: Handle<{ children?: RemixNode; firstname?: string; csrf: string; title?: string }>,
@@ -42,9 +43,7 @@ export function Shell(
           ) : (
             <form data-rmx-document method="post" action={routes.auth.connect.href()}>
               <input type="hidden" name="_csrf" value={handle.props.csrf} />
-              <button type="submit" class="button button-strava">
-                Connect with Strava <span aria-hidden="true">↗</span>
-              </button>
+              <StravaConnect />
             </form>
           )}
         </nav>
@@ -56,9 +55,10 @@ export function Shell(
         </span>
         <div>
           <a href="https://www.strava.com" target="_blank" rel="noreferrer" class="strava-credit">
-            Powered by <strong>STRAVA</strong>
+            <img src="/strava-powered-by.svg" alt="Powered by Strava" width="132" />
           </a>
           <a href={routes.privacy.href()}>Privacy & your data</a>
+          <a href={routes.privacy.href() + '#support'}>Support</a>
         </div>
       </footer>
     </Document>

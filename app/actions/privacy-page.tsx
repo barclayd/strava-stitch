@@ -18,18 +18,32 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string }>
           Stitch uses your Strava activities to create the ride you ask for. Your activities are
           shown only to your connected account.
         </p>
+        <p>
+          Stitch is a free service operated by Barksoft Ltd. It is an independent application and is
+          not developed or endorsed by Strava.
+        </p>
         <h2>What we access</h2>
         <p>
-          With your permission, Stitch reads your profile and activities, including GPS data from
-          private activities. Upload permission lets Stitch create a ride after you explicitly
-          confirm. Strava does not provide activity deletion through its API.
+          With your permission, Stitch uses Strava’s API to read your profile and activities,
+          including GPS data from private activities and available elevation, heart rate, cadence,
+          distance, and temperature samples. Upload permission lets Stitch create a ride after you
+          explicitly confirm. Strava does not provide activity deletion through its API.
         </p>
         <h2>What we keep</h2>
         <p>
-          Strava access and refresh tokens are encrypted on the server. Your browser stores an
-          essential session cookie. Stitch previews and their activity data expire after 24 hours
-          and are removed during normal app maintenance. You can download your stitched GPX and a
+          Cloudflare hosts Stitch and its encrypted storage. We keep your athlete ID, first name,
+          permissions, and encrypted access and refresh tokens to maintain your connection until you
+          remove it. Your browser stores an essential session cookie; sessions expire after seven
+          days without use. Stitch previews and their activity data become unavailable after 24
+          hours and are purged by hourly maintenance. You can download your stitched GPX and a
           backup bundle containing reconstructed originals.
+        </p>
+        <p>
+          Stitch has no advertising, analytics, or AI features. Strava may collect and use API usage
+          information for its business purposes, including improving its services, support, and
+          checking compliance. See the{' '}
+          <a href="https://www.strava.com/legal/privacy">Strava Privacy Policy</a> for Strava’s own
+          processing of your information.
         </p>
         <h2>What a backup contains</h2>
         <p>
@@ -46,9 +60,11 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string }>
         </p>
         <h2>Disconnect whenever you like</h2>
         <p>
-          Remove your connection data and previews from Stitch below. To revoke Strava authorization
-          as well, visit Strava → Settings → My Apps. A deployed installation also receives Strava’s
-          deauthorization events to remove stored data.
+          Remove your connection data and previews from Stitch below. You will see a confirmation
+          when removal completes. To revoke Strava authorization as well, visit{' '}
+          <a href="https://www.strava.com/settings/apps">Strava → Settings → My Apps</a>. Stitch
+          also receives Strava’s deauthorization events and verifies revoked access before removing
+          the connection and previews. Files you have downloaded remain on your device.
         </p>
         {handle.props.firstname && (
           <form data-rmx-document method="post" action={routes.auth.disconnect.href()}>
@@ -58,9 +74,13 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string }>
             </button>
           </form>
         )}
-        <p class="muted">
-          This installation is an early preview running locally. Public launch requires Strava app
-          access approval, a secure deployment, and an active webhook subscription.
+        <h2 id="support">Support & data requests</h2>
+        <p>
+          Contact Barksoft Ltd. at <a href="mailto:admin@danbarclay.dev">admin@danbarclay.dev</a>{' '}
+          for help with Stitch, access to your stored data, or removal requests. Please do not send
+          passwords, access tokens, or private activity files in your first message. For settings
+          and activities held by Strava, visit{' '}
+          <a href="https://www.strava.com/settings">your Strava account</a>.
         </p>
       </main>
     </Shell>

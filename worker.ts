@@ -66,7 +66,9 @@ export default {
         ['GET', 'HEAD'].includes(request.method) &&
         (url.pathname.startsWith('/client/') ||
           url.pathname.startsWith('/fonts/') ||
-          ['/styles.css', '/favicon.svg'].includes(url.pathname))
+          ['/styles.css', '/favicon.svg', '/strava-connect.svg', '/strava-powered-by.svg'].includes(
+            url.pathname,
+          ))
       )
         return env.ASSETS.fetch(request)
       const bounded = await boundedRequest(request)

@@ -5,6 +5,7 @@ import { colours, duration, km, day, time } from '../public/format.ts'
 import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
 import { UploadForm, UploadStatus } from './public/upload-form.tsx'
+import { StravaConnect } from '../../ui/strava.tsx'
 
 export function StitchPage(
   handle: Handle<{
@@ -110,12 +111,13 @@ export function StitchPage(
                         </div>
                         {!demo && (
                           <a
+                            class="strava-data-link"
                             href={'https://www.strava.com/activities/' + r.activity.id}
                             target="_blank"
                             rel="noreferrer"
                             aria-label={'View ' + r.activity.name + ' on Strava'}
                           >
-                            ↗
+                            View on Strava ↗
                           </a>
                         )}
                       </div>
@@ -164,7 +166,7 @@ export function StitchPage(
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
-                    <button class="button button-strava wide">Connect with Strava ↗</button>
+                    <StravaConnect />
                   </form>
                 </>
               ) : j.state === 'complete' ? (
@@ -179,7 +181,7 @@ export function StitchPage(
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View your ride on Strava ↗
+                    View on Strava ↗
                   </a>
                 </>
               ) : j.state === 'processing' ? (
@@ -226,13 +228,13 @@ export function StitchPage(
                       </p>
                       {m.records.map((r, i) => (
                         <a
-                          class="source-link"
+                          class="source-link strava-data-link"
                           key={r.activity.id}
                           href={'https://www.strava.com/activities/' + r.activity.id}
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Part {i + 1} · {r.activity.name} ↗
+                          Part {i + 1} · {r.activity.name} · View on Strava ↗
                         </a>
                       ))}
                     </li>
@@ -258,7 +260,7 @@ export function StitchPage(
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
-                    <button class="button button-strava wide">Allow Strava uploads ↗</button>
+                    <StravaConnect />
                   </form>
                 </>
               ) : (

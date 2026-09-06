@@ -132,9 +132,16 @@ svg {
   color: #fff;
   background: var(--ink);
 }
-.button-strava {
-  background: #fc4c02;
-  color: #fff;
+.strava-connect {
+  display: inline-flex;
+  padding: 0;
+  background: transparent;
+  border-radius: 6px;
+}
+.strava-connect img {
+  display: block;
+  width: 237px;
+  height: 48px;
 }
 .button-outline {
   background: #fff;
@@ -704,18 +711,19 @@ svg {
 }
 .site-footer > div {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 27px;
 }
-.strava-credit {
-  font-size: 9px;
+.strava-credit img {
+  display: block;
+  height: auto;
 }
-.strava-credit strong {
-  color: #fc4c02;
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  font-size: 12px;
-  margin-left: 4px;
+.strava-data-link {
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .alert {
   padding: 16px 20px;
@@ -944,9 +952,6 @@ svg {
   line-height: 1.7;
   margin-top: 6px;
 }
-.timeline-record > a {
-  color: #95a687;
-}
 .part-number {
   display: grid;
   place-items: center;
@@ -1083,6 +1088,10 @@ svg {
   font-size: 17px;
   color: #637356;
 }
+.prose-page p a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .prose-page .muted {
   font-size: 12px;
   margin-top: 30px;
@@ -1093,9 +1102,6 @@ svg {
 @media (hover: hover) and (pointer: fine) {
   .button-dark:hover {
     background: #46543e;
-  }
-  .button-strava:hover {
-    background: #e64500;
   }
   .button-outline:hover {
     background: #f7f9f3;
@@ -1176,8 +1182,11 @@ svg {
 }
 @media (max-width: 780px) {
   .site-header {
-    height: 80px;
-    padding: 0 24px;
+    min-height: 80px;
+    height: auto;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 16px 24px;
   }
   .brand {
     font-size: 27px;

@@ -3,6 +3,7 @@ import { Shell, Alert } from '../ui/shell.tsx'
 import { Workspace } from './public/workspace.tsx'
 import type { Ride } from './public/format.ts'
 import { routes } from '../routes.ts'
+import { StravaConnect } from '../ui/strava.tsx'
 
 export function HomePage(
   handle: Handle<{
@@ -62,9 +63,7 @@ export function HomePage(
               <span>Ready for your own ride?</span>
               <form data-rmx-document method="post" action={routes.auth.connect.href()}>
                 <input type="hidden" name="_csrf" value={p.csrf} />
-                <button class="text-button orange" type="submit">
-                  Connect with Strava ↗
-                </button>
+                <StravaConnect />
               </form>
               <p>
                 Read your activities and upload when you confirm. Only you see your data in Stitch.
