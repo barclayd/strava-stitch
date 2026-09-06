@@ -1,7 +1,6 @@
 import { get, post, route } from 'remix/routes'
 
 export const routes = route({
-  assets: get('/assets/*path'),
   home: '/',
   privacy: get('/privacy'),
   demo: get('/example'),

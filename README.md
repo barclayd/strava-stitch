@@ -1,105 +1,95 @@
 # Stitch
 
-A free TypeScript application for stitching Strava activities into one ride.
-Select two to eight Ride activities, preview the route and gaps, download GPX or
-backup files, and explicitly confirm an upload to Strava.
+A free TypeScript / Remix 3 application for combining Strava activities into one
+ride. Preview the route and gaps, download GPX and backups, then explicitly confirm
+an upload. Production: [stravastitch.com](https://stravastitch.com).
 
 ## Development
 
-The application requires **Node 24.3+** and uses Remix 3's native UI (not React).
-Run commands from the repository root and install the versions pinned in the lockfile:
+Use Node 24.3+ and run commands from the repository root:
 
 ```sh
 npm ci
-cp .env.example .env.local
-chmod 600 .env.local
-```
-
-Fill in the Strava client ID and secret, plus two independent secrets:
-`SESSION_SECRET` (at least 32 random characters) and `TOKEN_ENCRYPTION_KEY`
-(exactly 32 random bytes encoded as base64). Keep the encryption key stable so
-stored connections remain readable. Never commit credentials.
-
-Set the Strava app's callback domain to `localhost`. The local callback URL is
-`http://localhost:44100/auth/strava/callback`.
-
-```sh
+cp .dev.vars.example .dev.vars
+chmod 600 .dev.vars
 npm run dev
 ```
 
-Open [localhost:44100](http://localhost:44100). Server changes restart automatically;
-reload after interface changes. `npm run hmr` is the optional hot-reload entry point.
+Fill in `.dev.vars` before starting: the Strava client secret, a random
+`SESSION_SECRET` of at least 32 characters, a separate `TOKEN_ENCRYPTION_KEY`
+containing 32 random bytes encoded as base64, and a random webhook verification
+token. Never commit these values. Keep the encryption key stable.
 
-## Checks
+Wrangler serves [localhost:44100](http://localhost:44100), compiles browser assets,
+and uses local Durable Object storage in `.wrangler/`. Reload after interface
+changes. The Strava client ID and local origin are in `wrangler.jsonc`.
+The local callback is `http://localhost:44100/auth/strava/callback`.
 
-Run from the repository root:
+## Deploy to Cloudflare
+
+```sh
+npx wrangler login
+npm run build
+npm run deploy
+```
+
+`build` compiles browser assets and bundles the Worker into `dist/worker` without
+publishing. `deploy` rebuilds and publishes the production environment. Cloudflare
+provisions the configured Durable Objects, custom-domain DNS, and HTTPS.
+
+For a new installation, update the account, client ID, and domains in
+`wrangler.jsonc`. Provision each of the four secrets from `.dev.vars.example` with
+`npx wrangler secret put SECRET_NAME --env production` before deploying. A staging
+environment is also configured and needs its own secrets before use; deploy it
+with `npx wrangler deploy --env staging`.
+
+Set the Strava app's website and authorization callback domain to the production
+origin and hostname. The production callback URL is
+`https://stravastitch.com/auth/strava/callback`. Register
+[Strava webhooks](https://developers.strava.com/docs/webhooks/) at
+`https://stravastitch.com/webhooks/strava`, using the production verification token;
+set the returned subscription ID in the production vars and deploy again.
+Strava allows one webhook subscription per application, so staging should use a
+separate Strava application if it needs its own subscription.
+
+Athlete connections and previews use separate SQLite-backed Durable Objects per
+athlete. Sessions use separate objects per browser session. Private payloads are
+encrypted; previews become inaccessible after 24 hours and are purged by hourly
+alarms. Session storage expires after seven days. Upload claims and token refreshes
+are coordinated per athlete. Disconnecting removes stored athlete data. Webhook deauthorization is checked
+against Strava before removing data. Keep production secrets backed up privately; losing the encryption key makes
+existing connections unreadable. Local prototype data is not migrated on deployment.
+
+## Maintenance
 
 ```sh
 npm test
 npm run typecheck
 npm run format
-npx remix doctor --strict
+npm run types  # after changing Wrangler bindings or vars
 ```
 
-All tests are TypeScript. They cover merge preservation, OAuth/CSRF, ownership,
-exports, upload confirmation and retries, token refresh, deauthorization, and
-session concurrency. Strava calls are mocked; tests never modify live activities.
-
-## Deployment
-
-Use the repository root as the working directory. Deploy `app/`, `public/`, `server.ts`,
-`tsconfig.json`, `package.json`, and `package-lock.json` with Node 24.3+:
-
-```sh
-npm ci --omit=dev
-npm start
-```
-
-Node runs TypeScript directly and Remix compiles browser assets on demand; there
-is no separate build output. Run one process under a supervisor behind an HTTPS reverse
-proxy, with these settings:
-
-| Setting | Purpose |
-| --- | --- |
-| `APP_ORIGIN` | Public HTTPS origin, without a trailing slash; match the Strava callback domain. |
-| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | Credentials from the Strava developer dashboard. |
-| `SESSION_SECRET`, `TOKEN_ENCRYPTION_KEY` | Stable secrets described above; supply through your host's secret store. |
-| `HOST`, `PORT` | Listen address and port; default `127.0.0.1:44100`. |
-| `TRUST_PROXY` | Set to `true` only behind an exclusive trusted proxy that overwrites forwarding headers. |
-| `DATABASE_PATH` | Private persistent SQLite path; default `./db/stitch.sqlite`. |
-| `SESSION_DIR` | Private persistent session directory; default `./tmp/sessions`. |
-| `STRAVA_WEBHOOK_VERIFY_TOKEN` | Random token used when registering the webhook. |
-| `STRAVA_WEBHOOK_SUBSCRIPTION_ID` | ID returned when registering the Strava subscription. |
-
-Keep the database and sessions on persistent private storage. Back up the database
-and its encryption key securely. Tokens and preview data are encrypted; previews
-expire after 24 hours. Connection data remains until forgotten or deauthorized.
-In-process upload and refresh locks require **one application process**; add
-shared coordination before scaling to multiple instances.
-
-The reverse proxy must enforce body-size limits (64 KiB) and rate limits,
-including chunked requests. Keep private activity data out of access logs.
-Register [Strava webhooks](https://developers.strava.com/docs/webhooks/) at
-`https://YOUR_DOMAIN/webhooks/strava` so deauthorization removes stored data.
-Configure [athlete capacity](https://developers.strava.com/docs/rate-limits/) and
-complete Strava's applicable review before opening access to the public.
+Tests run the real Worker and Durable Objects locally with mocked Strava calls.
+They cover OAuth/CSRF, account isolation, GPX/ZIP preservation, confirmed uploads,
+duplicate handling, token refresh, deauthorization, session concurrency, and
+storage persistence. They never modify live activities. Type declarations are
+generated from Wrangler configuration; do not edit them by hand.
 
 ## Activity handling
 
+- Supports two to eight standard Ride activities, up to 50,000 GPS points in total.
+  Search and selection operate on a page of 30 activities.
+- Timestamps, GPS, and available elevation, distance, temperature, heart rate, and
+  cadence are preserved. Gaps stay unconnected and overlaps are rejected.
+- Backups contain reconstructed GPX files, not original FIT/device files. Power,
+  laps, photos, comments, and kudos are not transferred. Strava may recalculate totals.
 - OAuth requests `read`, `activity:read`, `activity:read_all`, and `activity:write`.
-  Uploads require the granted write scope and explicit user confirmation.
-- Strava has no activity deletion API. Duplicate handling requires a backup,
-  manual removal in Strava, and a separate confirmation. Stitch verifies the
-  originals return 404 before accepting that confirmation. Uploads use the
-  athlete's Strava privacy defaults.
-- GPX exports preserve timestamps, GPS, and available elevation, distance,
-  temperature, heart rate, and cadence. Gaps stay unconnected; overlaps are
-  rejected. Backups contain reconstructed GPX files, not original device files.
-- Power, laps, device metadata, photos, comments, and kudos are not transferred.
-  Strava may recalculate climbing and moving time after import.
-- The current version supports standard Ride activities with complete GPS/time
-  streams. Selection and search operate on a page of 30 activities.
+  Uploads always require explicit confirmation and use the athlete's privacy defaults.
+- Strava has no activity deletion API. Duplicates require a downloaded backup,
+  manual removal in Strava, and separate confirmation; Stitch checks the originals
+  are unavailable before allowing a retry. Stitch never deletes Strava activities.
+- Check [Strava athlete capacity and review requirements](https://developers.strava.com/docs/rate-limits/)
+  before opening access to other athletes.
 
-See the [API reference](https://developers.strava.com/docs/reference/) for Strava
-behavior and [AGENTS.md](AGENTS.md) for code organization. DM Sans is
-self-hosted in `public/fonts/`; retain its included licence when distributing.
+See [AGENTS.md](AGENTS.md) for code organization. Retain the DM Sans licence in
+`public/fonts/` when distributing the application.

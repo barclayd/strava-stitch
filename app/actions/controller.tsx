@@ -1,6 +1,5 @@
 import { createController } from 'remix/router'
 
-import { assets } from '../assets.ts'
 import { routes } from '../routes.ts'
 import { HomePage } from './home-page.tsx'
 import { Session } from 'remix/session'
@@ -15,13 +14,10 @@ import { PrivacyPage } from './privacy-page.tsx'
 
 export default createController(routes, {
   actions: {
-    async assets(context) {
-      return (await assets.fetch(context.request)) ?? new Response('Not Found', { status: 404 })
-    },
     async home(context) {
       const session = context.get(Session),
         id = session.get('athleteId'),
-        auth = typeof id === 'number' ? account(id) : undefined
+        auth = typeof id === 'number' ? await account(id) : undefined
       const page = Math.floor(
         Math.min(9999, Math.max(1, Number(context.url.searchParams.get('page')) || 1)),
       )
@@ -67,17 +63,19 @@ export default createController(routes, {
           page={page}
           hasMore={hasMore}
           recent={
-            auth ? jobs(auth.id).map((j) => ({ id: j.id, title: j.title, state: j.state })) : []
+            auth
+              ? (await jobs(auth.id)).map((j) => ({ id: j.id, title: j.title, state: j.state }))
+              : []
           }
         />,
       )
     },
-    privacy(context) {
+    async privacy(context) {
       const id = context.get(Session).get('athleteId')
       return context.render(
         <PrivacyPage
           csrf={getCsrfToken(context)}
-          firstname={typeof id === 'number' ? account(id)?.firstname : undefined}
+          firstname={typeof id === 'number' ? (await account(id))?.firstname : undefined}
         />,
       )
     },

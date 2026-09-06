@@ -1,5 +1,6 @@
-import { config } from './config.ts'
-import { account, saveAccount, forgetAccount, type Account } from './store.ts'
+import { getConfig, type AppConfig } from './config.ts'
+import { runtime } from './runtime.ts'
+import { type Account } from './store.ts'
 import type { Activity, Streams } from '../actions/stitches/merge.ts'
 
 export class StravaError extends Error {
@@ -11,9 +12,33 @@ export class StravaError extends Error {
   }
 }
 export const SCOPES = ['read', 'activity:read', 'activity:read_all', 'activity:write']
+type TokenResponse = {
+  access_token: string
+  refresh_token: string
+  expires_at: number
+  scope?: string
+  athlete?: { id: number; firstname?: string }
+}
+async function readJson<T>(response: Response): Promise<T> {
+  if (!response.body) throw new Error('Strava returned an empty response.')
+  const reader = response.body.getReader(),
+    decoder = new TextDecoder()
+  let size = 0,
+    body = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > 8000000) {
+      await reader.cancel()
+      throw new Error('This activity is too large for this version of Stitch.')
+    }
+    body += decoder.decode(value, { stream: true })
+  }
+  return JSON.parse(body + decoder.decode()) as T
+}
 const API = 'https://www.strava.com/api/v3'
-const refreshing = new Map<number, Promise<Account>>()
-export async function exchange(params: Record<string, string>) {
+export async function exchangeWithConfig(config: AppConfig, params: Record<string, string>) {
   const response = await fetch('https://www.strava.com/oauth/token', {
     method: 'POST',
     body: new URLSearchParams({
@@ -22,14 +47,14 @@ export async function exchange(params: Record<string, string>) {
       ...params,
     }),
     signal: AbortSignal.timeout(20000),
-    redirect: 'error',
+    redirect: 'manual',
   })
   if (!response.ok)
     throw new StravaError(
       response.status,
       'Strava could not complete the connection. Please connect again.',
     )
-  const data = await response.json()
+  const data = await readJson<TokenResponse>(response)
   if (
     typeof data.access_token !== 'string' ||
     typeof data.refresh_token !== 'string' ||
@@ -38,36 +63,11 @@ export async function exchange(params: Record<string, string>) {
     throw new Error('Strava returned an incomplete connection.')
   return data
 }
+export const exchange = (params: Record<string, string>) => exchangeWithConfig(getConfig(), params)
 async function credentials(id: number): Promise<Account> {
-  const current = account(id)
-  if (!current) throw new StravaError(401, 'Connect Strava to continue.')
-  if (current.expires_at > Date.now() / 1000 + 120) return current
-  if (!refreshing.has(id))
-    refreshing.set(
-      id,
-      (async () => {
-        try {
-          const data = await exchange({
-            grant_type: 'refresh_token',
-            refresh_token: current.refresh_token,
-          })
-          const next = {
-            ...current,
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            expires_at: data.expires_at,
-          }
-          saveAccount(next)
-          return next
-        } catch (error) {
-          if (error instanceof StravaError && [400, 401].includes(error.status)) forgetAccount(id)
-          throw error
-        } finally {
-          refreshing.delete(id)
-        }
-      })(),
-    )
-  return refreshing.get(id)!
+  const value = await runtime().store.credentials(id)
+  if (!value) throw new StravaError(401, 'Connect Strava to continue.')
+  return value
 }
 export function permittedGet(path: string) {
   return (
@@ -84,10 +84,10 @@ export async function get<T>(id: number, path: string): Promise<T> {
   const response = await fetch(API + path, {
     headers: { Authorization: 'Bearer ' + auth.access_token },
     signal: AbortSignal.timeout(30000),
-    redirect: 'error',
+    redirect: 'manual',
   })
   if (!response.ok) {
-    if (response.status === 401) forgetAccount(id)
+    if (response.status === 401) await runtime().store.invalidateAccount(id, auth.access_token)
     throw new StravaError(
       response.status,
       response.status === 429
@@ -99,7 +99,7 @@ export async function get<T>(id: number, path: string): Promise<T> {
             : 'Strava could not load this activity. Please try again.',
     )
   }
-  return response.json() as Promise<T>
+  return readJson<T>(response)
 }
 export const listActivities = (id: number, page: number) =>
   get<Activity[]>(id, `/athlete/activities?per_page=30&page=${page}`)
@@ -137,9 +137,9 @@ export async function upload(
     headers: { Authorization: 'Bearer ' + auth.access_token },
     body,
     signal: AbortSignal.timeout(40000),
-    redirect: 'error',
+    redirect: 'manual',
   })
-  const result = await response.json()
+  const result = await readJson<Upload>(response)
   if (!response.ok)
     throw new StravaError(
       response.status,

@@ -3,12 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_ENV=development node --watch --import remix/node-tsx server.ts",
-    "hmr": "NODE_ENV=development node hmr.ts",
-    "start": "NODE_ENV=production node --import remix/node-tsx server.ts",
-    "test": "NODE_ENV=test node --import remix/node-tsx --test",
+    "dev": "wrangler dev --port 44100",
+    "build:assets": "node scripts/build-assets.ts",
+    "build": "wrangler deploy --env production --dry-run --outdir dist/worker",
+    "deploy": "wrangler deploy --env production",
+    "test": "NODE_ENV=test node --import remix/node-tsx --test --test-concurrency=1",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --check app server.ts hmr.ts public/styles.css package.json"
+    "types": "wrangler types --env-interface Env --include-runtime false && prettier --write worker-configuration.d.ts",
+    "format": "prettier --check app scripts worker.ts worker-configuration.d.ts wrangler.jsonc tsconfig.json public/styles.css package.json"
   },
   "engines": {
     "node": ">=24.3.0"
@@ -18,8 +20,11 @@
     "remix": "^3.0.0-rc.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260906.1",
     "@types/node": "latest",
+    "esbuild": "^0.28.2",
     "prettier": "^3.9.6",
-    "typescript": "latest"
+    "typescript": "latest",
+    "wrangler": "^4.129.0"
   }
 }

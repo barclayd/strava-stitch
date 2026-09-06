@@ -39,6 +39,7 @@ export type Merge = {
   fields: string[]
 }
 // GPX cycling imports are classified as Ride. Do not silently reclassify e-bike or other sports.
+export const maxPoints = 50000
 export const cycling = new Set(['Ride'])
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const escape = (s: string) =>
@@ -65,7 +66,7 @@ export function recording(activity: Activity, streams: Streams): Recording {
     gps = streams.latlng?.data
   if (!times?.length || !gps?.length)
     throw new Error('This activity has no complete GPS track. Try its original file instead.')
-  if (times.length > 300000)
+  if (times.length > maxPoints)
     throw new Error('This activity is too large for this version of Stitch.')
   for (const stream of Object.values(streams)) {
     if (
@@ -126,6 +127,10 @@ export function merge(input: Recording[]): Merge {
   if (input.some((r) => !r.points.length)) throw new Error('Every activity needs GPS points.')
   if (new Set(input.map((r) => r.activity.sport_type)).size !== 1)
     throw new Error('Choose activities with the same cycling sport type.')
+  if (input.reduce((n, r) => n + r.points.length, 0) > maxPoints)
+    throw new Error(
+      'Choose activities with up to 50,000 GPS points in total. No samples have been removed.',
+    )
   const records = [...input].sort((a, b) => a.points[0].time - b.points[0].time)
   const joins: Join[] = []
   for (let i = 1; i < records.length; i++) {

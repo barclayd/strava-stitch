@@ -1,19 +1,17 @@
 import { createRouter, type MiddlewareContext } from 'remix/router'
 import { render } from 'remix/middleware/render'
-import { staticFiles } from 'remix/middleware/static'
 import { formData } from 'remix/middleware/form-data'
 import { csrf } from 'remix/middleware/csrf'
-import { config } from './data/config.ts'
+import { getConfig } from './data/config.ts'
 import { sessionMiddleware } from './middleware/session.ts'
 import authController from './actions/auth/controller.ts'
 import stitchesController from './actions/stitches/controller.tsx'
 import webhookController from './actions/webhooks/controller.ts'
 
 import controller from './actions/controller.tsx'
-import { assets } from './assets.ts'
 import { routes } from './routes.ts'
 
-const renderMiddleware = render({ assets })
+const renderMiddleware = render()
 const formMiddleware = formData({ maxFiles: 0, maxParts: 32, maxTotalSize: 65536 })
 const csrfMiddleware = csrf({ allowMissingOrigin: false })
 type AppContext = MiddlewareContext<
@@ -29,7 +27,7 @@ declare module 'remix/router' {
 export const router = createRouter<AppContext>({
   middleware: [
     async (context, next) => {
-      if (context.url.origin !== config.origin)
+      if (context.url.origin !== getConfig().origin)
         return new Response('Unrecognized host.', { status: 403 })
       if (Number(context.request.headers.get('content-length') ?? 0) > 65536)
         return new Response('Request too large.', { status: 413 })
@@ -44,7 +42,6 @@ export const router = createRouter<AppContext>({
       )
       return response
     },
-    staticFiles('./public', { index: false }),
     sessionMiddleware,
     formMiddleware,
     async (context, next) =>

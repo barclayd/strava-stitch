@@ -2,9 +2,9 @@
   "compilerOptions": {
     "strict": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "types": ["node", "remix/assets/types/hmr"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "types": ["node", "@cloudflare/workers-types", "remix/assets/types/hmr"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "target": "ESNext",
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,

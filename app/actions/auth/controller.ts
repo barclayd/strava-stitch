@@ -3,7 +3,7 @@ import { createController } from 'remix/router'
 import { Session } from 'remix/session'
 import { redirect } from 'remix/response/redirect'
 import { routes } from '../../routes.ts'
-import { config } from '../../data/config.ts'
+import { getConfig } from '../../data/config.ts'
 import { exchange, SCOPES } from '../../data/strava.ts'
 import { saveAccount, forgetAccount } from '../../data/store.ts'
 
@@ -11,11 +11,11 @@ export default createController(routes.auth, {
   actions: {
     connect({ get }) {
       const session = get(Session),
-        state = randomBytes(32).toString('hex')
+        state = Buffer.from(randomBytes(32)).toString('hex')
       session.set('oauth', { state, expires: Date.now() + 600000 })
       const params = new URLSearchParams({
-        client_id: config.clientId,
-        redirect_uri: config.origin + routes.auth.callback.href(),
+        client_id: getConfig().clientId,
+        redirect_uri: getConfig().origin + routes.auth.callback.href(),
         response_type: 'code',
         approval_prompt: 'force',
         scope: SCOPES.join(','),
@@ -49,13 +49,13 @@ export default createController(routes.auth, {
         const scope = String(data.scope ?? url.searchParams.get('scope') ?? '')
           .split(/[ ,]+/)
           .filter(Boolean)
-        if (!Number.isSafeInteger(data.athlete?.id))
+        if (!data.athlete || !Number.isSafeInteger(data.athlete.id))
           throw new Error('Strava did not return an athlete account.')
         if (!scope.includes('activity:read_all'))
           throw new Error(
             'Allow access to your activities, including Only You activities, to use Stitch.',
           )
-        saveAccount({
+        await saveAccount({
           id: data.athlete.id,
           firstname: String(data.athlete.firstname ?? 'Cyclist'),
           scope,
@@ -78,10 +78,10 @@ export default createController(routes.auth, {
       get(Session).destroy()
       return redirect(routes.home.href(), 303)
     },
-    disconnect({ get }) {
+    async disconnect({ get }) {
       const session = get(Session),
         id = session.get('athleteId')
-      if (typeof id === 'number') forgetAccount(id)
+      if (typeof id === 'number') await forgetAccount(id)
       session.unset('athleteId')
       session.unset('oauth')
       session.regenerateId(true)

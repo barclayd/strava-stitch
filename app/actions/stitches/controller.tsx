@@ -5,9 +5,9 @@ import { redirect } from 'remix/response/redirect'
 import { zipSync, strToU8 } from 'fflate'
 import * as s from 'remix/data-schema'
 import { routes } from '../../routes.ts'
-import { account, newJob, job, saveJob, claimUpload, type Job } from '../../data/store.ts'
+import { account, newJob, job, patchJob, claimUpload, type Job } from '../../data/store.ts'
 import * as strava from '../../data/strava.ts'
-import { merge, recording, toGpx } from './merge.ts'
+import { merge, recording, toGpx, maxPoints } from './merge.ts'
 import { StitchPage } from './page.tsx'
 
 function identity(session: Session) {
@@ -20,7 +20,7 @@ const fail = (session: Session, message: string, target = routes.home.href()) =>
 }
 const problem = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong. Please try again.'
-const updateStatus = (j: Job, result: strava.Upload) => {
+const updateStatus = async (j: Job, result: strava.Upload) => {
   if (result.activity_id && Number.isSafeInteger(result.activity_id)) {
     j.state = 'complete'
     j.activityId = result.activity_id
@@ -38,14 +38,19 @@ const updateStatus = (j: Job, result: strava.Upload) => {
         'Strava did not return an upload identifier. Check your account before trying again.'
     }
   }
-  saveJob(j)
+  await patchJob(j.id, j.owner, {
+    state: j.state,
+    error: j.error ?? '',
+    uploadId: j.uploadId,
+    activityId: j.activityId,
+  })
 }
 
 export default createController(routes.stitches, {
   actions: {
     async create({ get }) {
       const session = get(Session),
-        auth = identity(session)
+        auth = await identity(session)
       if (!auth) return fail(session, 'Connect Strava to stitch your activities.')
       const fields = get(FormData)
       const parsed = s.parseSafe(s.array(s.string()), fields.getAll('activities'))
@@ -61,24 +66,31 @@ export default createController(routes.stitches, {
         return fail(session, 'Choose between two and eight different activities.')
       try {
         const records = []
+        let points = 0
         for (const value of parsed.value) {
           const id = Number(value),
             detail = await strava.activity(auth.id, id)
           if (detail.id !== id || detail.athlete?.id !== auth.id)
             return fail(session, 'Every activity must belong to your connected Strava account.')
-          records.push(recording(detail, await strava.streams(auth.id, id)))
+          const source = await strava.streams(auth.id, id)
+          points += source.time?.data?.length ?? 0
+          if (points > maxPoints)
+            throw new Error(
+              'Choose activities with up to 50,000 GPS points in total. No samples have been removed.',
+            )
+          records.push(recording(detail, source))
         }
-        const j = newJob(auth.id, merge(records))
+        const j = await newJob(auth.id, merge(records))
         return redirect(routes.stitches.show.href({ id: j.id }), 303)
       } catch (error) {
         return fail(session, problem(error))
       }
     },
-    show(context) {
+    async show(context) {
       const session = context.get(Session),
-        auth = identity(session)
+        auth = await identity(session)
       if (!auth) return redirect(routes.home.href(), 303)
-      const j = job(context.params.id, auth.id)
+      const j = await job(context.params.id, auth.id)
       if (!j)
         return new Response('This preview has expired or is not available to this account.', {
           status: 404,
@@ -93,9 +105,9 @@ export default createController(routes.stitches, {
         />,
       )
     },
-    download({ get, params }) {
-      const auth = identity(get(Session)),
-        j = auth ? job(params.id, auth.id) : undefined
+    async download({ get, params }) {
+      const auth = await identity(get(Session)),
+        j = auth ? await job(params.id, auth.id) : undefined
       if (!j) return new Response('Not found', { status: 404 })
       return new Response(toGpx(j.merge.records, j.title), {
         headers: {
@@ -104,9 +116,9 @@ export default createController(routes.stitches, {
         },
       })
     },
-    backup({ get, params }) {
-      const auth = identity(get(Session)),
-        j = auth ? job(params.id, auth.id) : undefined
+    async backup({ get, params }) {
+      const auth = await identity(get(Session)),
+        j = auth ? await job(params.id, auth.id) : undefined
       if (!j) return new Response('Not found', { status: 404 })
       const files: Record<string, Uint8Array> = {
         'stitched-ride.gpx': strToU8(toGpx(j.merge.records, j.title)),
@@ -117,8 +129,7 @@ export default createController(routes.stitches, {
       for (const r of j.merge.records)
         files[`original-${r.activity.id}.gpx`] = strToU8(toGpx([r], r.activity.name))
       const zip = zipSync(files)
-      j.backupDownloaded = true
-      saveJob(j)
+      await patchJob(j.id, j.owner, { backupDownloaded: true })
       return new Response(new Uint8Array(zip), {
         headers: {
           'Content-Type': 'application/zip',
@@ -128,8 +139,8 @@ export default createController(routes.stitches, {
     },
     async confirmRemoval({ get, params }) {
       const session = get(Session),
-        auth = identity(session),
-        j = auth ? job(params.id, auth.id) : undefined,
+        auth = await identity(session),
+        j = auth ? await job(params.id, auth.id) : undefined,
         target = routes.stitches.show.href({ id: params.id })
       if (!auth || !j) return new Response('Not found', { status: 404 })
       if (
@@ -155,8 +166,7 @@ export default createController(routes.stitches, {
             if (!(error instanceof strava.StravaError && error.status === 404)) throw error
           }
         }
-        j.removalConfirmed = true
-        saveJob(j)
+        await patchJob(j.id, j.owner, { removalConfirmed: true })
         return redirect(target, 303)
       } catch (error) {
         return fail(session, problem(error), target)
@@ -164,8 +174,8 @@ export default createController(routes.stitches, {
     },
     async upload({ get, params }) {
       const session = get(Session),
-        auth = identity(session),
-        j = auth ? job(params.id, auth.id) : undefined,
+        auth = await identity(session),
+        j = auth ? await job(params.id, auth.id) : undefined,
         target = routes.stitches.show.href({ id: params.id })
       if (!auth || !j) return new Response('Not found', { status: 404 })
       const form = get(FormData),
@@ -182,15 +192,13 @@ export default createController(routes.stitches, {
         return fail(session, 'Review the joins and confirm the upload before continuing.', target)
       if (j.state === 'duplicate' && !j.removalConfirmed)
         return fail(session, 'Complete the separate original-removal step before retrying.', target)
-      const claimed = claimUpload(j.id, auth.id)
+      const claimed = await claimUpload(j.id, auth.id, title.trim())
       if (!claimed)
         return fail(
           session,
           'This upload has already started. Check its status before trying again.',
           target,
         )
-      claimed.title = title.trim()
-      saveJob(claimed)
       try {
         const result = await strava.upload(
           auth.id,
@@ -198,7 +206,7 @@ export default createController(routes.stitches, {
           claimed.title,
           `stitch-${claimed.id}.gpx`,
         )
-        updateStatus(claimed, result)
+        await updateStatus(claimed, result)
       } catch (error) {
         // Do not retry a request that might already have reached Strava.
         claimed.state =
@@ -211,18 +219,18 @@ export default createController(routes.stitches, {
           claimed.state === 'unknown'
             ? 'The connection ended before Strava confirmed the result. Check your Strava activities before starting another upload.'
             : problem(error)
-        saveJob(claimed)
+        await patchJob(claimed.id, claimed.owner, { state: claimed.state, error: claimed.error })
       }
       return redirect(target, 303)
     },
     async status({ get, params }) {
       const session = get(Session),
-        auth = identity(session),
-        j = auth ? job(params.id, auth.id) : undefined
+        auth = await identity(session),
+        j = auth ? await job(params.id, auth.id) : undefined
       if (!auth || !j) return new Response('Not found', { status: 404 })
       if (j.state === 'processing' && j.uploadId) {
         try {
-          updateStatus(j, await strava.get<strava.Upload>(auth.id, `/uploads/${j.uploadId}`))
+          await updateStatus(j, await strava.get<strava.Upload>(auth.id, `/uploads/${j.uploadId}`))
         } catch (error) {
           return Response.json({ state: j.state, error: problem(error) }, { status: 503 })
         }

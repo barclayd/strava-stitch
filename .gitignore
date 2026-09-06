@@ -21,3 +21,9 @@ exports/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Cloudflare build output and local secrets
+/dist/
+/.wrangler/
+.dev.vars*
+!.dev.vars.example
