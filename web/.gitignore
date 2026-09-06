@@ -1,0 +1,8 @@
+node_modules/
+db/*.sqlite
+tmp/
+.env*
+!.env.example
+db/*
+!db/.gitkeep
+.DS_Store

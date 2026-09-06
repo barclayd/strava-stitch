@@ -1,0 +1,16 @@
+# Local credentials and private activity data
+.env
+.env.*
+!.env.example
+.local/
+/data/
+exports/
+*.gpx
+*.tcx
+*.fit
+*.fit.gz
+*.gpx.gz
+*.tcx.gz
+.DS_Store
+__pycache__/
+*.pyc

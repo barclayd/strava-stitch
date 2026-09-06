@@ -1,0 +1,5 @@
+node_modules
+db
+tmp
+.env.local
+.agents
