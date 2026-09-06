@@ -1,4 +1,9 @@
-# Local credentials and private activity data
+# Dependencies and runtime state
+node_modules/
+/web/db/
+/web/tmp/
+
+# Credentials and private activity files, including local prototype artifacts
 .env
 .env.*
 !.env.example
@@ -11,6 +16,8 @@ exports/
 *.fit.gz
 *.gpx.gz
 *.tcx.gz
+
+# Local machine artifacts
 .DS_Store
 __pycache__/
 *.pyc
