@@ -2,7 +2,7 @@ import { clientEntry, on, ref, type Handle } from 'remix/ui'
 import { routes } from '../../../routes.ts'
 
 export const UploadForm = clientEntry(
-  import.meta.url,
+  '/client/upload-form.js#UploadForm',
   function UploadForm(handle: Handle<{ id: string; title: string; csrf: string; retry: boolean }>) {
     let confirmed = false,
       gaps = false,
@@ -88,7 +88,7 @@ export const UploadForm = clientEntry(
 )
 
 export const UploadStatus = clientEntry(
-  import.meta.url,
+  '/client/upload-form.js#UploadStatus',
   function UploadStatus(handle: Handle<{ id: string }>) {
     let message = 'Strava is processing your ride…',
       checking = false
@@ -99,7 +99,7 @@ export const UploadStatus = clientEntry(
         const response = await fetch(routes.stitches.status.href({ id: handle.props.id }), {
           signal,
         })
-        const data = await response.json()
+        const data = (await response.json()) as { error?: string; state?: string }
         if (!response.ok) message = data.error ?? 'Could not check yet. Try again shortly.'
         else if (data.state !== 'processing') {
           window.location.reload()

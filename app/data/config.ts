@@ -1,27 +1,48 @@
-import { loadEnvFile } from 'node:process'
-import { existsSync } from 'node:fs'
+import { runtime } from './runtime.ts'
 
-if (process.env.NODE_ENV !== 'test' && existsSync('.env.local')) loadEnvFile('.env.local')
-function required(key: string) {
-  const value = process.env[key]
-  if (!value) throw new Error(`${key} is required. See .env.example.`)
-  return value
+export type AppConfig = {
+  origin: string
+  clientId: string
+  clientSecret: string
+  sessionSecret: string
+  encryptionKey: Buffer
+  webhookToken: string
+  webhookSubscription: string
 }
-export const config = {
-  origin: required('APP_ORIGIN'),
-  clientId: required('STRAVA_CLIENT_ID'),
-  clientSecret: required('STRAVA_CLIENT_SECRET'),
-  sessionSecret: required('SESSION_SECRET'),
-  encryptionKey: Buffer.from(required('TOKEN_ENCRYPTION_KEY'), 'base64'),
-  database: process.env.DATABASE_PATH ?? './db/stitch.sqlite',
-  webhookToken: process.env.STRAVA_WEBHOOK_VERIFY_TOKEN,
-  webhookSubscription: process.env.STRAVA_WEBHOOK_SUBSCRIPTION_ID,
+export function readConfig(env: {
+  APP_ORIGIN: string
+  STRAVA_CLIENT_ID: string
+  STRAVA_CLIENT_SECRET: string
+  SESSION_SECRET: string
+  TOKEN_ENCRYPTION_KEY: string
+  STRAVA_WEBHOOK_VERIFY_TOKEN: string
+  STRAVA_WEBHOOK_SUBSCRIPTION_ID: string
+}): AppConfig {
+  for (const key of [
+    'APP_ORIGIN',
+    'STRAVA_CLIENT_ID',
+    'STRAVA_CLIENT_SECRET',
+    'SESSION_SECRET',
+    'TOKEN_ENCRYPTION_KEY',
+  ] as const)
+    if (!env[key]) throw new Error('Missing Worker configuration: ' + key)
+  const config = {
+    origin: env.APP_ORIGIN,
+    clientId: env.STRAVA_CLIENT_ID,
+    clientSecret: env.STRAVA_CLIENT_SECRET,
+    sessionSecret: env.SESSION_SECRET,
+    encryptionKey: Buffer.from(env.TOKEN_ENCRYPTION_KEY, 'base64'),
+    webhookToken: env.STRAVA_WEBHOOK_VERIFY_TOKEN,
+    webhookSubscription: env.STRAVA_WEBHOOK_SUBSCRIPTION_ID,
+  }
+  const origin = new URL(config.origin)
+  if (
+    origin.origin !== config.origin ||
+    (origin.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(origin.hostname))
+  )
+    throw new Error('Use an HTTPS origin, or localhost for development.')
+  if (config.encryptionKey.length !== 32 || config.sessionSecret.length < 32)
+    throw new Error('Use strong, separate encryption and session keys.')
+  return config
 }
-if (config.encryptionKey.length !== 32 || config.sessionSecret.length < 32)
-  throw new Error('Use strong, separate encryption and session keys.')
-const origin = new URL(config.origin)
-if (
-  origin.origin !== config.origin ||
-  (process.env.NODE_ENV === 'production' && origin.protocol !== 'https:')
-)
-  throw new Error('APP_ORIGIN must be an origin, with HTTPS in production.')
+export const getConfig = () => runtime().config

@@ -1,19 +1,19 @@
-import { mkdirSync } from 'node:fs'
 import { createCookie } from 'remix/cookie'
 import { session } from 'remix/middleware/session'
-import { atomicSessionStorage } from '../data/sessions.ts'
-import { config } from '../data/config.ts'
+import { runtime } from '../data/runtime.ts'
 
-const directory = process.env.SESSION_DIR ?? './tmp/sessions'
-mkdirSync(directory, { recursive: true, mode: 0o700 })
-export const sessionMiddleware = session(
-  createCookie('stitch_session', {
-    secrets: [config.sessionSecret],
-    httpOnly: true,
-    sameSite: 'Lax',
-    secure: config.origin.startsWith('https:'),
-    maxAge: 604800,
-    path: '/',
-  }),
-  atomicSessionStorage(directory),
-)
+// Construct the middleware per request so bindings and secrets never leak between requests.
+export const sessionMiddleware: ReturnType<typeof session> = (context, next) => {
+  const { config, sessions } = runtime()
+  return session(
+    createCookie('stitch_session', {
+      secrets: [config.sessionSecret],
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: config.origin.startsWith('https:'),
+      maxAge: 604800,
+      path: '/',
+    }),
+    sessions,
+  )(context, next)
+}

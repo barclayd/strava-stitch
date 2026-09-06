@@ -4,7 +4,7 @@ import { RouteMap } from '../../ui/public/route-map.tsx'
 import { colours, duration, km, day, time, type Ride } from './format.ts'
 
 export const Workspace = clientEntry(
-  import.meta.url,
+  '/client/workspace.js#Workspace',
   function Workspace(
     handle: Handle<{
       rides: Ride[]

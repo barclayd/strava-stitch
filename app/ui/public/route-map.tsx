@@ -2,7 +2,7 @@ import { clientEntry, on, type Handle } from 'remix/ui'
 import { colours, type Track } from '../../actions/public/format.ts'
 
 export const RouteMap = clientEntry(
-  import.meta.url,
+  '/client/route-map.js#RouteMap',
   function RouteMap(handle: Handle<{ tracks: Track[]; compact?: boolean }>) {
     let view = [0, 0, 900, 600],
       drag: { x: number; y: number; v: number[] } | undefined

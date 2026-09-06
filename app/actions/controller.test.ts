@@ -1,30 +1,38 @@
 import { test, after } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { createTestHarness } from 'wrangler'
+import { seal, unseal } from '../data/encryption.ts'
 import { randomBytes } from 'node:crypto'
 import { unzipSync, strFromU8 } from 'fflate'
 import { merge, recording, type Activity, type Streams } from './stitches/merge.ts'
 
-const directory = mkdtempSync(join(tmpdir(), 'stitch-tests-'))
-Object.assign(process.env, {
-  NODE_ENV: 'test',
-  APP_ORIGIN: 'http://localhost:44100',
-  STRAVA_CLIENT_ID: '123',
+const secrets = {
   STRAVA_CLIENT_SECRET: 'test-client-secret',
-  SESSION_SECRET: randomBytes(40).toString('hex'),
-  TOKEN_ENCRYPTION_KEY: randomBytes(32).toString('base64'),
-  DATABASE_PATH: join(directory, 'db.sqlite'),
-  SESSION_DIR: join(directory, 'sessions'),
+  SESSION_SECRET: Buffer.from(randomBytes(40)).toString('hex'),
+  TOKEN_ENCRYPTION_KEY: Buffer.from(randomBytes(32)).toString('base64'),
   STRAVA_WEBHOOK_VERIFY_TOKEN: 'test-hook',
-  STRAVA_WEBHOOK_SUBSCRIPTION_ID: '99',
+}
+const server = createTestHarness({
+  workers: [
+    {
+      configPath: './wrangler.jsonc',
+      secrets,
+      vars: { STRAVA_CLIENT_ID: '123', STRAVA_WEBHOOK_SUBSCRIPTION_ID: '99' },
+    },
+  ],
 })
-const { router } = await import('../router.ts')
-const { account, saveAccount, newJob, job, seal, unseal } = await import('../data/store.ts')
+const worker = server.getWorker<Env>()
+await server.listen()
+const env = await worker.getEnv()
+const repo = (owner: number) => env.ATHLETES.getByName(String(owner))
+const account = (id: number) => repo(id).account()
+const saveAccount = (value: import('../data/store.ts').Account) => repo(value.id).saveAccount(value)
+const newJob = (owner: number, content: import('./stitches/merge.ts').Merge) =>
+  repo(owner).newJob(owner, content)
+const job = (id: string, owner: number) => repo(owner).job(id, owner)
 const { permittedGet } = await import('../data/strava.ts')
 const { routes } = await import('../routes.ts')
-const origin = process.env.APP_ORIGIN!
+const origin = 'http://localhost:44100'
 const raw: Streams = {
   time: { data: [0, 5, 10], original_size: 3 },
   latlng: {
@@ -53,6 +61,8 @@ const makeMerge = () => merge([recording(detail(101), raw), recording(detail(102
 let oauthOwner = 1,
   scopes = ['read', 'activity:read', 'activity:read_all', 'activity:write'],
   uploadMode = 'success',
+  longRide = false,
+  deauthorized = false,
   deleted = false,
   foreign = false,
   uploads = 0,
@@ -61,8 +71,9 @@ const originalFetch = globalThis.fetch
 globalThis.fetch = async (input, init) => {
   const url = String(input),
     method = init?.method ?? 'GET'
+  if (new URL(url).hostname !== 'www.strava.com') return originalFetch(input, init)
   if (url === 'https://www.strava.com/oauth/token') {
-    const params = init?.body as URLSearchParams
+    const params = await new Request(url, init).formData()
     if (params.get('grant_type') === 'refresh_token') refreshes++
     return Response.json({
       athlete: { id: oauthOwner, firstname: 'Tester' },
@@ -79,35 +90,66 @@ globalThis.fetch = async (input, init) => {
   )
   if (url.endsWith('/uploads') && method === 'POST') {
     uploads++
-    assert.equal((init?.body as FormData).get('data_type'), 'gpx')
+    assert.equal((await new Request(url, init).formData()).get('data_type'), 'gpx')
     if (uploadMode === 'timeout') throw new Error('Simulated network interruption')
     if (uploadMode === 'duplicate')
       return Response.json({ id: 123, error: 'duplicate of Test ride 101' }, { status: 201 })
     return Response.json({ id: 123, status: 'processing' }, { status: 201 })
   }
+  if (url.endsWith('/athlete'))
+    return deauthorized ? new Response(null, { status: 401 }) : Response.json({ id: oauthOwner })
   if (url.endsWith('/uploads/123'))
     return Response.json({ id: 123, activity_id: 500, status: 'ready' })
   if (url.includes('/athlete/activities?')) return Response.json([detail(101), detail(102)])
-  if (url.includes('/streams?')) return Response.json(raw)
+  if (url.includes('/streams?'))
+    return Response.json(
+      longRide
+        ? {
+            time: { data: Array.from({ length: 6000 }, (_, i) => i) },
+            latlng: { data: Array.from({ length: 6000 }, (_, i) => [51 + i / 100000, -1]) },
+            distance: { data: Array.from({ length: 6000 }, (_, i) => i * 5) },
+          }
+        : raw,
+    )
   const match = url.match(/\/activities\/(\d+)$/)
   if (match)
     return deleted
       ? new Response('', { status: 404 })
-      : Response.json(detail(Number(match[1]), foreign ? 2 : 1))
+      : Response.json({
+          ...detail(Number(match[1]), foreign ? 2 : oauthOwner),
+          ...(longRide
+            ? {
+                start_date: new Date(
+                  Date.UTC(2026, 8, 6, Number(match[1]) === 101 ? 8 : 10),
+                ).toISOString(),
+              }
+            : {}),
+        })
   throw new Error('Unexpected network request')
 }
-after(() => {
+after(async () => {
   globalThis.fetch = originalFetch
-  rmSync(directory, { recursive: true, force: true })
+  await server.close()
 })
 
 class Client {
   cookie = ''
   csrf = ''
-  async request(path: string, options: RequestInit = {}) {
+  async request(
+    path: string,
+    options: {
+      method?: string
+      headers?: Record<string, string>
+      body?: string | URLSearchParams
+    } = {},
+  ) {
     const headers = new Headers(options.headers)
     if (this.cookie) headers.set('cookie', this.cookie)
-    const response = await router.fetch(new Request(origin + path, { ...options, headers }))
+    const response = await worker.fetch(origin + path, {
+      ...options,
+      headers: Object.fromEntries(headers),
+      redirect: 'manual',
+    })
     const set = response.headers.get('set-cookie')
     if (set) this.cookie = set.split(';')[0]
     return response
@@ -143,7 +185,11 @@ class Client {
         }),
     )
     assert.equal(callback.status, 303)
-    await this.page()
+    const home = await this.page()
+    assert.ok(
+      home.text.includes('Tester'),
+      home.text.match(/role="alert"[^>]*>(.*?)<\/div>/)?.[1] ?? 'Login did not persist',
+    )
   }
 }
 const confirmation = { title: 'One ride', confirm: 'upload', gaps: 'reviewed' }
@@ -156,14 +202,21 @@ test('OAuth is bound to a browser session and uploads require CSRF and granted s
   assert.equal((await c.post('/auth/strava', {}, false)).status, 403)
   assert.equal((await c.request('/auth/strava/callback?state=wrong&code=fake')).status, 400)
   await c.login(1, false)
-  const j = newJob(1, makeMerge())
+  const j = await newJob(1, makeMerge())
   const before = uploads
   await c.post(routes.stitches.upload.href({ id: j.id }), confirmation)
   assert.equal(uploads, before)
-  assert.equal(job(j.id, 1)?.state, 'ready')
-  const plaintext = readFileSync(process.env.DATABASE_PATH!, 'utf8')
+  assert.equal((await job(j.id, 1))?.state, 'ready')
+  const sql = await server.getWorker().getDurableObjectStorage('ATHLETES', { name: '1' })
+  const plaintext = JSON.stringify(await sql.exec('SELECT payload FROM account'))
   assert.ok(!plaintext.includes('secret-access-1'))
-  assert.deepEqual(unseal(seal({ test: 'private' })), { test: 'private' })
+  assert.deepEqual(
+    unseal(
+      seal({ test: 'private' }, Buffer.from(secrets.TOKEN_ENCRYPTION_KEY, 'base64')),
+      Buffer.from(secrets.TOKEN_ENCRYPTION_KEY, 'base64'),
+    ),
+    { test: 'private' },
+  )
   await c.post('/auth/logout', {})
   const loggedOut = await c.page()
   assert.match(loggedOut.text, /EXAMPLE ACTIVITIES/)
@@ -183,7 +236,7 @@ test('prepare checks ownership and stores a preview; downloads and bundles stay 
   const target = response.headers.get('location')!,
     id = target.split('/').at(-1)!
   assert.deepEqual(
-    job(id, 1)?.merge.records.map((r) => r.activity.id),
+    (await job(id, 1))?.merge.records.map((r) => r.activity.id),
     [101, 102],
   )
   assert.match((await c.page(target)).text, /Looking like one ride/)
@@ -212,17 +265,17 @@ test('upload is explicitly confirmed, submitted once, and polled to completion',
   const c = new Client()
   await c.login()
   uploadMode = 'success'
-  const j = newJob(1, makeMerge()),
+  const j = await newJob(1, makeMerge()),
     path = routes.stitches.upload.href({ id: j.id }),
     before = uploads
   await c.post(path, { title: 'Test' })
   assert.equal(uploads, before)
   await Promise.all([c.post(path, confirmation), c.post(path, confirmation)])
   assert.equal(uploads, before + 1)
-  assert.equal(job(j.id, 1)?.state, 'processing')
+  assert.equal((await job(j.id, 1))?.state, 'processing')
   await c.request(routes.stitches.status.href({ id: j.id }))
-  assert.equal(job(j.id, 1)?.state, 'complete')
-  assert.equal(job(j.id, 1)?.activityId, 500)
+  assert.equal((await job(j.id, 1))?.state, 'complete')
+  assert.equal((await job(j.id, 1))?.activityId, 500)
   await c.post(path, confirmation)
   assert.equal(uploads, before + 1)
 })
@@ -231,22 +284,22 @@ test('duplicates require a backup and separate confirmed removal, with fresh rea
   await c.login()
   uploadMode = 'duplicate'
   deleted = false
-  const j = newJob(1, makeMerge()),
+  const j = await newJob(1, makeMerge()),
     path = routes.stitches.upload.href({ id: j.id }),
     removal = routes.stitches.confirmRemoval.href({ id: j.id })
   await c.post(path, confirmation)
-  assert.equal(job(j.id, 1)?.state, 'duplicate')
+  assert.equal((await job(j.id, 1))?.state, 'duplicate')
   const before = uploads
   await c.post(path, confirmation)
   assert.equal(uploads, before)
   await c.post(removal, { confirm: 'removed' })
-  assert.ok(!job(j.id, 1)?.removalConfirmed)
+  assert.ok(!(await job(j.id, 1))?.removalConfirmed)
   await c.request(routes.stitches.backup.href({ id: j.id }))
   await c.post(removal, { confirm: 'removed' })
-  assert.ok(!job(j.id, 1)?.removalConfirmed)
+  assert.ok(!(await job(j.id, 1))?.removalConfirmed)
   deleted = true
   await c.post(removal, { confirm: 'removed' })
-  assert.equal(job(j.id, 1)?.removalConfirmed, true)
+  assert.equal((await job(j.id, 1))?.removalConfirmed, true)
   uploadMode = 'success'
   await c.post(path, confirmation)
   assert.equal(uploads, before + 1)
@@ -256,17 +309,18 @@ test('uncertain uploads cannot be silently retried; refresh and deauthorization 
   const c = new Client()
   await c.login()
   uploadMode = 'timeout'
-  const j = newJob(1, makeMerge()),
+  const j = await newJob(1, makeMerge()),
     path = routes.stitches.upload.href({ id: j.id })
-  const value = account(1)!
-  saveAccount({ ...value, expires_at: 0 })
+  const value = (await account(1))!
+  await saveAccount({ ...value, expires_at: 0 })
   const previousRefresh = refreshes
   await c.post(path, confirmation)
   assert.equal(refreshes, previousRefresh + 1)
-  assert.equal(job(j.id, 1)?.state, 'unknown')
+  assert.equal((await job(j.id, 1))?.state, 'unknown')
   const before = uploads
   await c.post(path, confirmation)
   assert.equal(uploads, before)
+  deauthorized = true
   const response = await c.request('/webhooks/strava', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -279,11 +333,85 @@ test('uncertain uploads cannot be silently retried; refresh and deauthorization 
     }),
   })
   assert.equal(response.status, 200)
-  assert.equal(account(1), undefined)
-  assert.equal(job(j.id, 1), undefined)
+  assert.equal(await account(1), undefined)
+  assert.equal(await job(j.id, 1), undefined)
   assert.equal(permittedGet('/activities/123'), true)
   assert.equal(permittedGet('/athlete/activities?per_page=30&page=1'), true)
   assert.equal(permittedGet('/activities/123/delete'), false)
-  const crossOrigin = await router.fetch(new Request('http://attacker.test/'))
+  const crossOrigin = await worker.fetch('http://attacker.test/')
   assert.equal(crossOrigin.status, 403)
+})
+
+test('Worker serves bundled assets, rejects oversized requests, and keeps private files inaccessible', async () => {
+  const script = await worker.fetch(origin + '/client/workspace.js')
+  assert.equal(script.status, 200)
+  assert.match(script.headers.get('content-type')!, /javascript/)
+  assert.ok(!(await script.text()).includes('STRAVA_CLIENT_SECRET'))
+  for (const path of ['/.env.local', '/.dev.vars', '/app/data/store.ts', '/db/stitch.sqlite'])
+    assert.equal((await worker.fetch(origin + path)).status, 404)
+  const tooLarge = await worker.fetch(origin + '/stitches', {
+    method: 'POST',
+    body: 'x'.repeat(65537),
+    redirect: 'manual',
+  })
+  assert.equal(tooLarge.status, 413)
+})
+
+test('large encrypted previews survive object restarts and late updates preserve completion and backups', async () => {
+  const c = new Client()
+  await c.login(3)
+  longRide = true
+  const response = await c.post('/stitches', { activities: ['101', '102'] })
+  longRide = false
+  const id = response.headers.get('location')!.split('/').at(-1)!
+  assert.notEqual(id, '')
+  const sql = await server.getWorker().getDurableObjectStorage('ATHLETES', { name: '3' })
+  const chunks = await sql.exec('SELECT part FROM chunks WHERE job=?', id)
+  assert.ok(chunks.length > 1)
+  await server.getWorker().evictDurableObject('ATHLETES', { name: '3' })
+  assert.equal((await job(id, 3))?.merge.pointCount, 12000)
+  const zip = await c.request(routes.stitches.backup.href({ id: id }))
+  assert.equal(zip.status, 200)
+  const files = unzipSync(new Uint8Array(await zip.arrayBuffer()))
+  assert.equal((strFromU8(files['stitched-ride.gpx']).match(/<trkpt /g) ?? []).length, 12000)
+  await repo(3).patchJob(id, 3, { state: 'complete', activityId: 500 })
+  await repo(3).patchJob(id, 3, { state: 'processing' })
+  const saved = await job(id, 3)
+  assert.equal(saved?.state, 'complete')
+  assert.equal(saved?.backupDownloaded, true)
+  assert.equal(await repo(3).claimUpload(id, 3, 'Again'), undefined)
+})
+
+test('Strava webhook verification accepts an empty GET body and rejects the wrong token', async () => {
+  const query = new URLSearchParams({
+    'hub.mode': 'subscribe',
+    'hub.verify_token': secrets.STRAVA_WEBHOOK_VERIFY_TOKEN,
+    'hub.challenge': 'test-challenge',
+  })
+  const verified = await worker.fetch(origin + '/webhooks/strava?' + query, {
+    headers: { 'Content-Length': '0' },
+  })
+  assert.equal(verified.status, 200)
+  assert.deepEqual(await verified.json(), { 'hub.challenge': 'test-challenge' })
+  query.set('hub.verify_token', 'wrong')
+  assert.equal((await worker.fetch(origin + '/webhooks/strava?' + query)).status, 404)
+})
+
+test('a forged deauthorization notification cannot erase a connected athlete', async () => {
+  const c = new Client()
+  deauthorized = false
+  await c.login(4)
+  const response = await c.request('/webhooks/strava', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      subscription_id: 99,
+      owner_id: 4,
+      object_type: 'athlete',
+      aspect_type: 'update',
+      updates: { authorized: 'false' },
+    }),
+  })
+  assert.equal(response.status, 200)
+  assert.ok(await account(4))
 })

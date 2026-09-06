@@ -12,7 +12,12 @@
 - Keep native OAuth and upload forms marked `data-rmx-document` so Remix does not
   intercept redirects. Preserve CSRF, session rotation, ownership checks, and
   explicit upload/removal confirmations. Never add automatic activity deletion.
-- Only expose browser modules through the allowlist in `app/assets.ts`. Keep
+- Bundle only the public client entries listed in `scripts/build-assets.ts`. Keep
   tokens and private GPS data out of source, logs, and public demo fixtures.
+- Cloudflare bindings are generated with `npm run types`. Read them through the
+  request runtime; never store user data in Worker globals. Use one Durable Object
+  per athlete or browser session. Preserve atomic upload claims and refresh coordination.
+- `npm run build` is a production dry run; `npm run deploy` publishes production.
+  Keep secrets in ignored `.dev.vars` locally and Cloudflare secrets in production.
 - Use the installed package documentation at `node_modules/remix/src/` and the
   [Remix guides](https://guides.remix.run/) for current framework APIs.

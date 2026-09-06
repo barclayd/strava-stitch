@@ -1,14 +1,31 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { atomicSessionStorage } from './sessions.ts'
+import { createTestHarness } from 'wrangler'
+import { persistentSessions } from './sessions.ts'
 
 test('concurrent session saves stay readable and logout cannot be undone by an in-flight request', async () => {
-  const directory = mkdtempSync(join(tmpdir(), 'stitch-session-'))
+  const server = createTestHarness({
+    workers: [
+      {
+        configPath: './wrangler.jsonc',
+        secrets: {
+          STRAVA_CLIENT_SECRET: 'test',
+          SESSION_SECRET: 's'.repeat(40),
+          TOKEN_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
+          STRAVA_WEBHOOK_VERIFY_TOKEN: 'test',
+        },
+      },
+    ],
+  })
+  const worker = server.getWorker<Env>()
+  await server.listen()
+  const env = await worker.getEnv()
   try {
-    const storage = atomicSessionStorage(directory),
+    const storage = persistentSessions({
+        read: (id) => env.SESSIONS.getByName(id).read(),
+        save: (id, data) => env.SESSIONS.getByName(id).save(data),
+        revoke: (id) => env.SESSIONS.getByName(id).revoke(),
+      }),
       initial = await storage.read(null)
     initial.set('athleteId', 123)
     await storage.save(initial)
@@ -24,6 +41,6 @@ test('concurrent session saves stay readable and logout cannot be undone by an i
     await storage.save(b)
     assert.equal((await storage.read(initial.id)).get('athleteId'), undefined)
   } finally {
-    rmSync(directory, { recursive: true, force: true })
+    await server.close()
   }
 })
