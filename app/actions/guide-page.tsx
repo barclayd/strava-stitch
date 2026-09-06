@@ -27,13 +27,16 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
             </p>
           </header>
           <figure class="guide-figure">
-            <img
-              src="/images/merge-guide.png"
-              alt="Two activity tracks are placed in time order inside one ride. The pause between them stays a gap."
-              width="1200"
-              height="675"
-              fetchPriority="high"
-            />
+            <picture>
+              <source srcSet="/images/merge-guide.svg" type="image/svg+xml" />
+              <img
+                src="/images/merge-guide.png"
+                alt="Two activity tracks are placed in time order inside one ride. The pause between them stays a gap."
+                width="1200"
+                height="675"
+                fetchPriority="high"
+              />
+            </picture>
             <figcaption>
               An illustrative join. Stitch keeps the original timestamps and leaves the gap between
               activities unconnected.

@@ -1,5 +1,5 @@
 import sharp from 'sharp'
-import { mkdir, readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 // Original code-drawn diagrams only: no athlete data or third-party marks in public artwork.
@@ -46,6 +46,8 @@ function artwork(kind: 'home' | 'guide' | 'illustration'): string {
 export async function buildImages(directory: string): Promise<void> {
   const images = join(directory, 'images')
   await mkdir(images, { recursive: true })
+  // The reading page uses the small, resolution-independent original; PNGs remain for sharing.
+  await writeFile(join(images, 'merge-guide.svg'), artwork('illustration'))
   for (const [kind, filename] of [
     ['home', 'stitch-social.png'],
     ['guide', 'merge-guide-social.png'],

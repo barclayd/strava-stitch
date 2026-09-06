@@ -1,7 +1,7 @@
 import type { Handle } from 'remix/ui'
 import { Shell, Alert } from '../../ui/shell.tsx'
 import { RouteMap } from '../../ui/public/route-map.tsx'
-import { colours, duration, km, day, time } from '../public/format.ts'
+import { labelColours, duration, km, day, time } from '../public/format.ts'
 import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
 import { UploadForm, UploadStatus } from './public/upload-form.tsx'
@@ -104,7 +104,7 @@ export function StitchPage(
                   {m.records.map((r, i) => (
                     <div class="timeline-part" key={r.activity.id}>
                       <div class="timeline-record">
-                        <span class="part-number" style={{ background: colours[i] }}>
+                        <span class="part-number" style={{ background: labelColours[i] }}>
                           {i + 1}
                         </span>
                         <div>
