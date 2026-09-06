@@ -1,178 +1,105 @@
 # Stitch
 
-Explore combining split Strava cycling activities into one ride.
+A free TypeScript application for stitching Strava activities into one ride.
+Select two to eight Ride activities, preview the route and gaps, download GPX or
+backup files, and explicitly confirm an upload to Strava.
 
-## Remix application
+## Development
 
-The current application is in [`web/`](web/README.md), running locally at
-[localhost:44100](http://localhost:44100). It provides activity selection, route
-and timing previews, GPX and backup ZIP downloads, and explicitly confirmed
-Strava uploads. The local account has now authorized `activity:write` alongside
-profile and activity reading. Strava has no supported activity deletion API;
-users remove originals themselves, with a separate confirmation for each retry.
-
-See the [web app README](web/README.md) for setup, validation, preservation limits,
-and the remaining public-launch requirements. The Python files and experiment
-notes below document the original feasibility work.
-
-## Agreed first milestone
-
-Read selected activities, preview a stitched ride locally, and download a combined
-activity file. The owner subsequently authorized a Strava UI upload and personally
-deleted the two originals after the first upload was rejected as a duplicate.
-The assistant must not delete activities or change the source recordings.
-
-## Original prototype setup
-
-On 6 September 2026, with the account owner's authorization, the existing Ride On
-account connection was revoked and its API registration was repurposed as Stitch.
-This reused the registration; it did not delete it or create a new client ID.
-
-- Application: Stitch
-- Client ID (public): `262735`
-- Category: Data Importer
-- Website: `http://localhost:8765`
-- Authorization callback domain: `localhost`
-- Client secret: stored privately in ignored `.local/client.json`; not rotated
-- Initial authorization: `read activity:read_all`; the newer Remix connection
-  separately adds `activity:read` and `activity:write`
-
-Do not reuse Ride On's previous access or refresh tokens. The dashboard's default
-`read` token does not establish access to activity data. The prototype now has
-its own OAuth flow and verifies the scopes actually granted. The user has
-requested read/write capability; the first preview used
-`activity:read_all`, and the Remix app subsequently added `activity:write`. Having
-write permission is not authorization to upload or modify activities.
-
-## Successful first experiment
-
-The following private rides were read through the official API on 6 September
-2026, after the owner approved the read-only connection:
-
-- `20063555735`: 09:15:08–10:35:02 BST, 4,169 GPS points
-- `20063564353`: 10:38:10–13:13:20 BST, 8,181 GPS points
-
-Both were recorded on a Garmin Edge 1050. The owner confirmed they were stopped
-throughout the 3 minute 8 second gap. The recorded endpoints are 21.4 metres apart;
-no route or distance was invented across that gap.
-
-Outputs are in the ignored `exports/` directory:
-
-- `stitched-2026-09-06.gpx`: 12,350 original points across two track segments
-- `preview.html`: self-contained interactive route trace and comparison
-- `stitched-2026-09-06.json`: machine-readable merge report
-
-Combined Strava source summaries: 72.1747 km, 3:26:36 moving time, 748 m climbing.
-Elapsed time including the stop: 3:58:12. Exported fields include GPS, original
-timestamps, elevation, temperature, and cumulative recorded distance using
-Strava's supported Cluetrust GPX extension. Heart rate, cadence, and power streams
-were not returned for these rides. Raw source JSON retains moving/speed streams.
-
-The GPX is reconstructed from API streams, not a lossless Garmin FIT merge. It does
-not transfer device metadata, laps, photos, kudos, comments, or private notes.
-An importer may recalculate distance and moving time: unfiltered geometric GPS
-distance is about 72.91 km, while the included recorded-distance extension ends at
-72.1747 km. The successful UI import below retained that exact distance.
-
-### Strava UI upload test
-
-On 6 September 2026, the owner explicitly requested uploading the generated GPX
-through Strava's navbar → Upload → File. Strava responded:
-
-> stitched-2026-09-06.gpx duplicate of Morning Ride
-
-The duplicate link pointed to original activity `20063555735`. That first attempt
-created no merged activity and did not modify or delete either original. The
-file's original timestamps were not shifted to bypass duplicate detection.
-
-The owner then personally deleted the originals and explicitly requested another
-attempt. Read-only checks returned 404 for both source IDs. The unchanged GPX was
-accepted through the same upload page and saved as
-[Sunday ride — stitched](https://www.strava.com/activities/20063927672), with
-visibility **Only You**, sport **Ride**, and bike **Canyon Grail CFR**.
-
-The saved activity was inspected in the UI and read back through the API:
-
-| Measure | Combined sources | Imported activity |
-| --- | --- | --- |
-| Distance | 72.1747 km | 72.1747 km |
-| Moving time | 3:26:36 | 3:26:35 |
-| Elapsed time | 3:58:12 | 3:58:12 |
-| Elevation gain | 748 m | 698 m |
-| GPS samples | 12,350 | 12,350 |
-
-All timestamps match exactly. The 3:08 recording gap remains, with cumulative
-distance unchanged at 22,927.9 m across the stop. Eight imported GPS samples differ
-from the source coordinates by at most 5.14 m; the other 12,342 match exactly.
-The full route is visible in Strava. The import recalculated climbing and moving
-time, so the source summary totals should not be promised as exact import totals.
-Read-back data and verification are retained privately in `.local/`.
-
-All exported coordinates, times, elevations, and temperatures were compared to
-the original API data. The file passes the official GPX 1.1 schema. Five automated
-tests cover timestamp/stop preservation, distance continuity, invalid/partial
-data rejection, overlap rejection, and the API client's GET endpoint allowlist.
-
-## Run the original Python prototype
-
-Requires Python 3.9 or later; no third-party dependencies.
+The application requires **Node 24.3+** and uses Remix 3's native UI (not React).
+Run commands from the repository root and install the versions pinned in the lockfile:
 
 ```sh
-# Open the connection page at http://localhost:8765, then authorize in Strava.
-python3 connect.py
-
-# Read selected recordings that still exist in Strava.
-python3 stitch.py FIRST_ACTIVITY_ID SECOND_ACTIVITY_ID
-
-# Regenerate from local source data without another API request.
-python3 stitch.py --cached 20063555735 20063564353
-
-# Open the local preview at http://localhost:8766.
-python3 preview.py
-
-# Run the merge and read-only API boundary tests.
-python3 -m unittest -v
+npm ci
+cp .env.example .env.local
+chmod 600 .env.local
 ```
 
-This is a prototype for the selected Sunday ride; preview titles and output names
-currently refer to 6 September 2026. Tokens expire; reconnect if Strava returns
-401. Credentials and raw recordings live in `.local/`, with private permissions,
-and are excluded from version control. The preview server serves only generated
-files from `exports/`; it cannot serve credentials. No upload, activity update,
-or activity deletion operation is implemented.
+Fill in the Strava client ID and secret, plus two independent secrets:
+`SESSION_SECRET` (at least 32 random characters) and `TOKEN_ENCRYPTION_KEY`
+(exactly 32 random bytes encoded as base64). Keep the encryption key stable so
+stored connections remain readable. Never commit credentials.
 
-## Feasibility findings
+Set the Strava app's callback domain to `localhost`. The local callback URL is
+`http://localhost:44100/auth/strava/callback`.
 
-- The API provides activity details and time-series streams, which can be used to
-  construct a combined file. Both selected rides returned full-size, aligned
-  streams at high resolution.
-- There is no documented activity merge operation.
-- Strava accepts GPX, TCX, and FIT activity uploads, with timestamps required for
-  cycling recordings.
-- Uploading this merged GPX while retaining the originals was rejected as a
-  duplicate of `20063555735`. Strava's merge guidance calls for deleting originals.
-  The same file uploaded successfully after the owner personally deleted both
-  originals. The assistant must not delete activities or shift timestamps merely
-  to bypass detection.
-- Reconstructing an activity from API streams is not a lossless export of the
-  recording device's original file.
+```sh
+npm run dev
+```
 
-## Future product questions
+Open [localhost:44100](http://localhost:44100). Server changes restart automatically;
+reload after interface changes. `npm run hmr` is the optional hot-reload entry point.
 
-- Data preservation priorities for future rides beyond this first experiment.
-- Whether the inputs are recorded activities with timestamps, planned routes,
-  original GPX/FIT/TCX files, or a mixture.
-- Handling of unrecorded movement, overlaps, and multi-day rides. For this first
-  experiment, the confirmed stationary gap was preserved without interpolation.
-- Data to preserve: GPS, timestamps, elevation, heart rate, cadence, power,
-  temperature, laps, and metadata.
-- Additional sport types and importing original device files; the current
-  multi-user Remix prototype supports standard Ride activities from Strava.
+## Checks
 
-## Sources
+Run from the repository root:
 
-- [API reference](https://developers.strava.com/docs/reference/)
-- [Authentication](https://developers.strava.com/docs/authentication/)
-- [Uploads](https://developers.strava.com/docs/uploads/)
-- [Getting started](https://developers.strava.com/docs/getting-started/)
-- [Strava merge guidance](https://support.strava.com/en-us/articles/15401839-merge-or-combine-activities)
+```sh
+npm test
+npm run typecheck
+npm run format
+npx remix doctor --strict
+```
+
+All tests are TypeScript. They cover merge preservation, OAuth/CSRF, ownership,
+exports, upload confirmation and retries, token refresh, deauthorization, and
+session concurrency. Strava calls are mocked; tests never modify live activities.
+
+## Deployment
+
+Use the repository root as the working directory. Deploy `app/`, `public/`, `server.ts`,
+`tsconfig.json`, `package.json`, and `package-lock.json` with Node 24.3+:
+
+```sh
+npm ci --omit=dev
+npm start
+```
+
+Node runs TypeScript directly and Remix compiles browser assets on demand; there
+is no separate build output. Run one process under a supervisor behind an HTTPS reverse
+proxy, with these settings:
+
+| Setting | Purpose |
+| --- | --- |
+| `APP_ORIGIN` | Public HTTPS origin, without a trailing slash; match the Strava callback domain. |
+| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | Credentials from the Strava developer dashboard. |
+| `SESSION_SECRET`, `TOKEN_ENCRYPTION_KEY` | Stable secrets described above; supply through your host's secret store. |
+| `HOST`, `PORT` | Listen address and port; default `127.0.0.1:44100`. |
+| `TRUST_PROXY` | Set to `true` only behind an exclusive trusted proxy that overwrites forwarding headers. |
+| `DATABASE_PATH` | Private persistent SQLite path; default `./db/stitch.sqlite`. |
+| `SESSION_DIR` | Private persistent session directory; default `./tmp/sessions`. |
+| `STRAVA_WEBHOOK_VERIFY_TOKEN` | Random token used when registering the webhook. |
+| `STRAVA_WEBHOOK_SUBSCRIPTION_ID` | ID returned when registering the Strava subscription. |
+
+Keep the database and sessions on persistent private storage. Back up the database
+and its encryption key securely. Tokens and preview data are encrypted; previews
+expire after 24 hours. Connection data remains until forgotten or deauthorized.
+In-process upload and refresh locks require **one application process**; add
+shared coordination before scaling to multiple instances.
+
+The reverse proxy must enforce body-size limits (64 KiB) and rate limits,
+including chunked requests. Keep private activity data out of access logs.
+Register [Strava webhooks](https://developers.strava.com/docs/webhooks/) at
+`https://YOUR_DOMAIN/webhooks/strava` so deauthorization removes stored data.
+Configure [athlete capacity](https://developers.strava.com/docs/rate-limits/) and
+complete Strava's applicable review before opening access to the public.
+
+## Activity handling
+
+- OAuth requests `read`, `activity:read`, `activity:read_all`, and `activity:write`.
+  Uploads require the granted write scope and explicit user confirmation.
+- Strava has no activity deletion API. Duplicate handling requires a backup,
+  manual removal in Strava, and a separate confirmation. Stitch verifies the
+  originals return 404 before accepting that confirmation. Uploads use the
+  athlete's Strava privacy defaults.
+- GPX exports preserve timestamps, GPS, and available elevation, distance,
+  temperature, heart rate, and cadence. Gaps stay unconnected; overlaps are
+  rejected. Backups contain reconstructed GPX files, not original device files.
+- Power, laps, device metadata, photos, comments, and kudos are not transferred.
+  Strava may recalculate climbing and moving time after import.
+- The current version supports standard Ride activities with complete GPS/time
+  streams. Selection and search operate on a page of 30 activities.
+
+See the [API reference](https://developers.strava.com/docs/reference/) for Strava
+behavior and [AGENTS.md](AGENTS.md) for code organization. DM Sans is
+self-hosted in `public/fonts/`; retain its included licence when distributing.
