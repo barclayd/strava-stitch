@@ -1,7 +1,7 @@
 # Dependencies and runtime state
 node_modules/
-/web/db/
-/web/tmp/
+/db/
+/tmp/
 
 # Credentials and private activity files, including local prototype artifacts
 .env

@@ -6,11 +6,10 @@ backup files, and explicitly confirm an upload to Strava.
 
 ## Development
 
-The application lives in `web/`. It requires **Node 24.3+** and uses Remix 3's
-native UI (not React). Install the versions pinned in the lockfile:
+The application requires **Node 24.3+** and uses Remix 3's native UI (not React).
+Run commands from the repository root and install the versions pinned in the lockfile:
 
 ```sh
-cd web
 npm ci
 cp .env.example .env.local
 chmod 600 .env.local
@@ -33,7 +32,7 @@ reload after interface changes. `npm run hmr` is the optional hot-reload entry p
 
 ## Checks
 
-Run from `web/`:
+Run from the repository root:
 
 ```sh
 npm test
@@ -48,7 +47,7 @@ session concurrency. Strava calls are mocked; tests never modify live activities
 
 ## Deployment
 
-Use `web/` as the working directory. Deploy `app/`, `public/`, `server.ts`,
+Use the repository root as the working directory. Deploy `app/`, `public/`, `server.ts`,
 `tsconfig.json`, `package.json`, and `package-lock.json` with Node 24.3+:
 
 ```sh
@@ -102,5 +101,5 @@ complete Strava's applicable review before opening access to the public.
   streams. Selection and search operate on a page of 30 activities.
 
 See the [API reference](https://developers.strava.com/docs/reference/) for Strava
-behavior and [web/AGENTS.md](web/AGENTS.md) for code organization. DM Sans is
-self-hosted in `web/public/fonts/`; retain its included licence when distributing.
+behavior and [AGENTS.md](AGENTS.md) for code organization. DM Sans is
+self-hosted in `public/fonts/`; retain its included licence when distributing.

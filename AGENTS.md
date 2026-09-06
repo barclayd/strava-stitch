@@ -1,6 +1,6 @@
 # Maintaining Stitch
 
-- Use TypeScript for application code, scripts, and tests. Keep the app in `web/`.
+- Use TypeScript for application code, scripts, and tests. Run commands from the repository root.
 - Run `npm test`, `npm run typecheck`, and `npm run format` after relevant changes.
   Setup and deployment instructions live in the root README.
 - This is Remix 3's native UI, not React. Components receive a `Handle`, return a
