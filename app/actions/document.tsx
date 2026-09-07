@@ -53,23 +53,43 @@ export function Document(handle: Handle<DocumentProps>) {
               )}
             </>
           )}
-          <link rel="stylesheet" href="/styles.css" />
           <link
+            data-rmx-key="site-font"
             rel="preload"
             href="/fonts/dm-sans.woff2"
             as="font"
             type="font/woff2"
             crossOrigin="anonymous"
           />
-          <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-          <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
-          <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-          <title>{seo?.title ?? title}</title>
+          <link data-rmx-key="site-icon" rel="icon" type="image/svg+xml" href="/favicon.svg" />
+          <link
+            data-rmx-key="site-icon-png"
+            rel="icon"
+            type="image/png"
+            sizes="96x96"
+            href="/favicon-96.png"
+          />
+          <link
+            data-rmx-key="site-touch-icon"
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+          />
+          <title data-rmx-key="page-title">{seo?.title ?? title}</title>
           {head}
           {(clientFeatures ? entryPreloads[clientFeatures] : []).map((href) => (
-            <link key={href} rel="modulepreload" href={href} />
+            <link
+              key={href}
+              data-rmx-key={`modulepreload:${href}`}
+              rel="modulepreload"
+              href={href}
+            />
           ))}
-          {clientFeatures && <script type="module" src={entryHref}></script>}
+          {clientFeatures && (
+            <script data-rmx-key="client-runtime" type="module" src={entryHref}></script>
+          )}
+          {/* Keep this keyed stylesheet last so frame reconciliation neither replaces nor moves it. */}
+          <link data-rmx-key="site-styles" rel="stylesheet" href="/styles.css" />
         </head>
         <body mix={css({ margin: 0 })}>{children}</body>
       </html>
