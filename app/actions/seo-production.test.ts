@@ -32,6 +32,24 @@ after(() => server.close())
 const get = (path: string, method = 'GET') =>
   worker.fetch(publicOrigin + path, { method, redirect: 'manual' })
 
+test('production pages restrict iframe embedding to danbarclay.dev without conflicting headers', async () => {
+  for (const path of [...Object.values(publicPages).map((page) => page.path), '/example']) {
+    const response = await get(path)
+    assert.equal(response.status, 200, path)
+    const directives = response.headers
+      .get('content-security-policy')!
+      .split(';')
+      .map((directive) => directive.trim())
+    assert.deepEqual(
+      directives.filter((directive) => directive.startsWith('frame-ancestors')),
+      ['frame-ancestors https://danbarclay.dev'],
+    )
+    assert.equal(response.headers.get('x-frame-options'), null)
+    assert.ok(directives.includes("script-src 'self'"))
+    assert.ok(directives.includes("form-action 'self' https://www.strava.com"))
+  }
+})
+
 test('public production pages send complete, consistent SEO in the initial HTML', async () => {
   for (const [key, page] of Object.entries(publicPages)) {
     const response = await get(page.path)
