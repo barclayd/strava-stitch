@@ -36,12 +36,12 @@ export function HomePage(
             <h1>
               Combine your
               <br />
-              <span class="together-word">Strava activities.</span>
+              <span class="together-word">Strava activities in seconds</span>
             </h1>
             <p>
               A split run. A paused ride. An accidental finish.
               <br class="desktop-break" /> Stitch activities of the same sport into one.{' '}
-              <strong>Free to use.</strong>
+              <strong>Free to use, always.</strong>
             </p>
           </div>
           <Alert message={p.error} />
@@ -207,8 +207,8 @@ export function HomePage(
               <details>
                 <summary>Is it free?</summary>
                 <p>
-                  Yes, Stitch is free to use. Connections are limited during early access. Try the
-                  illustrative example without connecting your account.
+                  Yes, Stitch is free to use, always. Connections are limited during early access.
+                  Try the illustrative example without connecting your account.
                 </p>
               </details>
             </div>

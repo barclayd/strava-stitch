@@ -6,9 +6,10 @@ export const publicPages = {
     path: '/',
     title: 'Combine Strava Activities for Free | Stitch',
     description:
-      'Combine Strava runs, rides, swims and more for free. Stitch activities of the same sport, including indoor recordings. Preview, download GPX or FIT, and upload.',
+      'Combine your Strava activities in seconds. Free to use, always. Join runs, rides, swims and more of the same sport. Preview, download GPX or FIT, and upload.',
     image: '/images/stitch-social.png',
-    imageAlt: 'Stitch: combine your Strava activities for free, with a preview of each join.',
+    imageAlt:
+      'Stitch: Combine your Strava activities in seconds. Free to use, always. Two activities with the pause preserved.',
   },
   guide: {
     path: '/guides/merge-strava-activities',
@@ -24,7 +25,8 @@ export const publicPages = {
     description:
       'How Stitch uses your Strava data, protects your activities, handles uploads and backups, and lets you disconnect. Support from Barksoft Ltd.',
     image: '/images/stitch-social.png',
-    imageAlt: 'Stitch: combine your Strava activities for free, with a preview of each join.',
+    imageAlt:
+      'Stitch: Combine your Strava activities in seconds. Free to use, always. Two activities with the pause preserved.',
   },
 } as const
 export type PublicPage = keyof typeof publicPages

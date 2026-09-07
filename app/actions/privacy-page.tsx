@@ -20,8 +20,8 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
           activities are shown only to your connected account.
         </p>
         <p>
-          Stitch is a free service operated by Barksoft Ltd. It is an independent application and is
-          not developed or endorsed by Strava.
+          Stitch is operated by Barksoft Ltd. and is free to use, always. It is an independent
+          application and is not developed or endorsed by Strava.
         </p>
         <h2>What we access</h2>
         <p>
