@@ -6,7 +6,7 @@ import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
 import { UploadForm, UploadStatus } from './public/upload-form.tsx'
 import { StravaConnect } from '../../ui/strava.tsx'
-import { fileFormat, hasPosition } from './merge.ts'
+import { fileFormat, hasPosition, mergedDescription } from './merge.ts'
 import { sportLabel } from '../../data/sports.ts'
 
 function joinLocation(metres: number | null) {
@@ -296,7 +296,13 @@ export function StitchPage(
                 <>
                   <p>Review the recordings and pauses, then upload to Strava as {sport}.</p>
                   {j.error && <Alert message={j.error} />}
-                  <UploadForm id={j.id} csrf={csrf} title={j.title} retry={j.state !== 'ready'} />
+                  <UploadForm
+                    id={j.id}
+                    csrf={csrf}
+                    title={j.title}
+                    description={j.description ?? mergedDescription(j.merge)}
+                    retry={j.state !== 'ready'}
+                  />
                 </>
               )}
               {!demo && (

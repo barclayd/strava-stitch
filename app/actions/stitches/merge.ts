@@ -3,6 +3,7 @@ import { isSport, unavailableReason } from '../../data/sports.ts'
 export type Activity = {
   id: number
   name: string
+  description?: string | null
   start_date: string
   start_date_local?: string
   distance: number
@@ -42,6 +43,11 @@ export type Merge = {
   fields: string[]
 }
 export const maxPoints = 50000
+export const mergedDescription = (merge: Merge) =>
+  merge.records
+    .map(({ activity }) => activity.description?.trim() ?? '')
+    .filter(Boolean)
+    .join('\n')
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 export const hasPosition = (p: Point): p is Point & { lat: number; lon: number } =>
   finite(p.lat) && finite(p.lon)

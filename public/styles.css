@@ -28,7 +28,8 @@ body {
   margin: 0;
 }
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 a {
@@ -37,7 +38,8 @@ a {
 }
 button,
 a,
-input {
+input,
+textarea {
   -webkit-tap-highlight-color: transparent;
 }
 button {
@@ -49,6 +51,7 @@ button:disabled {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
+textarea:focus-visible,
 summary:focus-visible {
   outline: 3px solid #9ab4a5;
   outline-offset: 4px;
@@ -911,7 +914,8 @@ svg {
   color: #71825f;
   margin-bottom: -8px;
 }
-.title-input {
+.title-input,
+.description-input {
   width: 100%;
   border: 1px solid #dce3d3;
   border-radius: 6px;
@@ -919,6 +923,17 @@ svg {
   padding: 13px;
   font-size: 13px;
   color: #3f4c32;
+}
+.description-input {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+.description-help {
+  margin-top: -8px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #71825f;
 }
 .check-line {
   display: flex;

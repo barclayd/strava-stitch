@@ -59,8 +59,8 @@ export class AthleteData extends DurableObject<Env> {
   patchJob(id: string, owner: number, patch: JobPatch) {
     return this.repository.patchJob(id, owner, patch)
   }
-  claimUpload(id: string, owner: number, title: string) {
-    return this.repository.claimUpload(id, owner, title)
+  claimUpload(id: string, owner: number, title: string, description?: string) {
+    return this.repository.claimUpload(id, owner, title, description)
   }
   async alarm() {
     this.repository.expire()

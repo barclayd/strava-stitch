@@ -132,6 +132,7 @@ export async function upload(
   file: ActivityFile,
   name: string,
   externalId: string,
+  description: string,
 ): Promise<Upload> {
   const auth = await credentials(id)
   if (!auth.scope.includes('activity:write'))
@@ -143,7 +144,7 @@ export async function upload(
   body.set('sport_type', file.sport)
   if (file.trainer) body.set('trainer', '1')
   body.set('external_id', externalId)
-  body.set('description', 'Combined with Stitch. Original timestamps and gaps preserved.')
+  body.set('description', description)
   const response = await fetch(API + '/uploads', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + auth.access_token },

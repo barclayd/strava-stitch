@@ -3,7 +3,15 @@ import { routes } from '../../../routes.ts'
 
 export const UploadForm = clientEntry(
   '/client/upload-form.js#UploadForm',
-  function UploadForm(handle: Handle<{ id: string; title: string; csrf: string; retry: boolean }>) {
+  function UploadForm(
+    handle: Handle<{
+      id: string
+      title: string
+      description: string
+      csrf: string
+      retry: boolean
+    }>,
+  ) {
     let confirmed = false,
       gaps = false,
       pending = false
@@ -30,6 +38,22 @@ export const UploadForm = clientEntry(
           maxLength={100}
           defaultValue={handle.props.title}
         />
+        <label class="field-label" for="activity-description">
+          Description (optional)
+        </label>
+        <textarea
+          class="description-input"
+          id="activity-description"
+          name="description"
+          rows={5}
+          defaultValue={handle.props.description}
+          aria-describedby="activity-description-help"
+          placeholder="Tell the story of your activity…"
+        />
+        <p class="description-help" id="activity-description-help">
+          Existing descriptions are combined in activity order. Edit, add to them, or leave this
+          blank.
+        </p>
         <label class="check-line">
           <input
             type="checkbox"

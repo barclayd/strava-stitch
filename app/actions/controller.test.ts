@@ -387,7 +387,48 @@ test('prepare checks ownership and stores a preview; downloads and bundles stay 
   assert.equal(blocked.headers.get('location'), '/')
   foreign = false
 })
-test('upload is explicitly confirmed, submitted once, and polled to completion', async () => {
+test('descriptions are prefilled, escaped, editable, and may be cleared on existing previews', async () => {
+  const c = new Client()
+  await c.login(4)
+  activityOverrides = {
+    101: { description: 'Outward leg\nCoffee & cake ☕' },
+    102: { description: '</textarea><script>alert("test")</script>' },
+  }
+  try {
+    const response = await c.post('/stitches', { activities: ['102', '101'] }),
+      path = response.headers.get('location')!,
+      id = path.split('/').at(-1)!,
+      expected = 'Outward leg\nCoffee & cake ☕\n</textarea><script>alert("test")</script>'
+    assert.equal((await job(id, 4))?.description, expected)
+    const preview = await c.page(path)
+    assert.match(preview.text, /<textarea[^>]*name="description"/)
+    assert.match(preview.text, /Coffee &amp; cake ☕\n&lt;\/textarea&gt;&lt;script&gt;/)
+    assert.ok(!preview.text.includes('</textarea><script>alert("test")</script>'))
+
+    // A preview created before descriptions were editable still uses its source descriptions.
+    const sql = await server.getWorker().getDurableObjectStorage('ATHLETES', { name: '4' }),
+      rows = await sql.exec('SELECT metadata FROM jobs WHERE id=?', id),
+      key = Buffer.from(secrets.TOKEN_ENCRYPTION_KEY, 'base64'),
+      metadata = unseal<Omit<import('../data/store.ts').Job, 'merge'>>(
+        String(rows[0].metadata),
+        key,
+      )
+    delete metadata.description
+    await sql.exec('UPDATE jobs SET metadata=? WHERE id=?', seal(metadata, key), id)
+    assert.match((await c.page(path)).text, /Coffee &amp; cake ☕\n&lt;\/textarea&gt;/)
+
+    uploadMode = 'duplicate'
+    await c.post(routes.stitches.upload.href({ id }), { ...confirmation, description: '' })
+    assert.equal(lastUpload?.get('description'), '')
+    assert.equal((await job(id, 4))?.description, '')
+    await repo(4).patchJob(id, 4, { state: 'failed' })
+    assert.match((await c.page(path)).text, /<textarea[^>]*><\/textarea>/)
+  } finally {
+    activityOverrides = {}
+    uploadMode = 'success'
+  }
+})
+test('upload is explicitly confirmed, submitted once with matching edits, and polled to completion', async () => {
   const c = new Client()
   await c.login()
   uploadMode = 'success'
@@ -396,14 +437,27 @@ test('upload is explicitly confirmed, submitted once, and polled to completion',
     before = uploads
   await c.post(path, { title: 'Test' })
   assert.equal(uploads, before)
-  await Promise.all([c.post(path, confirmation), c.post(path, confirmation)])
+  const drafts = [
+    {
+      ...confirmation,
+      title: 'Morning ride',
+      description: 'Coffee ☕\nA great morning & a tailwind home.',
+    },
+    { ...confirmation, title: 'Other tab', description: 'A different edit' },
+  ]
+  await Promise.all(drafts.map((draft) => c.post(path, draft)))
   assert.equal(uploads, before + 1)
-  assert.equal((await job(j.id, 1))?.state, 'processing')
+  const saved = (await job(j.id, 1))!
+  assert.equal(saved.state, 'processing')
+  assert.equal(saved.description, drafts.find((draft) => draft.title === saved.title)?.description)
+  assert.equal(lastUpload?.get('name'), saved.title)
+  assert.equal(lastUpload?.get('description'), saved.description)
   await c.request(routes.stitches.status.href({ id: j.id }))
   assert.equal((await job(j.id, 1))?.state, 'complete')
   assert.equal((await job(j.id, 1))?.activityId, 500)
   await c.post(path, confirmation)
   assert.equal(uploads, before + 1)
+  assert.equal((await job(j.id, 1))?.description, saved.description)
 })
 test('duplicates require a backup and separate confirmed removal, with fresh read-only checks', async () => {
   const c = new Client()
@@ -413,22 +467,32 @@ test('duplicates require a backup and separate confirmed removal, with fresh rea
   const j = await newJob(1, makeMerge()),
     path = routes.stitches.upload.href({ id: j.id }),
     removal = routes.stitches.confirmRemoval.href({ id: j.id })
-  await c.post(path, confirmation)
+  const description = 'First part\nSecond part\nAdded in Stitch: a lovely ride ☀️'
+  await c.post(path, { ...confirmation, description })
   assert.equal((await job(j.id, 1))?.state, 'duplicate')
+  assert.equal(lastUpload?.get('description'), description)
+  assert.equal((await job(j.id, 1))?.description, description)
   const before = uploads
   await c.post(path, confirmation)
   assert.equal(uploads, before)
   await c.post(removal, { confirm: 'removed' })
   assert.ok(!(await job(j.id, 1))?.removalConfirmed)
-  await c.request(routes.stitches.backup.href({ id: j.id }))
+  const backup = await c.request(routes.stitches.backup.href({ id: j.id })),
+    files = unzipSync(new Uint8Array(await backup.arrayBuffer()))
+  assert.equal(JSON.parse(strFromU8(files['activities.json'])).description, description)
   await c.post(removal, { confirm: 'removed' })
   assert.ok(!(await job(j.id, 1))?.removalConfirmed)
   deleted = true
   await c.post(removal, { confirm: 'removed' })
   assert.equal((await job(j.id, 1))?.removalConfirmed, true)
+  assert.match(
+    (await c.page(routes.stitches.show.href({ id: j.id }))).text,
+    /Added in Stitch: a lovely ride ☀️/,
+  )
   uploadMode = 'success'
   await c.post(path, confirmation)
   assert.equal(uploads, before + 1)
+  assert.equal(lastUpload?.get('description'), description)
   deleted = false
 })
 test('uncertain uploads cannot be silently retried; refresh and deauthorization work', async () => {
@@ -494,8 +558,15 @@ test('large encrypted previews survive object restarts and late updates preserve
   const sql = await server.getWorker().getDurableObjectStorage('ATHLETES', { name: '3' })
   const chunks = await sql.exec('SELECT part FROM chunks WHERE job=?', id)
   assert.ok(chunks.length > 1)
+  uploadMode = 'success'
+  await c.post(routes.stitches.upload.href({ id }), {
+    ...confirmation,
+    title: 'My edited ride',
+    description: 'The full route\nWith a coffee stop ☕',
+  })
   await server.getWorker().evictDurableObject('ATHLETES', { name: '3' })
   assert.equal((await job(id, 3))?.merge.pointCount, 12000)
+  assert.equal((await job(id, 3))?.description, 'The full route\nWith a coffee stop ☕')
   const zip = await c.request(routes.stitches.backup.href({ id: id }))
   assert.equal(zip.status, 200)
   const files = unzipSync(new Uint8Array(await zip.arrayBuffer()))
