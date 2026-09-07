@@ -2,6 +2,8 @@ import { router } from './app/router.ts'
 import { readConfig } from './app/data/config.ts'
 import { withRuntime, type Runtime } from './app/data/runtime.ts'
 import { persistentSessions } from './app/data/sessions.ts'
+import { isPublicPath, noIndex, publicOrigin, robots, sitemap } from './app/seo.ts'
+import { routes } from './app/routes.ts'
 export { AthleteData, BrowserSession } from './app/cloudflare/durable-objects.ts'
 
 export function createRuntime(env: Env): Runtime {
@@ -60,18 +62,61 @@ export default {
     try {
       const url = new URL(request.url),
         runtime = createRuntime(env)
-      if (url.origin !== runtime.config.origin)
-        return new Response('Unrecognized host.', { status: 403 })
+      if (url.origin !== runtime.config.origin) return unindexedError('Unrecognized host.', 403)
+      if (['GET', 'HEAD'].includes(request.method)) {
+        // Public crawl resources do not need a session, CSRF cookie, or Durable Object lookup.
+        const isRobots = url.pathname === routes.crawl.robots.href()
+        if (isRobots || url.pathname === routes.crawl.sitemap.href())
+          return new Response(
+            request.method === 'HEAD' ? null : isRobots ? robots(url.origin) : sitemap(url.origin),
+            {
+              headers: {
+                'Content-Type': isRobots
+                  ? 'text/plain; charset=utf-8'
+                  : 'application/xml; charset=utf-8',
+                'Cache-Control': 'public, max-age=3600',
+                'X-Content-Type-Options': 'nosniff',
+                'X-Robots-Tag': noIndex,
+              },
+            },
+          )
+        const normalized = url.pathname.replace(/\/+$/, '')
+        if (normalized && normalized !== url.pathname && isPublicPath(normalized)) {
+          url.pathname = normalized
+          return new Response(null, {
+            status: 308,
+            headers: {
+              Location: url.href,
+              ...(url.origin === publicOrigin ? {} : { 'X-Robots-Tag': noIndex }),
+            },
+          })
+        }
+      }
       if (
         ['GET', 'HEAD'].includes(request.method) &&
         (url.pathname.startsWith('/client/') ||
           url.pathname.startsWith('/fonts/') ||
-          ['/styles.css', '/favicon.svg'].includes(url.pathname))
-      )
-        return env.ASSETS.fetch(request)
+          url.pathname.startsWith('/images/') ||
+          [
+            '/styles.css',
+            '/favicon.svg',
+            '/favicon-96.png',
+            '/apple-touch-icon.png',
+            '/strava-connect.svg',
+            '/strava-powered-by.svg',
+          ].includes(url.pathname))
+      ) {
+        const asset = await env.ASSETS.fetch(request)
+        const response = new Response(asset.body, asset)
+        if (url.origin !== publicOrigin || response.status >= 400)
+          response.headers.set('X-Robots-Tag', noIndex)
+        return response
+      }
       const bounded = await boundedRequest(request)
-      if (!bounded) return new Response('Request too large.', { status: 413 })
-      return await withRuntime(runtime, () => router.fetch(bounded))
+      if (!bounded) return unindexedError('Request too large.', 413)
+      const response = await withRuntime(runtime, () => router.fetch(bounded))
+      if (!response.headers.has('X-Robots-Tag')) response.headers.set('X-Robots-Tag', noIndex)
+      return response
     } catch (error) {
       console.error(
         JSON.stringify({
@@ -79,7 +124,14 @@ export default {
           type: error instanceof Error ? error.name : 'UnknownError',
         }),
       )
-      return new Response('Something went wrong. Please refresh and try again.', { status: 500 })
+      return unindexedError('Something went wrong. Please refresh and try again.', 500)
     }
   },
 } satisfies ExportedHandler<Env>
+
+function unindexedError(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: { 'X-Robots-Tag': noIndex, 'Cache-Control': 'private, no-store' },
+  })
+}

@@ -1,9 +1,11 @@
 import { build } from 'esbuild'
 import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { buildImages } from './build-images.ts'
 
 rmSync('dist/assets', { recursive: true, force: true })
 mkdirSync('dist/assets', { recursive: true })
 cpSync('public', 'dist/assets', { recursive: true })
+await buildImages('dist/assets')
 await build({
   entryPoints: {
     entry: 'app/actions/public/entry.ts',

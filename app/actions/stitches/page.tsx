@@ -1,10 +1,11 @@
 import type { Handle } from 'remix/ui'
 import { Shell, Alert } from '../../ui/shell.tsx'
 import { RouteMap } from '../../ui/public/route-map.tsx'
-import { colours, duration, km, day, time } from '../public/format.ts'
+import { labelColours, duration, km, day, time } from '../public/format.ts'
 import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
 import { UploadForm, UploadStatus } from './public/upload-form.tsx'
+import { StravaConnect } from '../../ui/strava.tsx'
 
 export function StitchPage(
   handle: Handle<{
@@ -31,7 +32,12 @@ export function StitchPage(
         .map((p) => [p.lat, p.lon] as [number, number]),
     }))
     return (
-      <Shell firstname={firstname} csrf={csrf} title={j.title + ' — Stitch'}>
+      <Shell
+        firstname={firstname}
+        csrf={csrf}
+        title={j.title + ' — Stitch'}
+        clientFeatures="preview"
+      >
         <main id="main" class="main-content review-main">
           <a class="back-link" href={routes.home.href()}>
             ← Choose activities
@@ -98,7 +104,7 @@ export function StitchPage(
                   {m.records.map((r, i) => (
                     <div class="timeline-part" key={r.activity.id}>
                       <div class="timeline-record">
-                        <span class="part-number" style={{ background: colours[i] }}>
+                        <span class="part-number" style={{ background: labelColours[i] }}>
                           {i + 1}
                         </span>
                         <div>
@@ -110,12 +116,13 @@ export function StitchPage(
                         </div>
                         {!demo && (
                           <a
+                            class="strava-data-link"
                             href={'https://www.strava.com/activities/' + r.activity.id}
                             target="_blank"
                             rel="noreferrer"
                             aria-label={'View ' + r.activity.name + ' on Strava'}
                           >
-                            ↗
+                            View on Strava ↗
                           </a>
                         )}
                       </div>
@@ -164,7 +171,7 @@ export function StitchPage(
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
-                    <button class="button button-strava wide">Connect with Strava ↗</button>
+                    <StravaConnect />
                   </form>
                 </>
               ) : j.state === 'complete' ? (
@@ -179,7 +186,7 @@ export function StitchPage(
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View your ride on Strava ↗
+                    View on Strava ↗
                   </a>
                 </>
               ) : j.state === 'processing' ? (
@@ -226,13 +233,13 @@ export function StitchPage(
                       </p>
                       {m.records.map((r, i) => (
                         <a
-                          class="source-link"
+                          class="source-link strava-data-link"
                           key={r.activity.id}
                           href={'https://www.strava.com/activities/' + r.activity.id}
                           target="_blank"
                           rel="noreferrer"
                         >
-                          Part {i + 1} · {r.activity.name} ↗
+                          Part {i + 1} · {r.activity.name} · View on Strava ↗
                         </a>
                       ))}
                     </li>
@@ -258,7 +265,7 @@ export function StitchPage(
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
-                    <button class="button button-strava wide">Allow Strava uploads ↗</button>
+                    <StravaConnect />
                   </form>
                 </>
               ) : (

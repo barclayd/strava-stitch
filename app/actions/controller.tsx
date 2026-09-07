@@ -11,6 +11,8 @@ import { decodePolyline, type Ride } from './public/format.ts'
 import { exampleRecords, exampleMerge } from './example.ts'
 import { StitchPage } from './stitches/page.tsx'
 import { PrivacyPage } from './privacy-page.tsx'
+import { GuidePage } from './guide-page.tsx'
+import { pageSeo } from '../seo.ts'
 
 export default createController(routes, {
   actions: {
@@ -56,6 +58,7 @@ export default createController(routes, {
         }))
       return context.render(
         <HomePage
+          seo={pageSeo('home', context.url, typeof id === 'number' || !!error)}
           rides={rides}
           csrf={getCsrfToken(context)}
           firstname={auth?.firstname}
@@ -74,8 +77,21 @@ export default createController(routes, {
       const id = context.get(Session).get('athleteId')
       return context.render(
         <PrivacyPage
+          seo={pageSeo('privacy', context.url, typeof id === 'number')}
           csrf={getCsrfToken(context)}
           firstname={typeof id === 'number' ? (await account(id))?.firstname : undefined}
+        />,
+      )
+    },
+    guide(context) {
+      return context.render(
+        <GuidePage
+          csrf={getCsrfToken(context)}
+          seo={pageSeo(
+            'guide',
+            context.url,
+            typeof context.get(Session).get('athleteId') === 'number',
+          )}
         />,
       )
     },

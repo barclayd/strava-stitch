@@ -1,7 +1,7 @@
 import { clientEntry, on, type Handle } from 'remix/ui'
 import { routes } from '../../routes.ts'
 import { RouteMap } from '../../ui/public/route-map.tsx'
-import { colours, duration, km, day, time, type Ride } from './format.ts'
+import { colours, labelColours, duration, km, day, time, type Ride } from './format.ts'
 
 export const Workspace = clientEntry(
   '/client/workspace.js#Workspace',
@@ -100,7 +100,7 @@ export const Workspace = clientEntry(
                           </span>
                           <span
                             class="ride-order"
-                            style={active ? { color: colours[index] } : undefined}
+                            style={active ? { color: labelColours[index] } : undefined}
                           >
                             {active ? 'PART ' + (index + 1) : 'RIDE'}
                           </span>
