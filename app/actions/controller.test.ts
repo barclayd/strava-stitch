@@ -5,6 +5,8 @@ import { seal, unseal } from '../data/encryption.ts'
 import { randomBytes } from 'node:crypto'
 import { unzipSync, strFromU8 } from 'fflate'
 import { merge, recording, type Activity, type Streams } from './stitches/merge.ts'
+import { Decoder, Stream } from '@garmin/fitsdk'
+import { isSport } from '../data/sports.ts'
 
 const secrets = {
   STRAVA_CLIENT_SECRET: 'test-client-secret',
@@ -67,6 +69,11 @@ let oauthOwner = 1,
   foreign = false,
   uploads = 0,
   refreshes = 0
+let activityOverrides: Record<number, Partial<Activity>> = {},
+  streamOverrides: Record<number, Streams> = {},
+  listedIds = [101, 102],
+  lastUpload: FormData | undefined,
+  missingStreams = false
 const originalFetch = globalThis.fetch
 globalThis.fetch = async (input, init) => {
   const url = String(input),
@@ -90,7 +97,9 @@ globalThis.fetch = async (input, init) => {
   )
   if (url.endsWith('/uploads') && method === 'POST') {
     uploads++
-    assert.equal((await new Request(url, init).formData()).get('data_type'), 'gpx')
+    lastUpload = await new Request(url, init).formData()
+    assert.ok(['gpx', 'fit'].includes(String(lastUpload.get('data_type'))))
+    assert.ok(isSport(String(lastUpload.get('sport_type'))))
     if (uploadMode === 'timeout') throw new Error('Simulated network interruption')
     if (uploadMode === 'duplicate')
       return Response.json({ id: 123, error: 'duplicate of Test ride 101' }, { status: 201 })
@@ -100,16 +109,19 @@ globalThis.fetch = async (input, init) => {
     return deauthorized ? new Response(null, { status: 401 }) : Response.json({ id: oauthOwner })
   if (url.endsWith('/uploads/123'))
     return Response.json({ id: 123, activity_id: 500, status: 'ready' })
-  if (url.includes('/athlete/activities?')) return Response.json([detail(101), detail(102)])
+  if (url.includes('/athlete/activities?'))
+    return Response.json(listedIds.map((id) => ({ ...detail(id), ...activityOverrides[id] })))
+  if (url.includes('/streams?') && missingStreams) return new Response(null, { status: 404 })
   if (url.includes('/streams?'))
     return Response.json(
-      longRide
-        ? {
-            time: { data: Array.from({ length: 6000 }, (_, i) => i) },
-            latlng: { data: Array.from({ length: 6000 }, (_, i) => [51 + i / 100000, -1]) },
-            distance: { data: Array.from({ length: 6000 }, (_, i) => i * 5) },
-          }
-        : raw,
+      streamOverrides[Number(url.match(/\/activities\/(\d+)\//)?.[1])] ??
+        (longRide
+          ? {
+              time: { data: Array.from({ length: 6000 }, (_, i) => i) },
+              latlng: { data: Array.from({ length: 6000 }, (_, i) => [51 + i / 100000, -1]) },
+              distance: { data: Array.from({ length: 6000 }, (_, i) => i * 5) },
+            }
+          : raw),
     )
   const match = url.match(/\/activities\/(\d+)$/)
   if (match)
@@ -117,6 +129,7 @@ globalThis.fetch = async (input, init) => {
       ? new Response('', { status: 404 })
       : Response.json({
           ...detail(Number(match[1]), foreign ? 2 : oauthOwner),
+          ...activityOverrides[Number(match[1])],
           ...(longRide
             ? {
                 start_date: new Date(
@@ -194,6 +207,118 @@ class Client {
 }
 const confirmation = { title: 'One ride', confirm: 'upload', gaps: 'reviewed' }
 
+test('all-sport picker and server reject mixed sports and manual entries without hiding them', async () => {
+  const c = new Client()
+  try {
+    activityOverrides = {
+      101: { sport_type: 'Run', name: 'Morning run' },
+      102: { sport_type: 'TrailRun', name: 'Trail run' },
+      103: { sport_type: 'WeightTraining', manual: true, name: 'Manual weights' },
+    }
+    listedIds = [101, 102, 103]
+    await c.login(10)
+    const home = await c.page()
+    for (const title of ['Morning run', 'Trail run', 'Manual weights'])
+      assert.ok(home.text.includes(title))
+    assert.match(home.text, /Manual entry/)
+    assert.match(home.text, /disabled[^>]*aria-label="Select Manual weights"/)
+    const before = uploads
+    for (const selection of [
+      ['101', '102'],
+      ['101', '103'],
+    ]) {
+      const result = await c.post('/stitches', { activities: selection })
+      assert.equal(result.headers.get('location'), '/')
+      assert.match((await c.page()).text, /same sport|Manual entry/)
+    }
+    assert.equal(uploads, before)
+    activityOverrides[102] = { sport_type: 'Run' }
+    missingStreams = true
+    const unavailable = await c.post('/stitches', { activities: ['101', '102'] })
+    assert.equal(unavailable.headers.get('location'), '/')
+    assert.match((await c.page()).text, /no recorded timeline available/)
+    const manual = await c.post('/stitches', { activities: ['103', '101'] })
+    assert.equal(manual.headers.get('location'), '/')
+    assert.match((await c.page()).text, /Manual entry/)
+  } finally {
+    missingStreams = false
+    activityOverrides = {}
+    listedIds = [101, 102]
+  }
+})
+
+test('new sports complete preview, download, backup and confirmed uploads with the exact sport', async () => {
+  const c = new Client()
+  await c.login(11)
+  const { latlng: _gps, ...indoor } = raw
+  try {
+    for (const [sport, source, format] of [
+      ['Run', raw, 'gpx'],
+      ['TrailRun', raw, 'gpx'],
+      ['EBikeRide', raw, 'gpx'],
+      ['Hike', raw, 'gpx'],
+      ['Swim', raw, 'gpx'],
+      ['Swim', indoor, 'fit'],
+      ['VirtualRide', indoor, 'fit'],
+      ['WeightTraining', indoor, 'fit'],
+      ['Yoga', indoor, 'fit'],
+      ['Wheelchair', indoor, 'fit'],
+      ['Workout', { time: raw.time }, 'fit'],
+    ] as const) {
+      activityOverrides = {
+        101: { sport_type: sport, trainer: sport === 'VirtualRide' },
+        102: { sport_type: sport, trainer: sport === 'VirtualRide' },
+      }
+      streamOverrides = { 101: source, 102: source }
+      const created = await c.post('/stitches', { activities: ['102', '101'] })
+      const target = created.headers.get('location')!,
+        id = target.split('/').at(-1)!
+      assert.match(target, /^\/stitches\/.+/)
+      const page = await c.page(target)
+      assert.equal(page.response.status, 200)
+      assert.match(page.text, new RegExp(`Download ${format.toUpperCase()}`))
+      if (format === 'fit') {
+        assert.match(page.text, /No GPS route to preview/)
+        assert.match(page.text, /distance between endpoints is unavailable/)
+      }
+      const download = await c.request(routes.stitches.download.href({ id }))
+      assert.match(
+        download.headers.get('content-disposition')!,
+        new RegExp(`stitched-activity\\.${format}`),
+      )
+      const bytes = new Uint8Array(await download.arrayBuffer())
+      if (format === 'fit') {
+        const decoder = new Decoder(Stream.fromByteArray(bytes))
+        assert.ok(decoder.checkIntegrity())
+        const decoded = decoder.read()
+        assert.deepEqual(decoded.errors, [])
+        assert.equal(decoded.messages.recordMesgs?.length, 6)
+        assert.ok(decoded.messages.recordMesgs?.every((p) => p.positionLat === undefined))
+      }
+      const backup = await c.request(routes.stitches.backup.href({ id }))
+      const files = unzipSync(new Uint8Array(await backup.arrayBuffer()))
+      assert.deepEqual(files[`stitched-activity.${format}`], bytes)
+      assert.ok(files[`original-101.${format}`])
+      assert.equal(JSON.parse(strFromU8(files['activities.json'])).sport_type, sport)
+      const before = uploads
+      await c.post(routes.stitches.upload.href({ id }), { title: 'Missing confirmation' })
+      assert.equal(uploads, before)
+      await c.post(routes.stitches.upload.href({ id }), { ...confirmation, sport_type: 'Ride' })
+      assert.equal(uploads, before + 1)
+      assert.equal(lastUpload?.get('sport_type'), sport)
+      assert.equal(lastUpload?.get('data_type'), format)
+      assert.equal(lastUpload?.get('trainer'), sport === 'VirtualRide' ? '1' : null)
+      assert.equal((lastUpload?.get('file') as File).name, `stitched.${format}`)
+      assert.equal((await job(id, 11))?.state, 'processing')
+      await c.request(routes.stitches.status.href({ id }))
+      assert.equal((await job(id, 11))?.state, 'complete')
+    }
+  } finally {
+    activityOverrides = {}
+    streamOverrides = {}
+  }
+})
+
 test('OAuth is bound to a browser session and uploads require CSRF and granted scope', async () => {
   const c = new Client()
   const home = await c.page()
@@ -239,7 +364,7 @@ test('prepare checks ownership and stores a preview; downloads and bundles stay 
     (await job(id, 1))?.merge.records.map((r) => r.activity.id),
     [101, 102],
   )
-  assert.match((await c.page(target)).text, /Looking like one ride/)
+  assert.match((await c.page(target)).text, /Every part, together/)
   const file = await c.request(routes.stitches.download.href({ id }))
   assert.match(file.headers.get('content-disposition')!, /attachment/)
   assert.equal(((await file.text()).match(/<trkpt /g) ?? []).length, 6)
@@ -247,11 +372,12 @@ test('prepare checks ownership and stores a preview; downloads and bundles stay 
     files = unzipSync(new Uint8Array(await backup.arrayBuffer()))
   assert.deepEqual(Object.keys(files).sort(), [
     'README.txt',
+    'activities.json',
     'original-101.gpx',
     'original-102.gpx',
-    'stitched-ride.gpx',
+    'stitched-activity.gpx',
   ])
-  assert.match(strFromU8(files['README.txt']), /not original Garmin/)
+  assert.match(strFromU8(files['README.txt']), /not original device files/)
   const other = new Client()
   await other.login(2)
   assert.equal((await other.request(target)).status, 404)
@@ -373,7 +499,7 @@ test('large encrypted previews survive object restarts and late updates preserve
   const zip = await c.request(routes.stitches.backup.href({ id: id }))
   assert.equal(zip.status, 200)
   const files = unzipSync(new Uint8Array(await zip.arrayBuffer()))
-  assert.equal((strFromU8(files['stitched-ride.gpx']).match(/<trkpt /g) ?? []).length, 12000)
+  assert.equal((strFromU8(files['stitched-activity.gpx']).match(/<trkpt /g) ?? []).length, 12000)
   await repo(3).patchJob(id, 3, { state: 'complete', activityId: 500 })
   await repo(3).patchJob(id, 3, { state: 'processing' })
   const saved = await job(id, 3)

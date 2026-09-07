@@ -8,16 +8,16 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
     <Shell {...handle.props} title="Your data — Stitch">
       <main id="main" class="prose-page">
         <a class="back-link" href={routes.home.href()}>
-          ← Back to your rides
+          ← Back to your activities
         </a>
         <h1>
-          Your ride.
+          Your activities.
           <br />
           Your data.
         </h1>
         <p class="lead">
-          Stitch uses your Strava activities to create the ride you ask for. Your activities are
-          shown only to your connected account.
+          Stitch uses your Strava activities to create the combined activity you ask for. Your
+          activities are shown only to your connected account.
         </p>
         <p>
           Stitch is a free service operated by Barksoft Ltd. It is an independent application and is
@@ -27,8 +27,8 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
         <p>
           With your permission, Stitch uses Strava’s API to read your profile and activities,
           including GPS data from private activities and available elevation, heart rate, cadence,
-          distance, and temperature samples. Upload permission lets Stitch create a ride after you
-          explicitly confirm. Strava does not provide activity deletion through its API.
+          distance, and temperature samples. Upload permission lets Stitch create an activity after
+          you explicitly confirm. Strava does not provide activity deletion through its API.
         </p>
         <h2>What we keep</h2>
         <p>
@@ -36,8 +36,8 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
           permissions, and encrypted access and refresh tokens to maintain your connection until you
           remove it. Your browser stores an essential session cookie; sessions expire after seven
           days without use. Stitch previews and their activity data become unavailable after 24
-          hours and are purged by hourly maintenance. You can download your stitched GPX and a
-          backup bundle containing reconstructed originals.
+          hours and are purged by hourly maintenance. You can download your stitched GPX or FIT and
+          a backup bundle containing reconstructed originals.
         </p>
         <p>
           Stitch has no advertising, analytics, or AI features. Strava may collect and use API usage
@@ -48,10 +48,12 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
         </p>
         <h2>What a backup contains</h2>
         <p>
-          GPX files preserve original GPS positions, timestamps, elevation, and supported sensor
-          data available from Strava. They are not the original files from your recording device.
-          Photos, comments, kudos, laps, and device metadata are not transferred. Strava may
-          recalculate distance, moving time, and elevation when importing.
+          GPX and FIT files contain original timestamps and available GPS, elevation, and supported
+          sensor data from Strava, at the precision each format supports. Sport details are included
+          in the backup bundle. These are reconstructed files, not the original files from your
+          device. Photos, comments, kudos, original laps, pool lengths, workout sets, power, and
+          device metadata are not transferred. Strava may recalculate distance, moving time, and
+          elevation when importing.
         </p>
         <h2>Uploading and visibility</h2>
         <p>

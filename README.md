@@ -1,7 +1,7 @@
 # Stitch
 
 A free TypeScript / Remix 3 application for combining Strava activities into one
-ride. Preview the route and gaps, download GPX and backups, then explicitly confirm
+activity of the same sport. Preview the recordings and gaps, download GPX or FIT and backups, then explicitly confirm
 an upload. Production: [stravastitch.com](https://stravastitch.com).
 
 ## Development
@@ -70,19 +70,31 @@ npm run types  # after changing Wrangler bindings or vars
 ```
 
 Tests run the real Worker and Durable Objects locally with mocked Strava calls.
-They cover OAuth/CSRF, account isolation, GPX/ZIP preservation, confirmed uploads,
+They cover OAuth/CSRF, account isolation, GPX/FIT/ZIP preservation, confirmed uploads,
 duplicate handling, token refresh, deauthorization, session concurrency, and
 storage persistence. They never modify live activities. Type declarations are
 generated from Wrangler configuration; do not edit them by hand.
 
 ## Activity handling
 
-- Supports two to eight standard Ride activities, up to 50,000 GPS points in total.
-  Search and selection operate on a page of 30 activities.
-- Timestamps, GPS, and available elevation, distance, temperature, heart rate, and
-  cadence are preserved. Gaps stay unconnected and overlaps are rejected.
-- Backups contain reconstructed GPX files, not original FIT/device files. Power,
-  laps, photos, comments, and kudos are not transferred. Strava may recalculate totals.
+- Supports two to eight activities of the same exact sport, up to 50,000 recorded samples.
+  All sport types in [Strava's upload API](https://developers.strava.com/docs/uploads/) are
+  listed in `app/data/sports.ts`. Manual entries, unsupported types, overlapping recordings,
+  and activities without at least two recorded timestamps are rejected. Search by name,
+  date, or sport and selection operate on a page of 30 activities.
+- GPS is optional. Exports use GPX when every sample has GPS, otherwise FIT encoded with
+  Garmin's FIT SDK. Original timestamps and available GPS, elevation, temperature,
+  heart rate, and cadence are preserved at the file format's precision. Invalid or
+  unrepresentable FIT values are rejected before a preview is saved. Recorded distance is
+  normalized across recordings when complete; FIT also includes summary distances.
+- Each recording retains its boundary. FIT timer events stop at the end of each source
+  and resume at the start of the next; laps mark source boundaries. Original within-activity
+  timer events, original laps, pool lengths, workout sets, power, device metadata, and social
+  history are unavailable or not transferred. Strava may recalculate totals and moving time.
+- Direct uploads explicitly set `sport_type` from the stored recordings. Standalone imports
+  may detect a broader sport from GPX/FIT; check the result. Backup ZIPs contain reconstructed
+  sources, the stitched file, sport metadata in `activities.json`, and a limitations README.
+  These are not original device files.
 - OAuth requests `read`, `activity:read`, `activity:read_all`, and `activity:write`.
   Uploads always require explicit confirmation and use the athlete's privacy defaults.
 - Strava has no activity deletion API. Duplicates require a downloaded backup,

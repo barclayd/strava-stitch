@@ -1,14 +1,14 @@
 import type { Handle } from 'remix/ui'
 import { Shell, Alert } from '../ui/shell.tsx'
 import { Workspace } from './public/workspace.tsx'
-import type { Ride } from './public/format.ts'
+import type { ActivitySummary } from './public/format.ts'
 import { routes } from '../routes.ts'
 import { StravaConnect } from '../ui/strava.tsx'
 import type { PageSeo } from '../seo.ts'
 
 export function HomePage(
   handle: Handle<{
-    rides: Ride[]
+    activities: ActivitySummary[]
     firstname?: string
     csrf: string
     error?: string
@@ -25,7 +25,7 @@ export function HomePage(
         <main id="main" class="main-content">
           <div class="intro">
             <div class="eyebrow">
-              <span class="little-line" /> THE WHOLE RIDE
+              <span class="little-line" /> EVERY PART BELONGS
             </div>
             <h1>
               Combine your
@@ -33,8 +33,8 @@ export function HomePage(
               <span class="together-word">Strava activities.</span>
             </h1>
             <p>
-              A café stop. A wrong turn. An accidental finish.
-              <br class="desktop-break" /> Join your split activities into one complete ride.{' '}
+              A split run. A paused ride. An accidental finish.
+              <br class="desktop-break" /> Stitch activities of the same sport into one.{' '}
               <strong>Free to use.</strong>
             </p>
           </div>
@@ -48,13 +48,13 @@ export function HomePage(
                 <span>2</span> Review the join
               </li>
               <li>
-                <span>3</span> Make it one ride
+                <span>3</span> Bring it together
               </li>
             </ol>
             <span class="flow-reassurance">Your originals stay yours.</span>
           </div>
           <Workspace
-            rides={p.rides}
+            activities={p.activities}
             csrf={p.csrf}
             connected={!!p.firstname}
             page={p.page}
@@ -62,7 +62,7 @@ export function HomePage(
           />
           {!p.firstname && (
             <div class="connection-note">
-              <span>Ready for your own ride?</span>
+              <span>Ready for your own activities?</span>
               <form data-rmx-document method="post" action={routes.auth.connect.href()}>
                 <input type="hidden" name="_csrf" value={p.csrf} />
                 <StravaConnect />
@@ -96,10 +96,11 @@ export function HomePage(
           )}
           <section class="how-it-works" id="how-it-works">
             <div>
-              <span class="overline">LESS ADMIN. MORE RIDING.</span>
+              <span class="overline">LESS ADMIN. MORE MOVEMENT.</span>
               <h2>
                 A little stitching.
-                <br />A complete ride.
+                <br />
+                Every part together.
               </h2>
               <p>
                 From separate activities to one continuous story, with you in control of every step.
@@ -111,8 +112,9 @@ export function HomePage(
                 <div>
                   <h3>Choose your activities</h3>
                   <p>
-                    Connect Strava and select two to eight Ride activities that belong together. We
-                    arrange them by start time. Other sport types are coming later.
+                    Connect Strava and select two to eight activities of the same sport. Runs,
+                    rides, swims, hikes, and indoor workouts are supported when Strava has recorded
+                    timestamps. We arrange them by start time.
                   </p>
                 </div>
               </li>
@@ -129,10 +131,11 @@ export function HomePage(
               <li>
                 <span>03</span>
                 <div>
-                  <h3>Take the whole ride with you</h3>
+                  <h3>Take it all with you</h3>
                   <p>
-                    Download your GPX or confirm an upload to Strava. If originals need removing,
-                    you do that separately in Strava.
+                    Download GPX for GPS recordings or FIT for activities without GPS. Confirm a
+                    Strava upload to keep the original sport type. If originals need removing, you
+                    do that separately in Strava.
                   </p>
                 </div>
               </li>
@@ -142,7 +145,7 @@ export function HomePage(
             <div>
               <span class="overline">A GUIDE TO GETTING IT RIGHT</span>
               <h2 id="home-guide-heading">
-                Two activities. One ride.
+                Two activities. One story.
                 <br />A few things to know.
               </h2>
               <p>
@@ -155,10 +158,24 @@ export function HomePage(
             </div>
             <div class="home-questions">
               <details>
+                <summary>Does Stitch support all Strava activity types?</summary>
+                <p>
+                  Yes. Stitch supports all Strava sport types, including runs, rides, swims, walks,
+                  hikes, e-bike rides, and indoor workouts.
+                </p>
+                <p>
+                  Choose two to eight recorded activities of the same sport per stitch. Run and
+                  Trail Run, for example, are separate types. GPS is optional, but recorded
+                  timestamps are required. Manual entries and activities without a recorded timeline
+                  cannot be stitched.
+                </p>
+              </details>
+              <details>
                 <summary>Can I combine activities inside Strava?</summary>
                 <p>
                   Strava has no built-in merge feature. Stitch combines the data from your selected
-                  rides into a new GPX that you can download or upload after reviewing it.
+                  activities into a GPX or FIT file that you can download or upload after reviewing
+                  it.
                 </p>
               </details>
               <details>
@@ -170,7 +187,7 @@ export function HomePage(
                 </p>
               </details>
               <details>
-                <summary>Can I join rides with a pause between them?</summary>
+                <summary>Can I join activities with a pause between them?</summary>
                 <p>
                   Yes. Stitch preserves the original timestamps and leaves gaps unconnected.
                   Overlapping activities are rejected, and missing movement is never invented.

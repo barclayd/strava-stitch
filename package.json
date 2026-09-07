@@ -16,6 +16,7 @@
     "node": ">=24.3.0"
   },
   "dependencies": {
+    "@garmin/fitsdk": "^21.214.0",
     "fflate": "^0.8.3",
     "remix": "^3.0.0-rc.1"
   },

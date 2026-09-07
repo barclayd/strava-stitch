@@ -9,7 +9,7 @@ function artwork(kind: 'home' | 'guide' | 'illustration'): string {
   const title =
     kind === 'home'
       ? ['Combine your', 'Strava activities.']
-      : ['Two activities.', 'One whole ride.']
+      : ['Two activities.', 'Every part together.']
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="${height}" viewBox="0 0 1200 ${height}">
     <rect width="1200" height="${height}" fill="#f4f5ef"/>
     <g fill="none" stroke="#e1e5da" stroke-width="1.2" opacity=".85">
@@ -23,9 +23,9 @@ function artwork(kind: 'home' | 'guide' | 'illustration'): string {
       <text x="1138" y="72" text-anchor="end" font-size="17" fill="#345e51">${kind === 'home' ? 'FREE TO USE' : 'THE STITCH GUIDE'}</text>
       <text x="62" y="175" font-size="62" font-weight="700" letter-spacing="-2">${title[0]}</text>
       <text x="62" y="245" font-size="62" font-weight="700" letter-spacing="-2" fill="#345e51">${title[1]}</text>
-      <text x="65" y="292" font-size="23" fill="#586354">${kind === 'home' ? 'Preview the join. Keep the pause. Make it one ride.' : 'Original times. Recorded tracks. The pause stays a pause.'}</text>
+      <text x="65" y="292" font-size="23" fill="#586354">${kind === 'home' ? 'Runs, rides, swims and more. One sport per stitch.' : 'Original times. Recorded tracks. The pause stays a pause.'}</text>
       <rect x="64" y="340" width="1072" height="${illustration ? 247 : 207}" rx="18" fill="#fff" stroke="#dde4d7"/>
-      <text x="96" y="386" font-size="15" font-weight="700" letter-spacing="1.8" fill="#586354">ONE RIDE, FROM EVERY PART</text>
+      <text x="96" y="386" font-size="15" font-weight="700" letter-spacing="1.8" fill="#586354">ONE ACTIVITY, FROM EVERY PART</text>
       <path d="M101 477c49-80 77 27 131-30s50-34 94-3 81-14 144-14" stroke="#345e51" stroke-width="8" stroke-linecap="round" fill="none"/>
       <circle cx="101" cy="477" r="9" fill="#fff" stroke="#345e51" stroke-width="4"/>
       <circle cx="470" cy="430" r="7" fill="#345e51"/>

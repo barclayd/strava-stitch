@@ -14,7 +14,9 @@ export const RouteMap = clientEntry(
       handle.update()
     }
     return () => {
-      const tracks = handle.props.tracks.filter((t) => t.coordinates.length > 1)
+      const tracks = handle.props.tracks
+        .map((t, i) => ({ ...t, colour: colours[i % colours.length] }))
+        .filter((t) => t.coordinates.length > 1)
       const points = tracks.flatMap((t) => t.coordinates)
       const mercator = ([lat, lon]: [number, number]) => [
         (lon * Math.PI) / 180,
@@ -72,7 +74,7 @@ export const RouteMap = clientEntry(
                 }),
               ]}
             >
-              {tracks.map((t, i) => (
+              {tracks.map((t) => (
                 <g key={t.id}>
                   <polyline
                     points={t.coordinates.map((p) => xy(p).join(',')).join(' ')}
@@ -86,7 +88,7 @@ export const RouteMap = clientEntry(
                   <polyline
                     points={t.coordinates.map((p) => xy(p).join(',')).join(' ')}
                     fill="none"
-                    stroke={colours[i % colours.length]}
+                    stroke={t.colour}
                     stroke-width="4"
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -96,7 +98,7 @@ export const RouteMap = clientEntry(
                     cx={xy(t.coordinates[0])[0]}
                     cy={xy(t.coordinates[0])[1]}
                     r="8"
-                    fill={colours[i % colours.length]}
+                    fill={t.colour}
                     stroke="white"
                     stroke-width="3"
                   />
@@ -105,7 +107,7 @@ export const RouteMap = clientEntry(
                     cy={xy(t.coordinates.at(-1)!)[1]}
                     r="6"
                     fill="white"
-                    stroke={colours[i % colours.length]}
+                    stroke={t.colour}
                     stroke-width="3"
                   />
                 </g>
@@ -114,29 +116,45 @@ export const RouteMap = clientEntry(
           ) : (
             <div class="map-empty">
               <span class="empty-mark">↗</span>
-              <h3>Your ride takes shape here.</h3>
-              <p>Select activities to see their routes together.</p>
+              <h3>
+                {handle.props.tracks.length
+                  ? 'No GPS route to preview.'
+                  : 'Every part takes shape here.'}
+              </h3>
+              <p>
+                {handle.props.tracks.length
+                  ? 'Indoor activities can still be stitched when Strava has recorded timestamps.'
+                  : 'Select activities to see their routes together.'}
+              </p>
             </div>
           )}
-          <span class="map-caption">Original paths. Room between the parts.</span>
-          <div class="map-tools">
-            <button type="button" aria-label="Zoom in" mix={on('click', () => zoom(0.75))}>
-              +
-            </button>
-            <button type="button" aria-label="Zoom out" mix={on('click', () => zoom(1 / 0.75))}>
-              −
-            </button>
-            <button
-              type="button"
-              aria-label="Reset map"
-              mix={on('click', () => {
-                view = [0, 0, 900, 600]
-                handle.update()
-              })}
-            >
-              ↺
-            </button>
-          </div>
+          {points.length > 1 && (
+            <span class="map-caption">
+              {tracks.length < handle.props.tracks.length
+                ? 'Some selected activities have no route to preview.'
+                : 'Original paths. Room between the parts.'}
+            </span>
+          )}
+          {points.length > 1 && (
+            <div class="map-tools">
+              <button type="button" aria-label="Zoom in" mix={on('click', () => zoom(0.75))}>
+                +
+              </button>
+              <button type="button" aria-label="Zoom out" mix={on('click', () => zoom(1 / 0.75))}>
+                −
+              </button>
+              <button
+                type="button"
+                aria-label="Reset map"
+                mix={on('click', () => {
+                  view = [0, 0, 900, 600]
+                  handle.update()
+                })}
+              >
+                ↺
+              </button>
+            </div>
+          )}
         </div>
       )
     }

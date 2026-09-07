@@ -383,6 +383,22 @@ svg {
   background: #f6f8f2;
   border-color: #dfe6d5;
 }
+.ride-row.unavailable {
+  cursor: default;
+  background: #f4f5ef;
+}
+.ride-content .activity-reason {
+  display: block;
+  margin-top: 8px;
+  line-height: 1.5;
+  color: #586354;
+}
+.activity-sport {
+  display: block;
+  margin-bottom: 6px;
+  color: #586354;
+  font-size: 12px;
+}
 .ride-row input {
   position: absolute;
   opacity: 0;
@@ -416,6 +432,7 @@ svg {
 }
 .ride-topline {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   font-size: 9px;
@@ -451,6 +468,17 @@ svg {
 .selection-footer {
   padding: 19px 20px 20px;
   border-top: 1px solid var(--line);
+}
+.selection-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+.selection-controls .selected-caption {
+  margin-bottom: 0;
 }
 .selected-caption {
   font-size: 11px;

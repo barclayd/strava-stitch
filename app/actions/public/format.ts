@@ -1,5 +1,5 @@
 export type Track = { id: number; name: string; coordinates: [number, number][] }
-export type Ride = {
+export type ActivitySummary = {
   id: number
   name: string
   start: string
@@ -7,6 +7,7 @@ export type Ride = {
   moving: number
   elevation: number
   sport: string
+  unavailable?: string
   coordinates: [number, number][]
 }
 export const colours = [

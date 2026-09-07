@@ -1,23 +1,22 @@
 // Public search identity is fixed; never derive canonical URLs from request headers or activity data.
 export const publicOrigin = 'https://stravastitch.com'
-export const guideUpdated = '2026-09-06'
+export const guideUpdated = '2026-09-07'
 export const publicPages = {
   home: {
     path: '/',
     title: 'Combine Strava Activities for Free | Stitch',
     description:
-      'Join split Strava rides into one activity for free. Preview your route and pauses, download a merged GPX, or confirm an upload to Strava with Stitch.',
+      'Combine Strava runs, rides, swims and more for free. Stitch activities of the same sport, including indoor recordings. Preview, download GPX or FIT, and upload.',
     image: '/images/stitch-social.png',
     imageAlt: 'Stitch: combine your Strava activities for free, with a preview of each join.',
   },
   guide: {
     path: '/guides/merge-strava-activities',
-    title: 'How to Merge Strava Activities into One Ride | Stitch',
+    title: 'How to Merge Strava Activities | Stitch',
     description:
-      'Learn how to join or combine split Strava activities: choose your rides, check pauses, preserve GPS data, and handle duplicate uploads and original activities.',
+      'Learn how to merge Strava activities of the same sport, including runs, rides, swims and indoor workouts. Review gaps, download GPX or FIT, and upload safely.',
     image: '/images/merge-guide-social.png',
-    imageAlt:
-      'Two separate cycling activities become one ride, with the pause between them preserved.',
+    imageAlt: 'Two separate activities become one, with the pause between them preserved.',
   },
   privacy: {
     path: '/privacy',
@@ -96,7 +95,7 @@ function guideSchema(): Record<string, unknown> {
       {
         '@type': 'Article',
         '@id': url + '#article',
-        headline: 'How to merge Strava activities into one ride',
+        headline: 'How to merge Strava activities',
         description: publicPages.guide.description,
         mainEntityOfPage: url,
         url,

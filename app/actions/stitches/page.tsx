@@ -6,6 +6,14 @@ import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
 import { UploadForm, UploadStatus } from './public/upload-form.tsx'
 import { StravaConnect } from '../../ui/strava.tsx'
+import { fileFormat, hasPosition } from './merge.ts'
+import { sportLabel } from '../../data/sports.ts'
+
+function joinLocation(metres: number | null) {
+  if (metres === null)
+    return 'No GPS at this join, so the distance between endpoints is unavailable.'
+  return `Endpoints are ${metres >= 1000 ? `${km(metres)} km` : `${Math.round(metres)} m`} apart.`
+}
 
 export function StitchPage(
   handle: Handle<{
@@ -19,12 +27,15 @@ export function StitchPage(
 ) {
   return () => {
     const { job: j, csrf, firstname, canUpload, error, demo } = handle.props,
-      m = j.merge
+      m = j.merge,
+      format = fileFormat(m.records).toUpperCase(),
+      sport = sportLabel(m.records[0].activity.sport_type)
     const download = demo ? routes.demoDownload.href() : routes.stitches.download.href({ id: j.id })
     const tracks = m.records.map((r) => ({
       id: r.activity.id,
       name: r.activity.name,
       coordinates: r.points
+        .filter(hasPosition)
         .filter(
           (_p, i) =>
             i % Math.max(1, Math.floor(r.points.length / 1200)) === 0 || i === r.points.length - 1,
@@ -51,19 +62,22 @@ export function StitchPage(
                     ? 'STITCH COMPLETE'
                     : 'THE WHOLE PICTURE'}
               </span>
-              <h1>{j.state === 'complete' ? 'One ride. All yours.' : 'Looking like one ride.'}</h1>
+              <h1>
+                {j.state === 'complete' ? 'All together. All yours.' : 'Every part, together.'}
+              </h1>
               <p>
-                {m.records.length} activities · {day(m.start)} · Every original timestamp preserved.
+                {sport} · {m.records.length} activities · {day(m.start)} · Every original timestamp
+                preserved.
               </p>
             </div>
             <a class="button button-outline" href={download} download>
-              Download GPX <span>↓</span>
+              Download {format} <span>↓</span>
             </a>
           </div>
           <Alert message={error} />
-          {m.joins.some((g) => g.metres > 1000) && (
+          {m.joins.some((g) => (g.metres ?? 0) > 1000) && (
             <div class="alert">
-              The activities end and restart {km(Math.max(...m.joins.map((g) => g.metres)))} km
+              The activities end and restart {km(Math.max(...m.joins.map((g) => g.metres ?? 0)))} km
               apart at one join. Stitch leaves this gap unconnected. Check that these activities
               belong together.
             </div>
@@ -132,11 +146,8 @@ export function StitchPage(
                           <div>
                             <strong>{duration(m.joins[i].seconds)} between activities</strong>
                             <p>
-                              Endpoints are{' '}
-                              {m.joins[i].metres >= 1000
-                                ? `${km(m.joins[i].metres)} km`
-                                : `${Math.round(m.joins[i].metres)} m`}{' '}
-                              apart. The gap stays in elapsed time; no connecting points are added.
+                              {joinLocation(m.joins[i].metres)} The gap stays in elapsed time; no
+                              connecting points are added.
                             </p>
                           </div>
                         </div>
@@ -146,15 +157,28 @@ export function StitchPage(
                 </div>
               </section>
               <details class="preservation">
-                <summary>What comes along for the ride?</summary>
+                <summary>What comes along?</summary>
                 <p>
-                  All {m.pointCount.toLocaleString('en-GB')} GPS samples and their original
-                  timestamps. Available elevation, recorded distance, temperature, heart rate, and
-                  cadence are included in GPX.
+                  All {m.pointCount.toLocaleString('en-GB')} recorded samples and their original
+                  timestamps. Available GPS, elevation, temperature, heart rate, and cadence are
+                  included in {format}, at the precision it supports. Recorded distance is included
+                  when complete across all selected activities.
                 </p>
                 <p>
-                  This is reconstructed from Strava data. Photos, kudos, comments, laps, measured
-                  power, and device metadata are not transferred.
+                  This is reconstructed from Strava data. Photos, kudos, comments, original laps,
+                  pool lengths, workout sets, measured power, and device metadata are not
+                  transferred.
+                </p>
+                {format === 'FIT' && (
+                  <p>
+                    FIT preserves recordings without adding GPS. Its laps mark the source activities
+                    and its timer pauses mark the gaps between them. Original pause events within
+                    each activity are unavailable.
+                  </p>
+                )}
+                <p>
+                  Direct uploads keep the {sport} sport type. Check the sport when importing a
+                  downloaded file yourself.
                 </p>
               </details>
             </div>
@@ -177,7 +201,7 @@ export function StitchPage(
               ) : j.state === 'complete' ? (
                 <>
                   <p>
-                    Your stitched ride is on Strava. Open it to review the route, totals, and
+                    Your stitched activity is on Strava. Open it to review the sport, totals, and
                     visibility.
                   </p>
                   <a
@@ -210,13 +234,13 @@ export function StitchPage(
                 <div class="duplicate-flow">
                   <h3>Strava found an original.</h3>
                   <p>
-                    Strava may reject a stitched ride while the original activities exist. Removing
-                    them also removes their photos, comments, and kudos.
+                    Strava may reject a stitched activity while the original activities exist.
+                    Removing them also removes their photos, comments, and kudos.
                   </p>
                   <ol>
                     <li>
                       <strong>Save your backup.</strong>
-                      <p>A ZIP with the stitched GPX and reconstructed source GPX files.</p>
+                      <p>A ZIP with the stitched file, reconstructed sources, and sport details.</p>
                       <a
                         class="button button-outline wide"
                         href={routes.stitches.backup.href({ id: j.id })}
@@ -260,7 +284,7 @@ export function StitchPage(
               ) : !canUpload ? (
                 <>
                   <p>
-                    Allow uploads to send this ride directly to Strava. Downloads are already
+                    Allow uploads to send this activity directly to Strava. Downloads are already
                     available.
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
@@ -270,9 +294,7 @@ export function StitchPage(
                 </>
               ) : (
                 <>
-                  <p>
-                    Give the route and its pauses a final look, then send your whole ride to Strava.
-                  </p>
+                  <p>Review the recordings and pauses, then upload to Strava as {sport}.</p>
                   {j.error && <Alert message={j.error} />}
                   <UploadForm id={j.id} csrf={csrf} title={j.title} retry={j.state !== 'ready'} />
                 </>

@@ -61,14 +61,14 @@ export class AthleteRepository {
       id: randomUUID(),
       owner,
       created: Date.now(),
-      title: 'My ride — stitched',
+      title: 'My activity — stitched',
       merge,
       state: 'ready',
     }
     const { merge: content, ...metadata } = j
     const payload = seal(content, this.key)
     if (payload.length > 24000000)
-      throw new Error('This ride is too large to preview. Try fewer activities.')
+      throw new Error('This activity is too large to preview. Try fewer activities.')
     this.db.transaction(() => {
       this.db.query('INSERT INTO jobs VALUES (?, ?, ?)', j.id, j.created, seal(metadata, this.key))
       for (let i = 0; i < payload.length; i += chunkSize)

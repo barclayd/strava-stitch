@@ -27,11 +27,11 @@ const waypoints: [number, number][] = [
 const base = Date.parse('2026-09-06T08:15:00Z') / 1000
 function part(id: number, from: number, to: number, start: number): Recording {
   let distance = 0
-  const points: Point[] = []
+  const points: (Point & { lat: number; lon: number })[] = []
   for (let i = from; i < to; i++)
     for (let n = 0; n < 14; n++) {
       const t = n / 14,
-        p: Point = {
+        p: Point & { lat: number; lon: number } = {
           lat: waypoints[i][0] * (1 - t) + waypoints[i + 1][0] * t,
           lon: waypoints[i][1] * (1 - t) + waypoints[i + 1][1] * t,
           time: start + points.length * 15,
