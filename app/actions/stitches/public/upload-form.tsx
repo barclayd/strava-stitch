@@ -86,6 +86,8 @@ export const UploadForm = clientEntry(
         </label>
         <button
           class="button button-dark wide"
+          data-funnel="upload_click"
+          data-funnel-placement="preview"
           type="submit"
           disabled={!confirmed || !gaps || pending}
         >

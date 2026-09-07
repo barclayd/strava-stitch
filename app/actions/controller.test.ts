@@ -459,6 +459,19 @@ test('upload is explicitly confirmed, submitted once with matching edits, and po
   assert.equal(uploads, before + 1)
   assert.equal((await job(j.id, 1))?.description, saved.description)
 })
+test('concurrent status transitions identify one completion and reject late outcomes', async () => {
+  const c = new Client()
+  await c.login(6)
+  const j = await newJob(6, makeMerge())
+  await repo(6).patchJob(j.id, 6, { state: 'processing', uploadId: 123 })
+  const results = await Promise.all([
+    repo(6).patchJob(j.id, 6, { state: 'complete', activityId: 500 }, 'processing'),
+    repo(6).patchJob(j.id, 6, { state: 'complete', activityId: 500 }, 'processing'),
+  ])
+  assert.equal(results.filter(Boolean).length, 1)
+  assert.equal(await repo(6).patchJob(j.id, 6, { state: 'failed' }, 'processing'), undefined)
+  assert.equal((await job(j.id, 6))?.state, 'complete')
+})
 test('duplicates require a backup and separate confirmed removal, with fresh read-only checks', async () => {
   const c = new Client()
   await c.login()

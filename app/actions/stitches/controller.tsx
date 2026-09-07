@@ -11,6 +11,8 @@ import { merge, recording, maxPoints, mergedDescription } from './merge.ts'
 import { activityFile } from './export.ts'
 import { StitchPage } from './page.tsx'
 import { unavailableReason } from '../../data/sports.ts'
+import { track } from '../../data/analytics.ts'
+import type { ServerEvent } from '../../analytics.ts'
 
 function identity(session: Session) {
   const id = session.get('athleteId')
@@ -23,6 +25,7 @@ const fail = (session: Session, message: string, target = routes.home.href()) =>
 const problem = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong. Please try again.'
 const updateStatus = async (j: Job, result: strava.Upload) => {
+  const previous = j.state
   if (result.activity_id && Number.isSafeInteger(result.activity_id)) {
     j.state = 'complete'
     j.activityId = result.activity_id
@@ -40,12 +43,34 @@ const updateStatus = async (j: Job, result: strava.Upload) => {
         'Strava did not return an upload identifier. Check your account before trying again.'
     }
   }
-  await patchJob(j.id, j.owner, {
-    state: j.state,
-    error: j.error ?? '',
-    uploadId: j.uploadId,
-    activityId: j.activityId,
-  })
+  const saved = await patchJob(
+    j.id,
+    j.owner,
+    {
+      state: j.state,
+      error: j.error ?? '',
+      uploadId: j.uploadId,
+      activityId: j.activityId,
+    },
+    previous,
+  )
+  if (saved && saved.state !== previous) trackUploadOutcome(saved.state)
+  if (!saved) {
+    const current = await job(j.id, j.owner)
+    if (current) Object.assign(j, current)
+  }
+}
+
+function trackUploadOutcome(state: Job['state']) {
+  const events: Partial<Record<Job['state'], ServerEvent>> = {
+    processing: 'upload_accepted',
+    complete: 'upload_completed',
+    duplicate: 'upload_duplicate',
+    failed: 'upload_failed',
+    unknown: 'upload_unknown',
+  }
+  const event = events[state]
+  if (event) track(event, 'preview')
 }
 
 export default createController(routes.stitches, {
@@ -87,8 +112,10 @@ export default createController(routes.stitches, {
         const merged = merge(records)
         activityFile(merged.records, 'Stitched activity')
         const j = await newJob(auth.id, merged)
+        track('preview_created', 'workspace')
         return redirect(routes.stitches.show.href({ id: j.id }), 303)
       } catch (error) {
+        track('preview_failed', 'workspace')
         return fail(session, problem(error))
       }
     },
@@ -116,6 +143,7 @@ export default createController(routes.stitches, {
         j = auth ? await job(params.id, auth.id) : undefined
       if (!j) return new Response('Not found', { status: 404 })
       const file = activityFile(j.merge.records, j.title)
+      track('activity_downloaded', 'preview')
       return new Response(file.data, {
         headers: {
           'Content-Type': file.contentType,
@@ -157,6 +185,7 @@ export default createController(routes.stitches, {
       }
       const zip = zipSync(files)
       await patchJob(j.id, j.owner, { backupDownloaded: true })
+      track('backup_downloaded', 'preview')
       return new Response(new Uint8Array(zip), {
         headers: {
           'Content-Type': 'application/zip',
@@ -228,6 +257,7 @@ export default createController(routes.stitches, {
           'This upload has already started. Check its status before trying again.',
           target,
         )
+      track('upload_started', 'preview')
       try {
         const file = activityFile(claimed.merge.records, claimed.title)
         const result = await strava.upload(
@@ -250,7 +280,13 @@ export default createController(routes.stitches, {
           claimed.state === 'unknown'
             ? 'The connection ended before Strava confirmed the result. Check your Strava activities before starting another upload.'
             : problem(error)
-        await patchJob(claimed.id, claimed.owner, { state: claimed.state, error: claimed.error })
+        const saved = await patchJob(
+          claimed.id,
+          claimed.owner,
+          { state: claimed.state, error: claimed.error },
+          'submitting',
+        )
+        if (saved) trackUploadOutcome(saved.state)
       }
       return redirect(target, 303)
     },

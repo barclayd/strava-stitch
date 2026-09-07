@@ -48,6 +48,7 @@ export function StitchPage(
         csrf={csrf}
         title={j.title + ' — Stitch'}
         clientFeatures="preview"
+        analyticsPage={demo ? 'example' : 'preview'}
       >
         <main id="main" class="main-content review-main">
           <a class="back-link" href={routes.home.href()}>
@@ -195,7 +196,7 @@ export function StitchPage(
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
-                    <StravaConnect />
+                    <StravaConnect source="example" />
                   </form>
                 </>
               ) : j.state === 'complete' ? (
@@ -207,6 +208,8 @@ export function StitchPage(
                   <a
                     class="button button-dark wide"
                     href={'https://www.strava.com/activities/' + j.activityId}
+                    data-funnel="view_on_strava_click"
+                    data-funnel-placement="preview"
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -289,7 +292,7 @@ export function StitchPage(
                   </p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
-                    <StravaConnect />
+                    <StravaConnect source="preview" />
                   </form>
                 </>
               ) : (

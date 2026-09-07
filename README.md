@@ -137,6 +137,13 @@ generated from Wrangler configuration; do not edit them by hand.
 See [AGENTS.md](AGENTS.md) for code organization. Retain the DM Sans licence in
 `public/fonts/` when distributing the application.
 
+## Funnel analytics
+
+Cloudflare Analytics Engine records aggregate CTA clicks, completed Strava connections,
+previews, downloads, and upload outcomes. It is enabled in production and disabled in
+development/staging by default. See [the event catalogue and reporting instructions](docs/analytics.md).
+Run `npm run analytics -- 7` with an Account Analytics Read token to view the last week's counts.
+
 ## Search visibility
 
 Public titles, descriptions, canonical URLs, social images, and structured data

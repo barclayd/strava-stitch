@@ -5,7 +5,7 @@ import { guideUpdated, type PageSeo } from '../seo.ts'
 
 export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
   return () => (
-    <Shell {...handle.props}>
+    <Shell {...handle.props} analyticsPage="guide">
       <main id="main" class="guide-page">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
           <a href={routes.home.href()}>Stitch</a>
@@ -78,8 +78,14 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
                 <aside class="article-note">
                   <strong>Try the preview first.</strong> Stitch is in early access and Strava
                   connections are currently limited. The{' '}
-                  <a href={routes.demo.href()}>illustrative example</a> is available without
-                  connecting an account.
+                  <a
+                    href={routes.demo.href()}
+                    data-funnel="example_click"
+                    data-funnel-placement="guide"
+                  >
+                    illustrative example
+                  </a>{' '}
+                  is available without connecting an account.
                 </aside>
               </section>
               <section id="before-you-start">
@@ -319,7 +325,12 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
                 <span class="overline">BRING EVERY PART TOGETHER</span>
                 <h2>See what a join looks like.</h2>
                 <p>Explore two illustrative activities, the route, and the pause between them.</p>
-                <a class="button button-dark" href={routes.demo.href()}>
+                <a
+                  class="button button-dark"
+                  href={routes.demo.href()}
+                  data-funnel="example_click"
+                  data-funnel-placement="guide"
+                >
                   Explore the example <span aria-hidden="true">→</span>
                 </a>
                 <a class="inline-link" href={routes.home.href()}>

@@ -4,7 +4,7 @@ import { AthleteRepository, type SqlDatabase, type SqlValue } from '../data/athl
 import { readConfig } from '../data/config.ts'
 import { seal, unseal } from '../data/encryption.ts'
 import { exchangeWithConfig, StravaError } from '../data/strava.ts'
-import type { Account, JobPatch } from '../data/store.ts'
+import type { Account, Job, JobPatch } from '../data/store.ts'
 import type { Merge } from '../actions/stitches/merge.ts'
 
 export class AthleteData extends DurableObject<Env> {
@@ -56,8 +56,8 @@ export class AthleteData extends DurableObject<Env> {
   jobs(owner: number) {
     return this.repository.jobs(owner)
   }
-  patchJob(id: string, owner: number, patch: JobPatch) {
-    return this.repository.patchJob(id, owner, patch)
+  patchJob(id: string, owner: number, patch: JobPatch, expectedState?: Job['state']) {
+    return this.repository.patchJob(id, owner, patch, expectedState)
   }
   claimUpload(id: string, owner: number, title: string, description?: string) {
     return this.repository.claimUpload(id, owner, title, description)

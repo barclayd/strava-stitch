@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "wrangler dev --port 44100",
     "build:assets": "node scripts/build-assets.ts",
+    "analytics": "node scripts/analytics-report.ts",
     "build": "wrangler deploy --env production --dry-run --outdir dist/worker",
     "deploy": "wrangler deploy --env production",
     "test": "NODE_ENV=test node --import remix/node-tsx --test --test-concurrency=1",

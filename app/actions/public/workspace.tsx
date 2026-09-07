@@ -202,6 +202,8 @@ export const Workspace = clientEntry(
                 {connected ? (
                   <button
                     class="button button-dark wide"
+                    data-funnel="preview_click"
+                    data-funnel-placement="home"
                     type="submit"
                     disabled={selected.size < 2 || pending}
                   >
@@ -218,6 +220,8 @@ export const Workspace = clientEntry(
                 ) : (
                   <a
                     class={'button button-dark wide' + (selected.size < 2 ? ' disabled' : '')}
+                    data-funnel="example_click"
+                    data-funnel-placement="home"
                     href={selected.size >= 2 ? routes.demo.href() : undefined}
                     aria-disabled={selected.size < 2}
                   >

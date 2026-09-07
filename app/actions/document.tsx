@@ -2,6 +2,8 @@ import type { Handle, RemixNode } from 'remix/ui'
 import { css } from 'remix/ui'
 import { entryHref, entryPreloads, type ClientFeatures } from '../assets.ts'
 import { guideUpdated, indexRobots, noIndex, serializeJsonLd, type PageSeo } from '../seo.ts'
+import type { AnalyticsPage } from '../analytics.ts'
+import { runtime } from '../data/runtime.ts'
 
 export interface DocumentProps {
   children?: RemixNode
@@ -9,10 +11,11 @@ export interface DocumentProps {
   title?: string
   seo?: PageSeo
   clientFeatures?: ClientFeatures
+  analyticsPage?: AnalyticsPage
 }
 export function Document(handle: Handle<DocumentProps>) {
   return () => {
-    const { children, head, title = 'Stitch', seo, clientFeatures } = handle.props
+    const { children, head, title = 'Stitch', seo, clientFeatures, analyticsPage } = handle.props
     return (
       <html lang="en-GB">
         <head>
@@ -87,6 +90,21 @@ export function Document(handle: Handle<DocumentProps>) {
           ))}
           {clientFeatures && (
             <script data-rmx-key="client-runtime" type="module" src={entryHref}></script>
+          )}
+          {analyticsPage && runtime().analytics.enabled && (
+            <>
+              <meta
+                data-rmx-key="analytics-context"
+                name="stitch-analytics"
+                content={analyticsPage}
+                data-render={crypto.randomUUID()}
+              />
+              <script
+                data-rmx-key="site-analytics"
+                type="module"
+                src="/client/analytics.js"
+              ></script>
+            </>
           )}
           {/* Keep this keyed stylesheet last so frame reconciliation neither replaces nor moves it. */}
           <link data-rmx-key="site-styles" rel="stylesheet" href="/styles.css" />

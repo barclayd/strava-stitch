@@ -4,6 +4,7 @@ import { Document } from '../actions/document.tsx'
 import { StravaConnect } from './strava.tsx'
 import type { PageSeo } from '../seo.ts'
 import type { ClientFeatures } from '../assets.ts'
+import type { AnalyticsPage } from '../analytics.ts'
 
 export function Shell(
   handle: Handle<{
@@ -13,6 +14,7 @@ export function Shell(
     title?: string
     seo?: PageSeo
     clientFeatures?: ClientFeatures
+    analyticsPage?: AnalyticsPage
   }>,
 ) {
   return () => (
@@ -20,6 +22,7 @@ export function Shell(
       title={handle.props.title ?? 'Stitch'}
       seo={handle.props.seo}
       clientFeatures={handle.props.clientFeatures}
+      analyticsPage={handle.props.analyticsPage}
     >
       <a class="skip" href="#main">
         Skip to content
@@ -40,7 +43,12 @@ export function Shell(
           <a class="nav-link" href={routes.home.href() + '#how-it-works'}>
             How it works
           </a>
-          <a class="nav-link" href={routes.guide.href()}>
+          <a
+            class="nav-link"
+            href={routes.guide.href()}
+            data-funnel="guide_click"
+            data-funnel-placement="header"
+          >
             Guide
           </a>
           {handle.props.firstname ? (
@@ -59,7 +67,7 @@ export function Shell(
           ) : (
             <form data-rmx-document method="post" action={routes.auth.connect.href()}>
               <input type="hidden" name="_csrf" value={handle.props.csrf} />
-              <StravaConnect />
+              <StravaConnect source="header" />
             </form>
           )}
         </nav>
@@ -74,7 +82,9 @@ export function Shell(
             <img src="/strava-powered-by.svg" alt="Powered by Strava" width="132" />
           </a>
           <a href={routes.privacy.href()}>Privacy & your data</a>
-          <a href={routes.guide.href()}>How to merge activities</a>
+          <a href={routes.guide.href()} data-funnel="guide_click" data-funnel-placement="footer">
+            How to merge activities
+          </a>
           <a href={routes.privacy.href() + '#support'}>Support</a>
         </div>
       </footer>

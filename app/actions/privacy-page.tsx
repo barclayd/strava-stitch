@@ -5,7 +5,7 @@ import type { PageSeo } from '../seo.ts'
 
 export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; seo: PageSeo }>) {
   return () => (
-    <Shell {...handle.props} title="Your data — Stitch">
+    <Shell {...handle.props} title="Your data — Stitch" analyticsPage="privacy">
       <main id="main" class="prose-page">
         <a class="back-link" href={routes.home.href()}>
           ← Back to your activities
@@ -40,11 +40,23 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
           a backup bundle containing reconstructed originals.
         </p>
         <p>
-          Stitch has no advertising, analytics, or AI features. Strava may collect and use API usage
-          information for its business purposes, including improving its services, support, and
-          checking compliance. See the{' '}
+          Stitch has no advertising or AI features. Strava may collect and use API usage information
+          for its business purposes, including improving its services, support, and checking
+          compliance. See the{' '}
           <a href="https://www.strava.com/legal/privacy">Strava Privacy Policy</a> for Strava’s own
           processing of your information.
+        </p>
+        <h2>Understanding how Stitch is used</h2>
+        <p>
+          We use Cloudflare Analytics Engine to count page views, button clicks, successful Strava
+          connections, previews, downloads, and upload outcomes. These events contain fixed page and
+          action labels. They do not contain your identity, IP address, activity details,
+          descriptions, GPS data, search terms, or full URLs. We do not add analytics cookies or
+          identifiers to follow you between visits. Events are kept for three months.
+        </p>
+        <p>
+          We honour your browser’s Do Not Track and Global Privacy Control signals. Cloudflare still
+          processes ordinary network requests to host and protect the service.
         </p>
         <h2>What a backup contains</h2>
         <p>

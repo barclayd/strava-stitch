@@ -109,9 +109,15 @@ export class AthleteRepository {
         return { id, title, state }
       })
   }
-  patchJob(id: string, owner: number, patch: JobPatch): Job | undefined {
+  patchJob(
+    id: string,
+    owner: number,
+    patch: JobPatch,
+    expectedState?: Job['state'],
+  ): Job | undefined {
     const metadata = this.metadata(id)
     if (!metadata || metadata.owner !== owner || this.account()?.id !== owner) return undefined
+    if (expectedState !== undefined && metadata.state !== expectedState) return undefined
     // Late status polls must never move a completed upload backwards.
     if (metadata.state === 'complete' && patch.state && patch.state !== 'complete')
       return this.job(id, owner)

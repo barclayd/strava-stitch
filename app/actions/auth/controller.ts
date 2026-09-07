@@ -6,13 +6,17 @@ import { routes } from '../../routes.ts'
 import { getConfig } from '../../data/config.ts'
 import { exchange, SCOPES } from '../../data/strava.ts'
 import { saveAccount, forgetAccount } from '../../data/store.ts'
+import { placement, type AnalyticsPlacement } from '../../analytics.ts'
+import { track } from '../../data/analytics.ts'
 
 export default createController(routes.auth, {
   actions: {
     connect({ get }) {
       const session = get(Session),
-        state = Buffer.from(randomBytes(32)).toString('hex')
-      session.set('oauth', { state, expires: Date.now() + 600000 })
+        state = Buffer.from(randomBytes(32)).toString('hex'),
+        source = placement(get(FormData).get('source'))
+      session.set('oauth', { state, expires: Date.now() + 600000, source })
+      track('strava_connect_started', 'home', source)
       const params = new URLSearchParams({
         client_id: getConfig().clientId,
         redirect_uri: getConfig().origin + routes.auth.callback.href(),
@@ -25,7 +29,8 @@ export default createController(routes.auth, {
     },
     async callback({ get, url }) {
       const session = get(Session)
-      const pending = session.get('oauth') as { state: string; expires: number } | undefined
+      const pending = session.get('oauth') as
+        { state: string; expires: number; source?: AnalyticsPlacement } | undefined
       session.unset('oauth')
       const state = url.searchParams.get('state') ?? ''
       if (
@@ -39,11 +44,15 @@ export default createController(routes.auth, {
           status: 400,
         })
       if (url.searchParams.has('error')) {
+        track('strava_connect_cancelled', 'home', pending.source)
         session.flash('error', 'Connection cancelled. You can still explore the example.')
         return redirect(routes.home.href(), 303)
       }
       const code = url.searchParams.get('code')
-      if (!code) return new Response('Missing authorization code.', { status: 400 })
+      if (!code) {
+        track('strava_connect_failed', 'home', pending.source)
+        return new Response('Missing authorization code.', { status: 400 })
+      }
       try {
         const data = await exchange({ grant_type: 'authorization_code', code })
         const scope = String(data.scope ?? url.searchParams.get('scope') ?? '')
@@ -65,8 +74,10 @@ export default createController(routes.auth, {
         })
         session.regenerateId(true)
         session.set('athleteId', data.athlete.id)
+        track('strava_connected', 'workspace', pending.source)
         return redirect(routes.home.href(), 303)
       } catch (error) {
+        track('strava_connect_failed', 'home', pending.source)
         session.flash(
           'error',
           error instanceof Error ? error.message : 'Could not connect to Strava.',
