@@ -289,9 +289,9 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
                 </p>
                 <h3>Is Stitch free to use?</h3>
                 <p>
-                  Yes. Previewing, downloading, and uploading through Stitch are free. During early
-                  access, Strava limits how many accounts can connect. You can explore the example
-                  preview without an account.
+                  Yes. Free to use, always. Previewing, downloading, and uploading through Stitch
+                  are all included. During early access, Strava limits how many accounts can
+                  connect. You can explore the example preview without an account.
                 </p>
                 <h3>Can I merge GPX, FIT, or TCX files directly?</h3>
                 <p>

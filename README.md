@@ -1,6 +1,8 @@
 # Stitch
 
-A free TypeScript / Remix 3 application for combining Strava activities into one
+Combine your Strava activities in seconds. Free to use, always.
+
+A TypeScript / Remix 3 application for combining Strava activities into one
 activity of the same sport. Preview the recordings and gaps, download GPX or FIT and backups, then explicitly confirm
 an upload. Production: [stravastitch.com](https://stravastitch.com).
 

@@ -8,7 +8,7 @@ function artwork(kind: 'home' | 'guide' | 'illustration'): string {
   const height = illustration ? 675 : 630
   const title =
     kind === 'home'
-      ? ['Combine your', 'Strava activities.']
+      ? ['Combine your', 'Strava activities in seconds']
       : ['Two activities.', 'Every part together.']
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="${height}" viewBox="0 0 1200 ${height}">
     <rect width="1200" height="${height}" fill="#f4f5ef"/>
@@ -20,7 +20,7 @@ function artwork(kind: 'home' | 'guide' | 'illustration'): string {
     <g font-family="Arial, Helvetica, sans-serif" fill="#242923">
       <path d="M83 51H71a7 7 0 0 0 0 14h8a5 5 0 0 1 0 10H67M67 51v8m16 8v8" fill="none" stroke="#345e51" stroke-width="2.7" stroke-linecap="round"/>
       <text x="100" y="77" font-size="38" font-weight="700" letter-spacing="-2">stitch</text>
-      <text x="1138" y="72" text-anchor="end" font-size="17" fill="#345e51">${kind === 'home' ? 'FREE TO USE' : 'THE STITCH GUIDE'}</text>
+      <text x="1138" y="72" text-anchor="end" font-size="17" fill="#345e51">${kind === 'home' ? 'FREE TO USE, ALWAYS.' : 'THE STITCH GUIDE'}</text>
       <text x="62" y="175" font-size="62" font-weight="700" letter-spacing="-2">${title[0]}</text>
       <text x="62" y="245" font-size="62" font-weight="700" letter-spacing="-2" fill="#345e51">${title[1]}</text>
       <text x="65" y="292" font-size="23" fill="#586354">${kind === 'home' ? 'Runs, rides, swims and more. One sport per stitch.' : 'Original times. Recorded tracks. The pause stays a pause.'}</text>
