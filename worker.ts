@@ -20,7 +20,8 @@ export function createRuntime(env: Env): Runtime {
       job: (id, owner) => athlete(owner).job(id, owner),
       jobs: (owner) => athlete(owner).jobs(owner),
       patchJob: (id, owner, patch) => athlete(owner).patchJob(id, owner, patch),
-      claimUpload: (id, owner, title) => athlete(owner).claimUpload(id, owner, title),
+      claimUpload: (id, owner, title, description) =>
+        athlete(owner).claimUpload(id, owner, title, description),
       credentials: (owner) => athlete(owner).credentials(),
     },
     sessions: persistentSessions({

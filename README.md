@@ -120,8 +120,12 @@ generated from Wrangler configuration; do not edit them by hand.
   history are unavailable or not transferred. Strava may recalculate totals and moving time.
 - Direct uploads explicitly set `sport_type` from the stored recordings. Standalone imports
   may detect a broader sport from GPX/FIT; check the result. Backup ZIPs contain reconstructed
-  sources, the stitched file, sport metadata in `activities.json`, and a limitations README.
+  sources, the stitched file, sport and description metadata in `activities.json`, and a limitations README.
   These are not original device files.
+- The upload form combines nonblank source descriptions in chronological order, separated
+  by a newline. Users can edit or clear the description before confirming an upload.
+  Submitted edits are saved with the title and kept for retries. Descriptions are sent
+  directly to Strava and included in backup metadata, not embedded in GPX/FIT files.
 - OAuth requests `read`, `activity:read`, `activity:read_all`, and `activity:write`.
   Uploads always require explicit confirmation and use the athlete's privacy defaults.
 - Strava has no activity deletion API. Duplicates require a downloaded backup,

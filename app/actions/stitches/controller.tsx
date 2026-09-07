@@ -7,7 +7,7 @@ import * as s from 'remix/data-schema'
 import { routes } from '../../routes.ts'
 import { account, newJob, job, patchJob, claimUpload, type Job } from '../../data/store.ts'
 import * as strava from '../../data/strava.ts'
-import { merge, recording, maxPoints } from './merge.ts'
+import { merge, recording, maxPoints, mergedDescription } from './merge.ts'
 import { activityFile } from './export.ts'
 import { StitchPage } from './page.tsx'
 import { unavailableReason } from '../../data/sports.ts'
@@ -134,10 +134,12 @@ export default createController(routes.stitches, {
           JSON.stringify(
             {
               title: j.title,
+              description: j.description ?? mergedDescription(j.merge),
               sport_type: stitched.sport,
               sources: j.merge.records.map((r) => ({
                 id: r.activity.id,
                 name: r.activity.name,
+                description: r.activity.description ?? '',
                 sport_type: r.activity.sport_type,
               })),
             },
@@ -204,7 +206,8 @@ export default createController(routes.stitches, {
         target = routes.stitches.show.href({ id: params.id })
       if (!auth || !j) return new Response('Not found', { status: 404 })
       const form = get(FormData),
-        title = form.get('title')
+        title = form.get('title'),
+        description = form.get('description') ?? j.description ?? mergedDescription(j.merge)
       if (!auth.scope.includes('activity:write'))
         return fail(session, 'Allow uploads in your Strava connection first.', target)
       if (
@@ -212,12 +215,13 @@ export default createController(routes.stitches, {
         form.get('gaps') !== 'reviewed' ||
         typeof title !== 'string' ||
         !title.trim() ||
-        title.length > 100
+        title.length > 100 ||
+        typeof description !== 'string'
       )
         return fail(session, 'Review the joins and confirm the upload before continuing.', target)
       if (j.state === 'duplicate' && !j.removalConfirmed)
         return fail(session, 'Complete the separate original-removal step before retrying.', target)
-      const claimed = await claimUpload(j.id, auth.id, title.trim())
+      const claimed = await claimUpload(j.id, auth.id, title.trim(), description)
       if (!claimed)
         return fail(
           session,
@@ -231,6 +235,7 @@ export default createController(routes.stitches, {
           file,
           claimed.title,
           `stitch-${claimed.id}.${file.format}`,
+          claimed.description ?? mergedDescription(claimed.merge),
         )
         await updateStatus(claimed, result)
       } catch (error) {

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { merge, recording, toGpx, type Activity, type Streams } from './merge.ts'
+import { merge, mergedDescription, recording, toGpx, type Activity, type Streams } from './merge.ts'
 
 const detail = (id: number, start: string): Activity => ({
   id,
@@ -53,6 +53,23 @@ test('preserves samples, chronological order, stop, extensions, and normalized c
     [...gpx.matchAll(/<time>(.*?)<\/time>/g)].map((r) => Date.parse(r[1]) / 1000),
     m.records.flatMap((r) => r.points.map((p) => p.time)),
   )
+})
+test('combines nonblank descriptions in chronological order without losing internal line breaks', () => {
+  const records = fixture()
+  records[0].activity.description = '  First part\nCoffee stop ☕  '
+  records[1].activity.description = 'The ride home'
+  assert.equal(
+    mergedDescription(merge([...records].reverse())),
+    'First part\nCoffee stop ☕\nThe ride home',
+  )
+  assert.equal(records[0].activity.description, '  First part\nCoffee stop ☕  ')
+  for (const description of [undefined, null, '', ' \n ']) {
+    records[0].activity.description = description
+    assert.equal(mergedDescription(merge(records)), 'The ride home')
+    records[1].activity.description = description
+    assert.equal(mergedDescription(merge(records)), '')
+    records[1].activity.description = 'The ride home'
+  }
 })
 test('rejects repeated activities, overlapping times, inconsistent sports, invalid or partial streams', () => {
   const records = fixture()

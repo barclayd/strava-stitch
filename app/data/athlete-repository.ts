@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { seal, unseal } from './encryption.ts'
 import type { Account, Job, JobPatch, JobSummary } from './store.ts'
-import type { Merge } from '../actions/stitches/merge.ts'
+import { mergedDescription, type Merge } from '../actions/stitches/merge.ts'
 
 export type SqlValue = string | number | null
 export interface SqlDatabase {
@@ -62,6 +62,7 @@ export class AthleteRepository {
       owner,
       created: Date.now(),
       title: 'My activity — stitched',
+      description: mergedDescription(merge),
       merge,
       state: 'ready',
     }
@@ -121,7 +122,7 @@ export class AthleteRepository {
     )
     return this.job(id, owner)
   }
-  claimUpload(id: string, owner: number, title: string): Job | undefined {
+  claimUpload(id: string, owner: number, title: string, description?: string): Job | undefined {
     return this.db.transaction(() => {
       const metadata = this.metadata(id)
       if (!metadata || metadata.owner !== owner || this.account()?.id !== owner) return undefined
@@ -129,7 +130,16 @@ export class AthleteRepository {
       if (metadata.state === 'duplicate' && !metadata.removalConfirmed) return undefined
       this.db.query(
         'UPDATE jobs SET metadata=? WHERE id=?',
-        seal({ ...metadata, title, state: 'submitting', error: undefined }, this.key),
+        seal(
+          {
+            ...metadata,
+            title,
+            description: description ?? metadata.description,
+            state: 'submitting',
+            error: undefined,
+          },
+          this.key,
+        ),
         id,
       )
       return this.job(id, owner)
