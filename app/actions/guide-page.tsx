@@ -270,6 +270,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
               </section>
               <section id="questions">
                 <h2>A few more things to know</h2>
+                <h3>Does Stitch support all Strava activity types?</h3>
+                <p>
+                  Yes. Stitch supports all Strava sport types, including runs, rides, swims, walks,
+                  hikes, e-bike rides, and indoor workouts.
+                </p>
+                <p>
+                  Choose two to eight recorded activities of the same sport per stitch. Run and
+                  Trail Run, for example, are separate types. GPS is optional, but recorded
+                  timestamps are required. Manual entries and activities without a recorded timeline
+                  cannot be stitched.
+                </p>
                 <h3>Is Stitch free to use?</h3>
                 <p>
                   Yes. Previewing, downloading, and uploading through Stitch are free. During early

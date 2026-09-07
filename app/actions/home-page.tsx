@@ -158,6 +158,19 @@ export function HomePage(
             </div>
             <div class="home-questions">
               <details>
+                <summary>Does Stitch support all Strava activity types?</summary>
+                <p>
+                  Yes. Stitch supports all Strava sport types, including runs, rides, swims, walks,
+                  hikes, e-bike rides, and indoor workouts.
+                </p>
+                <p>
+                  Choose two to eight recorded activities of the same sport per stitch. Run and
+                  Trail Run, for example, are separate types. GPS is optional, but recorded
+                  timestamps are required. Manual entries and activities without a recorded timeline
+                  cannot be stitched.
+                </p>
+              </details>
+              <details>
                 <summary>Can I combine activities inside Strava?</summary>
                 <p>
                   Strava has no built-in merge feature. Stitch combines the data from your selected
@@ -171,14 +184,6 @@ export function HomePage(
                   No. Creating a preview leaves your Strava activities intact. If Strava rejects an
                   upload as a duplicate, you decide whether to remove originals yourself after
                   downloading a backup.
-                </p>
-              </details>
-              <details>
-                <summary>Which activities can I stitch?</summary>
-                <p>
-                  All Strava sport types listed in its upload API, with one sport per stitch. Run
-                  and Trail Run, for example, are separate types. Indoor recordings work too; manual
-                  entries and activities without recorded timestamps cannot be stitched.
                 </p>
               </details>
               <details>
