@@ -14,7 +14,8 @@ export const UploadForm = clientEntry(
   ) {
     let confirmed = false,
       gaps = false,
-      pending = false
+      pending = false,
+      description = handle.props.description
     return () => (
       <form
         data-rmx-document
@@ -46,7 +47,11 @@ export const UploadForm = clientEntry(
           id="activity-description"
           name="description"
           rows={5}
-          defaultValue={handle.props.description}
+          value={description}
+          mix={on('input', (event) => {
+            description = event.currentTarget.value
+            handle.update()
+          })}
           aria-describedby="activity-description-help"
           placeholder="Tell the story of your activity…"
         />
