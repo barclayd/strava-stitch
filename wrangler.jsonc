@@ -16,6 +16,7 @@
     "run_worker_first": true,
   },
   "vars": {
+    "ANALYTICS_ENABLED": "false",
     "APP_ORIGIN": "http://localhost:44100",
     "STRAVA_CLIENT_ID": "262735",
     "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "",
@@ -28,6 +29,7 @@
       "STRAVA_WEBHOOK_VERIFY_TOKEN",
     ],
   },
+  "analytics_engine_datasets": [{ "binding": "FUNNEL", "dataset": "strava_stitch_funnel_local" }],
   "durable_objects": {
     "bindings": [
       {
@@ -57,10 +59,14 @@
     "staging": {
       "name": "strava-stitch-staging",
       "vars": {
+        "ANALYTICS_ENABLED": "false",
         "APP_ORIGIN": "https://staging.stravastitch.com",
         "STRAVA_CLIENT_ID": "262735",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "",
       },
+      "analytics_engine_datasets": [
+        { "binding": "FUNNEL", "dataset": "strava_stitch_funnel_staging" },
+      ],
       "secrets": {
         "required": [
           "STRAVA_CLIENT_SECRET",
@@ -92,10 +98,12 @@
     "production": {
       "name": "strava-stitch",
       "vars": {
+        "ANALYTICS_ENABLED": "true",
         "APP_ORIGIN": "https://stravastitch.com",
         "STRAVA_CLIENT_ID": "262735",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "371550",
       },
+      "analytics_engine_datasets": [{ "binding": "FUNNEL", "dataset": "strava_stitch_funnel" }],
       "secrets": {
         "required": [
           "STRAVA_CLIENT_SECRET",

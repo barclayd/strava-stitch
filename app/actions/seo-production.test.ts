@@ -16,6 +16,7 @@ const server = createTestHarness({
         APP_ORIGIN: publicOrigin,
         STRAVA_CLIENT_ID: '123',
         STRAVA_WEBHOOK_SUBSCRIPTION_ID: '99',
+        ANALYTICS_ENABLED: 'true',
       },
       secrets: {
         STRAVA_CLIENT_SECRET: 'test-client-secret',
@@ -75,8 +76,40 @@ test('public production pages send complete, consistent SEO in the initial HTML'
       assert.doesNotMatch(raw, /aggregateRating|FAQPage|private-id|secret-access/)
     }
     if (key === 'home') assert.match(html, /modulepreload/)
-    else assert.doesNotMatch(html, /type="module"|modulepreload/)
+    else {
+      assert.doesNotMatch(html, /modulepreload|src="\/client\/entry.js"/)
+      assert.match(html, /src="\/client\/analytics.js"/)
+    }
   }
+})
+
+test('analytics supports every page without exposing paths, and respects browser opt-outs', async () => {
+  for (const [path, page] of [
+    ['/', 'home'],
+    ['/example', 'example'],
+    ['/guides/merge-strava-activities', 'guide'],
+    ['/privacy', 'privacy'],
+  ]) {
+    const html = await (await get(path + '?private-query=never-collect')).text()
+    assert.match(html, new RegExp(`name="stitch-analytics" content="${page}"`))
+    assert.match(html, /data-render="[a-f0-9-]+"/)
+    assert.equal((html.match(/src="\/client\/analytics.js"/g) ?? []).length, 1)
+    const headResources = [
+      ...html.slice(0, html.indexOf('</head>')).matchAll(/<(?:link|meta|script)\b[^>]*>/g),
+    ]
+    assert.match(headResources.at(-1)![0], /data-rmx-key="site-styles"/)
+  }
+  for (const headers of [{ DNT: '1' }, { 'Sec-GPC': '1' }]) {
+    const response = await worker.fetch(publicOrigin + '/', { headers })
+    assert.doesNotMatch(await response.text(), /stitch-analytics|\/client\/analytics.js/)
+  }
+  const response = await worker.fetch(publicOrigin + '/analytics', {
+    method: 'POST',
+    headers: { Origin: publicOrigin, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event: 'page_view', page: 'home', placement: 'unknown' }),
+  })
+  assert.equal(response.status, 204)
+  assert.equal(response.headers.get('set-cookie'), null)
 })
 
 test('production sitemap lists only public canonicals; robots and HEAD do not create sessions', async () => {

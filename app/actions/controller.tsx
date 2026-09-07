@@ -14,6 +14,7 @@ import { StitchPage } from './stitches/page.tsx'
 import { PrivacyPage } from './privacy-page.tsx'
 import { GuidePage } from './guide-page.tsx'
 import { pageSeo } from '../seo.ts'
+import { track } from '../data/analytics.ts'
 
 export default createController(routes, {
   actions: {
@@ -113,6 +114,7 @@ export default createController(routes, {
       )
     },
     demoDownload() {
+      track('example_downloaded', 'example')
       return new Response(toGpx(exampleRecords, 'Stitch — illustrative example'), {
         headers: {
           'Content-Type': 'application/gpx+xml',

@@ -21,7 +21,13 @@ export function HomePage(
   return () => {
     const p = handle.props
     return (
-      <Shell csrf={p.csrf} firstname={p.firstname} seo={p.seo} clientFeatures="workspace">
+      <Shell
+        csrf={p.csrf}
+        firstname={p.firstname}
+        seo={p.seo}
+        clientFeatures="workspace"
+        analyticsPage={p.firstname ? 'workspace' : 'home'}
+      >
         <main id="main" class="main-content">
           <div class="intro">
             <div class="eyebrow">
@@ -65,7 +71,7 @@ export function HomePage(
               <span>Ready for your own activities?</span>
               <form data-rmx-document method="post" action={routes.auth.connect.href()}>
                 <input type="hidden" name="_csrf" value={p.csrf} />
-                <StravaConnect />
+                <StravaConnect source="home" />
               </form>
               <p>
                 Read your activities and upload when you confirm. Only you see your data in Stitch.
@@ -152,7 +158,12 @@ export function HomePage(
                 Learn how to merge Strava activities, what happens to pauses and sensor data, and
                 how to handle duplicate uploads.
               </p>
-              <a class="inline-link" href={routes.guide.href()}>
+              <a
+                class="inline-link"
+                href={routes.guide.href()}
+                data-funnel="guide_click"
+                data-funnel-placement="home"
+              >
                 Read the guide to merging activities <span aria-hidden="true">→</span>
               </a>
             </div>

@@ -8,6 +8,7 @@ export const routes = route({
   crawl: { robots: get('/robots.txt'), sitemap: get('/sitemap.xml') },
   demo: get('/example'),
   demoDownload: get('/example/download'),
+  analytics: { receive: post('/analytics') },
   auth: {
     connect: post('/auth/strava'),
     callback: get('/auth/strava/callback'),

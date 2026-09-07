@@ -36,7 +36,12 @@ export interface Store {
   newJob(owner: number, merge: Merge): Promise<Job>
   job(id: string, owner: number): Promise<Job | undefined>
   jobs(owner: number): Promise<JobSummary[]>
-  patchJob(id: string, owner: number, patch: JobPatch): Promise<Job | undefined>
+  patchJob(
+    id: string,
+    owner: number,
+    patch: JobPatch,
+    expectedState?: Job['state'],
+  ): Promise<Job | undefined>
   claimUpload(
     id: string,
     owner: number,
@@ -51,7 +56,11 @@ export const forgetAccount = (id: number) => runtime().store.forgetAccount(id)
 export const newJob = (owner: number, merge: Merge) => runtime().store.newJob(owner, merge)
 export const job = (id: string, owner: number) => runtime().store.job(id, owner)
 export const jobs = (owner: number) => runtime().store.jobs(owner)
-export const patchJob = (id: string, owner: number, patch: JobPatch) =>
-  runtime().store.patchJob(id, owner, patch)
+export const patchJob = (
+  id: string,
+  owner: number,
+  patch: JobPatch,
+  expectedState?: Job['state'],
+) => runtime().store.patchJob(id, owner, patch, expectedState)
 export const claimUpload = (id: string, owner: number, title: string, description?: string) =>
   runtime().store.claimUpload(id, owner, title, description)

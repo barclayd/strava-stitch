@@ -4,12 +4,14 @@ import { withRuntime, type Runtime } from './app/data/runtime.ts'
 import { persistentSessions } from './app/data/sessions.ts'
 import { isPublicPath, noIndex, publicOrigin, robots, sitemap } from './app/seo.ts'
 import { routes } from './app/routes.ts'
+import { createAnalytics, receiveAnalytics } from './app/data/analytics.ts'
 export { AthleteData, BrowserSession } from './app/cloudflare/durable-objects.ts'
 
-export function createRuntime(env: Env): Runtime {
+export function createRuntime(env: Env, request?: Request): Runtime {
   const athlete = (owner: number) => env.ATHLETES.getByName(String(owner))
   return {
     config: readConfig(env),
+    analytics: createAnalytics(env, request),
     store: {
       account: (owner) => athlete(owner).account(),
       saveAccount: (value) => athlete(value.id).saveAccount(value),
@@ -19,7 +21,8 @@ export function createRuntime(env: Env): Runtime {
       newJob: (owner, merge) => athlete(owner).newJob(owner, merge),
       job: (id, owner) => athlete(owner).job(id, owner),
       jobs: (owner) => athlete(owner).jobs(owner),
-      patchJob: (id, owner, patch) => athlete(owner).patchJob(id, owner, patch),
+      patchJob: (id, owner, patch, expectedState) =>
+        athlete(owner).patchJob(id, owner, patch, expectedState),
       claimUpload: (id, owner, title, description) =>
         athlete(owner).claimUpload(id, owner, title, description),
       credentials: (owner) => athlete(owner).credentials(),
@@ -62,8 +65,10 @@ export default {
   async fetch(request, env): Promise<Response> {
     try {
       const url = new URL(request.url),
-        runtime = createRuntime(env)
+        runtime = createRuntime(env, request)
       if (url.origin !== runtime.config.origin) return unindexedError('Unrecognized host.', 403)
+      if (url.pathname === routes.analytics.receive.href())
+        return receiveAnalytics(request, runtime.analytics)
       if (['GET', 'HEAD'].includes(request.method)) {
         // Public crawl resources do not need a session, CSRF cookie, or Durable Object lookup.
         const isRobots = url.pathname === routes.crawl.robots.href()
