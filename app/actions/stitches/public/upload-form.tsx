@@ -19,12 +19,12 @@ export const UploadForm = clientEntry(
         })}
       >
         <input type="hidden" name="_csrf" value={handle.props.csrf} />
-        <label class="field-label" for="ride-title">
-          Give your whole ride a name
+        <label class="field-label" for="activity-title">
+          Give your activity a name
         </label>
         <input
           class="title-input"
-          id="ride-title"
+          id="activity-title"
           name="title"
           required
           maxLength={100}
@@ -58,7 +58,7 @@ export const UploadForm = clientEntry(
               handle.update()
             })}
           />
-          <span>Upload this stitched ride using my Strava account’s default visibility.</span>
+          <span>Upload this stitched activity using my Strava account’s default visibility.</span>
         </label>
         <button
           class="button button-dark wide"
@@ -90,7 +90,7 @@ export const UploadForm = clientEntry(
 export const UploadStatus = clientEntry(
   '/client/upload-form.js#UploadStatus',
   function UploadStatus(handle: Handle<{ id: string }>) {
-    let message = 'Strava is processing your ride…',
+    let message = 'Strava is processing your activity…',
       checking = false
     async function check(signal?: AbortSignal) {
       if (checking) return

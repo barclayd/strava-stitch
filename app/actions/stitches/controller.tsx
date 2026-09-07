@@ -7,8 +7,10 @@ import * as s from 'remix/data-schema'
 import { routes } from '../../routes.ts'
 import { account, newJob, job, patchJob, claimUpload, type Job } from '../../data/store.ts'
 import * as strava from '../../data/strava.ts'
-import { merge, recording, toGpx, maxPoints } from './merge.ts'
+import { merge, recording, maxPoints } from './merge.ts'
+import { activityFile } from './export.ts'
 import { StitchPage } from './page.tsx'
+import { unavailableReason } from '../../data/sports.ts'
 
 function identity(session: Session) {
   const id = session.get('athleteId')
@@ -72,15 +74,19 @@ export default createController(routes.stitches, {
             detail = await strava.activity(auth.id, id)
           if (detail.id !== id || detail.athlete?.id !== auth.id)
             return fail(session, 'Every activity must belong to your connected Strava account.')
+          const unavailable = unavailableReason(detail)
+          if (unavailable) throw new Error(unavailable)
           const source = await strava.streams(auth.id, id)
           points += source.time?.data?.length ?? 0
           if (points > maxPoints)
             throw new Error(
-              'Choose activities with up to 50,000 GPS points in total. No samples have been removed.',
+              'Choose activities with up to 50,000 recorded samples in total. No samples have been removed.',
             )
           records.push(recording(detail, source))
         }
-        const j = await newJob(auth.id, merge(records))
+        const merged = merge(records)
+        activityFile(merged.records, 'Stitched activity')
+        const j = await newJob(auth.id, merged)
         return redirect(routes.stitches.show.href({ id: j.id }), 303)
       } catch (error) {
         return fail(session, problem(error))
@@ -109,10 +115,11 @@ export default createController(routes.stitches, {
       const auth = await identity(get(Session)),
         j = auth ? await job(params.id, auth.id) : undefined
       if (!j) return new Response('Not found', { status: 404 })
-      return new Response(toGpx(j.merge.records, j.title), {
+      const file = activityFile(j.merge.records, j.title)
+      return new Response(file.data, {
         headers: {
-          'Content-Type': 'application/gpx+xml',
-          'Content-Disposition': 'attachment; filename="stitched-ride.gpx"',
+          'Content-Type': file.contentType,
+          'Content-Disposition': `attachment; filename="stitched-activity.${file.format}"`,
         },
       })
     },
@@ -120,14 +127,32 @@ export default createController(routes.stitches, {
       const auth = await identity(get(Session)),
         j = auth ? await job(params.id, auth.id) : undefined
       if (!j) return new Response('Not found', { status: 404 })
+      const stitched = activityFile(j.merge.records, j.title)
       const files: Record<string, Uint8Array> = {
-        'stitched-ride.gpx': strToU8(toGpx(j.merge.records, j.title)),
+        [`stitched-activity.${stitched.format}`]: stitched.data,
+        'activities.json': strToU8(
+          JSON.stringify(
+            {
+              title: j.title,
+              sport_type: stitched.sport,
+              sources: j.merge.records.map((r) => ({
+                id: r.activity.id,
+                name: r.activity.name,
+                sport_type: r.activity.sport_type,
+              })),
+            },
+            null,
+            2,
+          ),
+        ),
         'README.txt': strToU8(
-          'Stitch backup\n\nThese GPX files were reconstructed from Strava GPS streams. They preserve original timestamps, GPS and available elevation, distance, temperature, heart rate and cadence. They are not original Garmin/FIT files. Photos, kudos, comments, laps and device metadata are not included. Download original files from Strava separately if you need a complete device recording.\n',
+          'Stitch backup\n\nThese files were reconstructed from Strava streams, not original device files. GPS recordings use GPX; recordings without GPS use FIT. Original timestamps and available GPS, elevation, temperature, heart rate and cadence are included, at the precision supported by each format. Recorded distance is included when complete across all selected activities; FIT also includes summary distances. FIT laps mark source boundaries, not original laps. Photos, kudos, comments, original laps, pool lengths, workout sets, measured power and device metadata are not included. FIT timer pauses mark gaps between recordings; original within-activity pause events are unavailable.\n\nactivities.json records the exact Strava sport. Stitch sets it automatically for direct uploads. Check the sport when importing downloaded files yourself, because file-based sport detection varies. Download original files from Strava separately if you need a complete device recording.\n',
         ),
       }
-      for (const r of j.merge.records)
-        files[`original-${r.activity.id}.gpx`] = strToU8(toGpx([r], r.activity.name))
+      for (const r of j.merge.records) {
+        const file = activityFile([r], r.activity.name)
+        files[`original-${r.activity.id}.${file.format}`] = file.data
+      }
       const zip = zipSync(files)
       await patchJob(j.id, j.owner, { backupDownloaded: true })
       return new Response(new Uint8Array(zip), {
@@ -200,11 +225,12 @@ export default createController(routes.stitches, {
           target,
         )
       try {
+        const file = activityFile(claimed.merge.records, claimed.title)
         const result = await strava.upload(
           auth.id,
-          toGpx(claimed.merge.records, claimed.title),
+          file,
           claimed.title,
-          `stitch-${claimed.id}.gpx`,
+          `stitch-${claimed.id}.${file.format}`,
         )
         await updateStatus(claimed, result)
       } catch (error) {

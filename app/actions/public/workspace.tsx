@@ -1,13 +1,14 @@
 import { clientEntry, on, type Handle } from 'remix/ui'
 import { routes } from '../../routes.ts'
 import { RouteMap } from '../../ui/public/route-map.tsx'
-import { colours, labelColours, duration, km, day, time, type Ride } from './format.ts'
+import { colours, labelColours, duration, km, day, time, type ActivitySummary } from './format.ts'
+import { sportLabel } from '../../data/sports.ts'
 
 export const Workspace = clientEntry(
   '/client/workspace.js#Workspace',
   function Workspace(
     handle: Handle<{
-      rides: Ride[]
+      activities: ActivitySummary[]
       csrf: string
       connected: boolean
       page: number
@@ -18,21 +19,30 @@ export const Workspace = clientEntry(
       query = '',
       pending = false,
       selectionError = ''
-    if (!handle.props.connected) selected = new Set(handle.props.rides.slice(0, 2).map((r) => r.id))
+    if (!handle.props.connected)
+      selected = new Set(handle.props.activities.slice(0, 2).map((r) => r.id))
     function toggle(id: number) {
+      const activity = handle.props.activities.find((r) => r.id === id),
+        first = handle.props.activities.find((r) => selected.has(r.id))
+      selectionError = ''
       if (selected.has(id)) selected.delete(id)
+      else if (!activity || activity.unavailable)
+        selectionError = activity?.unavailable ?? 'Activity unavailable.'
+      else if (first && first.sport !== activity.sport)
+        selectionError = `Choose ${sportLabel(first.sport)} activities for this stitch, or deselect them to start another sport.`
       else if (selected.size < 8) selected.add(id)
       else selectionError = 'Choose up to eight activities at a time.'
-      if (selected.size < 8) selectionError = ''
       handle.update()
     }
     return () => {
-      const { rides, csrf, connected, page, hasMore } = handle.props
-      const chosen = rides
+      const { activities, csrf, connected, page, hasMore } = handle.props
+      const chosen = activities
         .filter((r) => selected.has(r.id))
         .sort((a, b) => Date.parse(a.start) - Date.parse(b.start))
-      const visible = rides.filter((r) =>
-        (r.name + ' ' + day(r.start)).toLowerCase().includes(query.toLowerCase()),
+      const visible = activities.filter((r) =>
+        (r.name + ' ' + day(r.start) + ' ' + sportLabel(r.sport))
+          .toLowerCase()
+          .includes(query.toLowerCase()),
       )
       const metres = chosen.reduce((n, r) => n + r.distance, 0),
         moving = chosen.reduce((n, r) => n + r.moving, 0)
@@ -43,15 +53,17 @@ export const Workspace = clientEntry(
               <h2 id="activities-title">
                 {connected ? 'Your activities' : 'Try it with a sample ride'}
               </h2>
-              <span class="count-badge">{rides.length}</span>
+              <span class="count-badge">{activities.length}</span>
             </div>
-            <p class="panel-description">Choose the parts of one ride. We’ll put them in order.</p>
+            <p class="panel-description">
+              Choose two to eight activities of the same sport. We’ll put them in order.
+            </p>
             {connected ? (
               <label class="search">
                 <span aria-hidden="true">⌕</span>
                 <input
                   type="search"
-                  placeholder="Find an activity…"
+                  placeholder="Search by name, date, or sport…"
                   aria-label="Search activities on this page"
                   value={query}
                   mix={on('input', (e) => {
@@ -81,12 +93,26 @@ export const Workspace = clientEntry(
               <div class="ride-list">
                 {visible.map((r) => {
                   const index = chosen.findIndex((c) => c.id === r.id),
-                    active = index >= 0
+                    active = index >= 0,
+                    unavailable =
+                      r.unavailable ??
+                      (chosen.length && chosen[0].sport !== r.sport
+                        ? `Choose ${sportLabel(chosen[0].sport)} activities, or clear your selection to switch sport.`
+                        : undefined)
                   return (
-                    <label class={'ride-row' + (active ? ' selected' : '')} key={r.id}>
+                    <label
+                      class={
+                        'ride-row' +
+                        (active ? ' selected' : '') +
+                        (unavailable ? ' unavailable' : '')
+                      }
+                      key={r.id}
+                    >
                       <input
                         type="checkbox"
                         checked={active}
+                        disabled={!!unavailable}
+                        aria-describedby={unavailable ? `activity-${r.id}-reason` : undefined}
                         aria-label={'Select ' + r.name}
                         mix={on('change', () => toggle(r.id))}
                       />
@@ -102,10 +128,11 @@ export const Workspace = clientEntry(
                             class="ride-order"
                             style={active ? { color: labelColours[index] } : undefined}
                           >
-                            {active ? 'PART ' + (index + 1) : 'RIDE'}
+                            {active ? 'PART ' + (index + 1) : sportLabel(r.sport)}
                           </span>
                         </div>
                         <h3>{r.name}</h3>
+                        {active && <span class="activity-sport">{sportLabel(r.sport)}</span>}
                         <p>
                           <span>
                             {km(r.distance)} <small>km</small>
@@ -115,17 +142,24 @@ export const Workspace = clientEntry(
                             {Math.round(r.elevation)} <small>m ↗</small>
                           </span>
                         </p>
+                        {unavailable && (
+                          <p class="activity-reason" id={`activity-${r.id}-reason`}>
+                            {unavailable}
+                          </p>
+                        )}
                       </div>
                     </label>
                   )
                 })}
                 {!visible.length && (
                   <div class="list-empty">
-                    <h3>{rides.length ? 'No matching activities' : 'No rides here yet'}</h3>
+                    <h3>
+                      {activities.length ? 'No matching activities' : 'No activities here yet'}
+                    </h3>
                     <p>
-                      {rides.length
-                        ? 'Try a different name or date.'
-                        : 'Try another page or record an outdoor ride in Strava.'}
+                      {activities.length
+                        ? 'Try a different name, date, or sport.'
+                        : 'Try another page or record an activity in Strava.'}
                     </p>
                   </div>
                 )}
@@ -146,9 +180,24 @@ export const Workspace = clientEntry(
                 </div>
               )}
               <div class="selection-footer">
-                <span class="selected-caption" aria-live="polite">
-                  {selected.size} {selected.size === 1 ? 'activity' : 'activities'} selected
-                </span>
+                <div class="selection-controls">
+                  <span class="selected-caption" aria-live="polite">
+                    {selected.size} {selected.size === 1 ? 'activity' : 'activities'} selected
+                  </span>
+                  {selected.size > 0 && (
+                    <button
+                      class="text-button"
+                      type="button"
+                      mix={on('click', () => {
+                        selected.clear()
+                        selectionError = ''
+                        handle.update()
+                      })}
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                </div>
                 {selectionError && <p role="alert">{selectionError}</p>}
                 {connected ? (
                   <button
@@ -162,7 +211,7 @@ export const Workspace = clientEntry(
                       </>
                     ) : (
                       <>
-                        Preview stitched ride <span>→</span>
+                        Preview stitched activity <span>→</span>
                       </>
                     )}
                   </button>
@@ -178,13 +227,13 @@ export const Workspace = clientEntry(
               </div>
             </form>
           </section>
-          <section class="visual-panel" aria-label="Your selected ride">
+          <section class="visual-panel" aria-label="Your selected activities">
             <RouteMap
               tracks={chosen.map((r) => ({ id: r.id, name: r.name, coordinates: r.coordinates }))}
             />
             <div class="route-summary">
               <div class="summary-title">
-                <span class="overline">THE RIDE, TOGETHER</span>
+                <span class="overline">ALL THE PARTS, TOGETHER</span>
                 <h3>
                   {chosen.length
                     ? `${chosen.length} ${chosen.length === 1 ? 'part' : 'parts'}. One story.`

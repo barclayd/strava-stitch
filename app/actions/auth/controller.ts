@@ -57,7 +57,7 @@ export default createController(routes.auth, {
           )
         await saveAccount({
           id: data.athlete.id,
-          firstname: String(data.athlete.firstname ?? 'Cyclist'),
+          firstname: String(data.athlete.firstname ?? 'Athlete'),
           scope,
           access_token: data.access_token,
           refresh_token: data.refresh_token,

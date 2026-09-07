@@ -6,8 +6,9 @@ import { Session } from 'remix/session'
 import { getCsrfToken } from 'remix/middleware/csrf'
 import { account, jobs } from '../data/store.ts'
 import { listActivities } from '../data/strava.ts'
-import { cycling, toGpx } from './stitches/merge.ts'
-import { decodePolyline, type Ride } from './public/format.ts'
+import { hasPosition, toGpx } from './stitches/merge.ts'
+import { unavailableReason } from '../data/sports.ts'
+import { decodePolyline, type ActivitySummary } from './public/format.ts'
 import { exampleRecords, exampleMerge } from './example.ts'
 import { StitchPage } from './stitches/page.tsx'
 import { PrivacyPage } from './privacy-page.tsx'
@@ -25,28 +26,27 @@ export default createController(routes, {
       )
       let error = session.get('error') as string | undefined,
         hasMore = false,
-        rides: Ride[] = []
+        activities: ActivitySummary[] = []
       if (auth) {
         try {
           const results = await listActivities(auth.id, page)
           hasMore = results.length === 30
-          rides = results
-            .filter((r) => cycling.has(r.sport_type) && !r.manual)
-            .map((r) => ({
-              id: r.id,
-              name: r.name,
-              start: r.start_date_local ?? r.start_date,
-              distance: r.distance,
-              moving: r.moving_time,
-              elevation: r.total_elevation_gain,
-              sport: r.sport_type,
-              coordinates: decodePolyline(r.map?.summary_polyline ?? ''),
-            }))
+          activities = results.map((r) => ({
+            id: r.id,
+            name: r.name,
+            start: r.start_date_local ?? r.start_date,
+            distance: r.distance,
+            moving: r.moving_time,
+            elevation: r.total_elevation_gain,
+            sport: r.sport_type,
+            unavailable: unavailableReason(r),
+            coordinates: decodePolyline(r.map?.summary_polyline ?? ''),
+          }))
         } catch (e) {
           error = e instanceof Error ? e.message : 'Could not load your activities.'
         }
       } else
-        rides = exampleRecords.map((r) => ({
+        activities = exampleRecords.map((r) => ({
           id: r.activity.id,
           name: r.activity.name,
           start: r.activity.start_date,
@@ -54,12 +54,12 @@ export default createController(routes, {
           moving: r.activity.moving_time,
           elevation: r.activity.total_elevation_gain,
           sport: 'Ride',
-          coordinates: r.points.map((p) => [p.lat, p.lon]),
+          coordinates: r.points.filter(hasPosition).map((p) => [p.lat, p.lon]),
         }))
       return context.render(
         <HomePage
           seo={pageSeo('home', context.url, typeof id === 'number' || !!error)}
-          rides={rides}
+          activities={activities}
           csrf={getCsrfToken(context)}
           firstname={auth?.firstname}
           error={error}

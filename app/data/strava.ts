@@ -2,6 +2,7 @@ import { getConfig, type AppConfig } from './config.ts'
 import { runtime } from './runtime.ts'
 import { type Account } from './store.ts'
 import type { Activity, Streams } from '../actions/stitches/merge.ts'
+import type { ActivityFile } from '../actions/stitches/export.ts'
 
 export class StravaError extends Error {
   constructor(
@@ -105,11 +106,20 @@ export const listActivities = (id: number, page: number) =>
   get<Activity[]>(id, `/athlete/activities?per_page=30&page=${page}`)
 export const activity = (id: number, activityId: number) =>
   get<Activity>(id, `/activities/${activityId}`)
-export const streams = (id: number, activityId: number) =>
-  get<Streams>(
-    id,
-    `/activities/${activityId}/streams?keys=time,latlng,altitude,distance,heartrate,cadence,temp&key_by_type=true`,
-  )
+export async function streams(id: number, activityId: number): Promise<Streams> {
+  try {
+    return await get<Streams>(
+      id,
+      `/activities/${activityId}/streams?keys=time,latlng,altitude,distance,heartrate,cadence,temp&key_by_type=true`,
+    )
+  } catch (error) {
+    if (error instanceof StravaError && error.status === 404)
+      throw new Error(
+        'Strava has no recorded timeline available for this activity. Try another recorded activity.',
+      )
+    throw error
+  }
+}
 export type Upload = {
   id?: number
   id_str?: string
@@ -119,7 +129,7 @@ export type Upload = {
 }
 export async function upload(
   id: number,
-  gpx: string,
+  file: ActivityFile,
   name: string,
   externalId: string,
 ): Promise<Upload> {
@@ -127,9 +137,11 @@ export async function upload(
   if (!auth.scope.includes('activity:write'))
     throw new StravaError(403, 'Allow uploads in your Strava connection to continue.')
   const body = new FormData()
-  body.set('file', new Blob([gpx], { type: 'application/gpx+xml' }), 'stitched.gpx')
+  body.set('file', new Blob([file.data], { type: file.contentType }), `stitched.${file.format}`)
   body.set('name', name)
-  body.set('data_type', 'gpx')
+  body.set('data_type', file.format)
+  body.set('sport_type', file.sport)
+  if (file.trainer) body.set('trainer', '1')
   body.set('external_id', externalId)
   body.set('description', 'Combined with Stitch. Original timestamps and gaps preserved.')
   const response = await fetch(API + '/uploads', {

@@ -95,5 +95,5 @@ test('rejects repeated activities, overlapping times, inconsistent sports, inval
     /backwards/,
   )
   const other = { ...records[1], activity: { ...records[1].activity, sport_type: 'EBikeRide' } }
-  assert.throws(() => merge([records[0], other]), /same cycling/)
+  assert.throws(() => merge([records[0], other]), /same sport/)
 })
