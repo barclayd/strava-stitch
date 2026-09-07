@@ -37,6 +37,33 @@ npm run deploy
 publishing. `deploy` rebuilds and publishes the production environment. Cloudflare
 provisions the configured Durable Objects, custom-domain DNS, and HTTPS.
 
+### Automatic deployments
+
+Cloudflare Workers Builds is connected to `barclayd/strava-stitch`. In the Worker's
+Settings → Builds, keep these settings:
+
+| Setting | Value |
+| --- | --- |
+| Production branch | `main` |
+| Build command | `npm run build` |
+| Deploy command | `npm run deploy` |
+| Version command | `npx wrangler versions upload --env production` |
+| Builds for non-production branches | Enabled |
+| Root directory | `/` |
+
+Merging a pull request into `main` automatically builds and deploys production.
+Other branches build and upload an undeployed version without changing the live
+site. The explicit production environment is essential: bare `wrangler deploy`
+uses the top-level local settings, including the localhost origin.
+
+Cloudflare currently [does not generate preview URLs for Workers that implement
+Durable Objects](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/#limitations),
+including Stitch. Branch build results are available in Cloudflare and GitHub,
+but clickable branch previews are unavailable with the current architecture.
+Use local development to review the application before merging.
+
+### Environment setup
+
 For a new installation, update the account, client ID, and domains in
 `wrangler.jsonc`. Provision each of the four secrets from `.dev.vars.example` with
 `npx wrangler secret put SECRET_NAME --env production` before deploying. A staging
