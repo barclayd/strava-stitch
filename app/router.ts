@@ -10,6 +10,8 @@ import webhookController from './actions/webhooks/controller.ts'
 
 import controller from './actions/controller.tsx'
 import { routes } from './routes.ts'
+import { Session } from 'remix/session'
+import { canIndex, indexRobots, noIndex } from './seo.ts'
 
 const renderMiddleware = render()
 const formMiddleware = formData({ maxFiles: 0, maxParts: 32, maxTotalSize: 65536 })
@@ -43,6 +45,22 @@ export const router = createRouter<AppContext>({
       return response
     },
     sessionMiddleware,
+    async (context, next) => {
+      const session = context.get(Session)
+      const personalized =
+        typeof session?.get('athleteId') === 'number' ||
+        (context.url.pathname === '/' && !!session?.get('error'))
+      const response = await next()
+      response.headers.set(
+        'X-Robots-Tag',
+        response.status === 200 &&
+          ['GET', 'HEAD'].includes(context.request.method) &&
+          canIndex(context.url, personalized)
+          ? indexRobots
+          : noIndex,
+      )
+      return response
+    },
     formMiddleware,
     async (context, next) =>
       context.url.pathname === routes.webhooks.receive.href()

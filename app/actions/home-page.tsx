@@ -4,6 +4,7 @@ import { Workspace } from './public/workspace.tsx'
 import type { Ride } from './public/format.ts'
 import { routes } from '../routes.ts'
 import { StravaConnect } from '../ui/strava.tsx'
+import type { PageSeo } from '../seo.ts'
 
 export function HomePage(
   handle: Handle<{
@@ -14,25 +15,26 @@ export function HomePage(
     page: number
     hasMore: boolean
     recent: { id: string; title: string; state: string }[]
+    seo: PageSeo
   }>,
 ) {
   return () => {
     const p = handle.props
     return (
-      <Shell csrf={p.csrf} firstname={p.firstname}>
+      <Shell csrf={p.csrf} firstname={p.firstname} seo={p.seo} clientFeatures="workspace">
         <main id="main" class="main-content">
           <div class="intro">
             <div class="eyebrow">
               <span class="little-line" /> THE WHOLE RIDE
             </div>
             <h1>
-              Every ride deserves
+              Combine your
               <br />
-              to be <span class="together-word">together.</span>
+              <span class="together-word">Strava activities.</span>
             </h1>
             <p>
               A café stop. A wrong turn. An accidental finish.
-              <br class="desktop-break" /> Bring your Strava activities back into one ride.{' '}
+              <br class="desktop-break" /> Join your split activities into one complete ride.{' '}
               <strong>Free to use.</strong>
             </p>
           </div>
@@ -67,6 +69,10 @@ export function HomePage(
               </form>
               <p>
                 Read your activities and upload when you confirm. Only you see your data in Stitch.
+              </p>
+              <p>
+                Stitch is in early access, with limited Strava connections. Explore the example
+                without an account.
               </p>
             </div>
           )}
@@ -131,6 +137,53 @@ export function HomePage(
                 </div>
               </li>
             </ol>
+          </section>
+          <section class="home-guide" aria-labelledby="home-guide-heading">
+            <div>
+              <span class="overline">A GUIDE TO GETTING IT RIGHT</span>
+              <h2 id="home-guide-heading">
+                Two activities. One ride.
+                <br />A few things to know.
+              </h2>
+              <p>
+                Learn how to merge Strava activities, what happens to pauses and sensor data, and
+                how to handle duplicate uploads.
+              </p>
+              <a class="inline-link" href={routes.guide.href()}>
+                Read the guide to merging activities <span aria-hidden="true">→</span>
+              </a>
+            </div>
+            <div class="home-questions">
+              <details>
+                <summary>Can I combine activities inside Strava?</summary>
+                <p>
+                  Strava has no built-in merge feature. Stitch combines the data from your selected
+                  rides into a new GPX that you can download or upload after reviewing it.
+                </p>
+              </details>
+              <details>
+                <summary>Will Stitch delete my original activities?</summary>
+                <p>
+                  No. Creating a preview leaves your Strava activities intact. If Strava rejects an
+                  upload as a duplicate, you decide whether to remove originals yourself after
+                  downloading a backup.
+                </p>
+              </details>
+              <details>
+                <summary>Can I join rides with a pause between them?</summary>
+                <p>
+                  Yes. Stitch preserves the original timestamps and leaves gaps unconnected.
+                  Overlapping activities are rejected, and missing movement is never invented.
+                </p>
+              </details>
+              <details>
+                <summary>Is it free?</summary>
+                <p>
+                  Yes, Stitch is free to use. Connections are limited during early access. Try the
+                  illustrative example without connecting your account.
+                </p>
+              </details>
+            </div>
           </section>
         </main>
       </Shell>

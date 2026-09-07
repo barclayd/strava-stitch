@@ -19,6 +19,17 @@ export const colours = [
   '#55758a',
   '#888b41',
 ]
+// Matching hues with enough contrast for small labels and white numbered badges.
+export const labelColours = [
+  '#345e51',
+  '#a25726',
+  '#776596',
+  '#376680',
+  '#805d2b',
+  '#9a596c',
+  '#55758a',
+  '#666a2c',
+]
 export function duration(seconds: number) {
   const n = Math.round(seconds)
   return `${Math.floor(n / 3600)}:${String(Math.floor(n / 60) % 60).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`

@@ -2,12 +2,25 @@ import type { Handle, RemixNode } from 'remix/ui'
 import { routes } from '../routes.ts'
 import { Document } from '../actions/document.tsx'
 import { StravaConnect } from './strava.tsx'
+import type { PageSeo } from '../seo.ts'
+import type { ClientFeatures } from '../assets.ts'
 
 export function Shell(
-  handle: Handle<{ children?: RemixNode; firstname?: string; csrf: string; title?: string }>,
+  handle: Handle<{
+    children?: RemixNode
+    firstname?: string
+    csrf: string
+    title?: string
+    seo?: PageSeo
+    clientFeatures?: ClientFeatures
+  }>,
 ) {
   return () => (
-    <Document title={handle.props.title ?? 'Stitch — Make the whole ride yours'}>
+    <Document
+      title={handle.props.title ?? 'Stitch'}
+      seo={handle.props.seo}
+      clientFeatures={handle.props.clientFeatures}
+    >
       <a class="skip" href="#main">
         Skip to content
       </a>
@@ -26,6 +39,9 @@ export function Shell(
         <nav aria-label="Main navigation">
           <a class="nav-link" href={routes.home.href() + '#how-it-works'}>
             How it works
+          </a>
+          <a class="nav-link" href={routes.guide.href()}>
+            Guide
           </a>
           {handle.props.firstname ? (
             <>
@@ -58,6 +74,7 @@ export function Shell(
             <img src="/strava-powered-by.svg" alt="Powered by Strava" width="132" />
           </a>
           <a href={routes.privacy.href()}>Privacy & your data</a>
+          <a href={routes.guide.href()}>How to merge activities</a>
           <a href={routes.privacy.href() + '#support'}>Support</a>
         </div>
       </footer>
@@ -67,7 +84,7 @@ export function Shell(
 export function Alert(handle: Handle<{ message?: string }>) {
   return () =>
     handle.props.message ? (
-      <div class="alert" role="alert">
+      <div class="alert" role="alert" data-nosnippet>
         {handle.props.message}
       </div>
     ) : null

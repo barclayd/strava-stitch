@@ -93,3 +93,25 @@ generated from Wrangler configuration; do not edit them by hand.
 
 See [AGENTS.md](AGENTS.md) for code organization. Retain the DM Sans licence in
 `public/fonts/` when distributing the application.
+
+## Search visibility
+
+Public titles, descriptions, canonical URLs, social images, and structured data
+live in `app/seo.ts`. The homepage and merging guide are server-rendered; the guide
+and privacy page load no client JavaScript. Edit the guide in
+`app/actions/guide-page.tsx` and update its visible date and `guideUpdated` only when
+the content materially changes. `scripts/build-images.ts` generates the share cards
+and icons during the asset build; no athlete data is used in the artwork.
+
+Only the production homepage, guide, and privacy page appear in `/sitemap.xml`.
+Private pages, downloads, signed-in responses, query variants, and non-production
+hosts send `noindex`; authentication remains the access control. Keep session-bearing
+HTML private/no-store. Add future public pages to the registry and typed routes.
+
+In [Google Search Console](https://search.google.com/search-console), use the
+`stravastitch.com` Domain property, verify ownership through DNS, and retain its
+verification record. After deployment, submit
+`https://stravastitch.com/sitemap.xml` and inspect the homepage and guide URLs.
+Track impressions, clicks, CTR, and average position for a query regex such as
+`(join|combine|merge).*strava.*activit` in Performance. Search Console requires no
+analytics script in Stitch. Indexing and ranking take time and are not guaranteed.

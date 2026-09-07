@@ -1,8 +1,11 @@
 import { get, post, route } from 'remix/routes'
+import { publicPages } from './seo.ts'
 
 export const routes = route({
-  home: '/',
-  privacy: get('/privacy'),
+  home: publicPages.home.path,
+  privacy: get(publicPages.privacy.path),
+  guide: get(publicPages.guide.path),
+  crawl: { robots: get('/robots.txt'), sitemap: get('/sitemap.xml') },
   demo: get('/example'),
   demoDownload: get('/example/download'),
   auth: {
