@@ -28,6 +28,7 @@ export const publicPages = {
     imageAlt:
       'Stitch: Combine your Strava activities in seconds. Free to use, always. Two activities with the pause preserved.',
   },
+  ...guideTopics,
 } as const
 export type PublicPage = keyof typeof publicPages
 export type PageSeo = {
@@ -50,13 +51,19 @@ export function canIndex(url: URL, personalized = false): boolean {
 }
 export function pageSeo(page: PublicPage, url: URL, personalized = false): PageSeo {
   const value = publicPages[page]
+  const article = page === 'guide' || page in guideTopics
   return {
     ...value,
     canonical: publicOrigin + value.path,
     image: publicOrigin + value.image,
-    type: page === 'guide' ? 'article' : 'website',
+    type: article ? 'article' : 'website',
     indexable: canIndex(url, personalized),
-    structuredData: page === 'home' ? homeSchema() : page === 'guide' ? guideSchema() : undefined,
+    structuredData:
+      page === 'home'
+        ? homeSchema()
+        : article
+          ? guideSchema(page as 'guide' | GuideTopic)
+          : undefined,
   }
 }
 // JSON-LD is raw text inside a script element, so a literal closing tag must never be possible.
@@ -89,19 +96,21 @@ function homeSchema(): Record<string, unknown> {
     ],
   }
 }
-function guideSchema(): Record<string, unknown> {
-  const url = publicOrigin + publicPages.guide.path
+function guideSchema(page: 'guide' | GuideTopic): Record<string, unknown> {
+  const value = publicPages[page]
+  const url = publicOrigin + value.path
   return {
     '@context': 'https://schema.org',
     '@graph': [
       {
         '@type': 'Article',
         '@id': url + '#article',
-        headline: 'How to merge Strava activities',
-        description: publicPages.guide.description,
+        headline: page === 'guide' ? 'How to merge Strava activities' : guideTopics[page].heading,
+        description: value.description,
         mainEntityOfPage: url,
         url,
-        dateModified: guideUpdated + 'T00:00:00+00:00',
+        dateModified:
+          (page === 'guide' ? guideUpdated : guideTopics[page].updated) + 'T00:00:00+00:00',
         author: publisher,
         publisher,
         inLanguage: 'en-GB',
@@ -116,7 +125,15 @@ function guideSchema(): Record<string, unknown> {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: 'Stitch', item: publicOrigin + '/' },
-          { '@type': 'ListItem', position: 2, name: 'Merge Strava activities', item: url },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Merge Strava activities',
+            item: publicOrigin + publicPages.guide.path,
+          },
+          ...(page === 'guide'
+            ? []
+            : [{ '@type': 'ListItem', position: 3, name: guideTopics[page].label, item: url }]),
         ],
       },
     ],
@@ -130,7 +147,7 @@ export function sitemap(origin: string): string {
     entries
       .map(
         ([key, page]) =>
-          `  <url><loc>${publicOrigin}${page.path}</loc>${key === 'guide' ? `<lastmod>${guideUpdated}</lastmod>` : ''}</url>`,
+          `  <url><loc>${publicOrigin}${page.path}</loc>${key === 'guide' ? `<lastmod>${guideUpdated}</lastmod>` : 'updated' in page ? `<lastmod>${page.updated}</lastmod>` : ''}</url>`,
       )
       .join('\n') +
     '\n</urlset>\n'
@@ -142,3 +159,4 @@ export function robots(origin: string): string {
     ? `User-agent: *\nAllow: /\n\nSitemap: ${publicOrigin}/sitemap.xml\n`
     : 'User-agent: *\nDisallow: /\n'
 }
+import { guideTopics, type GuideTopic } from './guide-topics.ts'
