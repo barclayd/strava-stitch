@@ -2,6 +2,7 @@ import type { Handle } from 'remix/ui'
 import { Shell } from '../ui/shell.tsx'
 import { routes } from '../routes.ts'
 import { guideUpdated, type PageSeo } from '../seo.ts'
+import { guideTopics, guideTopicKeys } from '../guide-topics.ts'
 
 export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
   return () => (
@@ -53,6 +54,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
               <a href="#pauses-and-gaps">Pauses and gaps</a>
               <a href="#duplicates">Duplicate uploads</a>
               <a href="#questions">Common questions</a>
+              <a href="#more-guides">Guides for your activity</a>
             </nav>
             <div class="article-body">
               <section id="can-you-merge">
@@ -331,6 +333,26 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
                   identifiers that follow you between visits, and you can remove your connection and
                   previews at any time.
                 </p>
+              </section>
+              <section id="more-guides">
+                <h2>Guides for your activity</h2>
+                <p>
+                  Work through a split recording, check what carries across for your sport, or
+                  resolve a duplicate upload.
+                </p>
+                <ul>
+                  {guideTopicKeys.map((key) => (
+                    <li key={key}>
+                      <a
+                        href={routes[key].href()}
+                        data-funnel="guide_click"
+                        data-funnel-placement="guide"
+                      >
+                        {guideTopics[key].heading}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </section>
               <aside class="guide-cta">
                 <span class="overline">BRING EVERY PART TOGETHER</span>

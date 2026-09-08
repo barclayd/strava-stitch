@@ -13,6 +13,7 @@ import { exampleRecords, exampleMerge, examplePreview } from './example.ts'
 import { ExamplePage } from './example-page.tsx'
 import { PrivacyPage } from './privacy-page.tsx'
 import { GuidePage } from './guide-page.tsx'
+import { TopicGuidePage } from './topic-guide-page.tsx'
 import { pageSeo } from '../seo.ts'
 import { track } from '../data/analytics.ts'
 
@@ -81,6 +82,58 @@ export default createController(routes, {
           csrf={getCsrfToken(context)}
           seo={pageSeo(
             'guide',
+            context.url,
+            typeof context.get(Session).get('athleteId') === 'number',
+          )}
+        />,
+      )
+    },
+    duplicateGuide(context) {
+      return context.render(
+        <TopicGuidePage
+          topic="duplicateGuide"
+          csrf={getCsrfToken(context)}
+          seo={pageSeo(
+            'duplicateGuide',
+            context.url,
+            typeof context.get(Session).get('athleteId') === 'number',
+          )}
+        />,
+      )
+    },
+    indoorGuide(context) {
+      return context.render(
+        <TopicGuidePage
+          topic="indoorGuide"
+          csrf={getCsrfToken(context)}
+          seo={pageSeo(
+            'indoorGuide',
+            context.url,
+            typeof context.get(Session).get('athleteId') === 'number',
+          )}
+        />,
+      )
+    },
+    runGuide(context) {
+      return context.render(
+        <TopicGuidePage
+          topic="runGuide"
+          csrf={getCsrfToken(context)}
+          seo={pageSeo(
+            'runGuide',
+            context.url,
+            typeof context.get(Session).get('athleteId') === 'number',
+          )}
+        />,
+      )
+    },
+    rideGuide(context) {
+      return context.render(
+        <TopicGuidePage
+          topic="rideGuide"
+          csrf={getCsrfToken(context)}
+          seo={pageSeo(
+            'rideGuide',
             context.url,
             typeof context.get(Session).get('athleteId') === 'number',
           )}

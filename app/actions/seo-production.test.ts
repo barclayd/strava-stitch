@@ -6,6 +6,7 @@ import { createCookie } from 'remix/cookie'
 import { createSession } from 'remix/session'
 import { publicPages, publicOrigin } from '../seo.ts'
 import { basemapPath, basemapKey } from '../maps.ts'
+import { guideTopics, guideTopicKeys } from '../guide-topics.ts'
 
 // Exercise the production origin entirely inside the local Worker harness; no live account calls.
 const sessionSecret = Buffer.from(randomBytes(40)).toString('hex')
@@ -142,6 +143,7 @@ test('analytics supports every page without exposing paths, and respects browser
     ['/example', 'example'],
     ['/guides/merge-strava-activities', 'guide'],
     ['/privacy', 'privacy'],
+    ...guideTopicKeys.map((key) => [guideTopics[key].path, key]),
   ]) {
     const html = await (await get(path + '?private-query=never-collect')).text()
     assert.match(html, new RegExp(`name="stitch-analytics" content="${page}"`))
@@ -254,7 +256,7 @@ test('share cards and icons are real publicly crawlable PNGs at their declared d
   }
 })
 
-test('an athlete session makes even the production homepage and guide unindexable', async () => {
+test('an athlete session makes every public page unindexable', async () => {
   const session = createSession()
   session.set('athleteId', 987654321)
   const id = session.id
@@ -263,12 +265,37 @@ test('an athlete session makes even the production homepage and guide unindexabl
   const cookie = (
     await createCookie('stitch_session', { secrets: [sessionSecret] }).serialize(id)
   ).split(';')[0]
-  for (const path of ['/', '/privacy', publicPages.guide.path]) {
+  for (const { path } of Object.values(publicPages)) {
     const response = await worker.fetch(publicOrigin + path, { headers: { Cookie: cookie } })
     assert.equal(response.status, 200)
     assert.match(response.headers.get('x-robots-tag')!, /noindex/)
     const html = await response.text()
     assert.match(html, /name="robots" content="noindex, nofollow"/)
     assert.doesNotMatch(html, /987654321/)
+  }
+})
+
+test('focused guides are discoverable and describe their own article and breadcrumb', async () => {
+  const hub = await (await get(publicPages.guide.path)).text()
+  for (const [key, topic] of Object.entries(guideTopics)) {
+    assert.ok(hub.includes(`href="${topic.path}"`), key)
+    const html = await (await get(topic.path)).text()
+    assert.ok(html.includes(`<h1>${topic.heading}</h1>`), key)
+    const graph = JSON.parse(
+      html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)![1],
+    )['@graph']
+    const article = graph.find((item: { '@type': string }) => item['@type'] === 'Article')
+    assert.equal(article.headline, topic.heading)
+    assert.equal(article.url, publicOrigin + topic.path)
+    const breadcrumbs = graph.find(
+      (item: { '@type': string }) => item['@type'] === 'BreadcrumbList',
+    ).itemListElement
+    assert.deepEqual(
+      breadcrumbs.map((item: { item: string }) => item.item),
+      [publicOrigin + '/', publicOrigin + publicPages.guide.path, publicOrigin + topic.path],
+    )
+    assert.ok(html.includes(`href="${publicPages.guide.path}"`))
+    const variant = await get(topic.path + '?source=test')
+    assert.match(variant.headers.get('x-robots-tag')!, /noindex/)
   }
 })

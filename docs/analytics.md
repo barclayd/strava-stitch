@@ -87,7 +87,9 @@ An anonymous click endpoint cannot establish that every accepted event came from
 Each row contains `blob1 = event`, `blob2 = page`, `blob3 = placement`,
 `blob4 = schema version (v1)`, and `double1 = 1`. `index1` is the event name and
 Cloudflare supplies the timestamp and sampling weight. Page labels are `home`,
-`workspace`, `example`, `preview`, `guide`, and `privacy`. Placement labels are
+`workspace`, `example`, `preview`, `guide`, `duplicateGuide`, `indoorGuide`,
+`runGuide`, `rideGuide`, and `privacy`. These fixed topic labels distinguish guide
+visits without collecting URLs or search terms. Placement labels are
 `header`, `home`, `example`, `preview`, `guide`, `footer`, or `unknown`.
 OAuth keeps the selected placement through the callback so connections can be compared by CTA.
 

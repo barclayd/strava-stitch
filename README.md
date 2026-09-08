@@ -160,7 +160,11 @@ and privacy page load no client JavaScript. Edit the guide in
 the content materially changes. `scripts/build-images.ts` generates the share cards
 and icons during the asset build; no athlete data is used in the artwork.
 
-Only the production homepage, guide, and privacy page appear in `/sitemap.xml`.
+Only the production homepage, public guides, and privacy page appear in `/sitemap.xml`.
+Focused guide metadata lives in `app/guide-topics.ts`, with article sections in
+`app/actions/guide-sections.tsx`. Keep each topic useful on its own, with distinct
+examples, accurate limitations, and links from the main guide. Merge, combine,
+and stitch wording belongs together; do not create duplicate synonym pages.
 Private pages, downloads, signed-in responses, query variants, and non-production
 hosts send `noindex`; authentication remains the access control. Keep session-bearing
 HTML private/no-store. Add future public pages to the registry and typed routes.
