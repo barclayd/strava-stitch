@@ -1,5 +1,50 @@
 import { clientEntry, on, ref, type Handle } from 'remix/ui'
 import { routes } from '../../../routes.ts'
+import { ActivityFields } from '../../../ui/activity-fields.tsx'
+
+export const ExampleDetails = clientEntry(
+  '/client/upload-form.js#ExampleDetails',
+  function ExampleDetails(handle: Handle<{ title: string; description: string }>) {
+    let title = handle.props.title,
+      description = handle.props.description
+    return () => (
+      <section class="example-details" aria-labelledby="example-details-heading">
+        <h2 id="example-details-heading">Your title and story, together.</h2>
+        <p class="example-details-intro">
+          Both original titles are combined for you. The descriptions come along too. Try editing
+          them, just as you can before uploading your own stitch to Strava.
+        </p>
+        <ActivityFields
+          idPrefix="example"
+          title={title}
+          description={description}
+          onTitleInput={(value) => {
+            title = value
+            handle.update()
+          }}
+          onDescriptionInput={(value) => {
+            description = value
+            handle.update()
+          }}
+        />
+        <div class="example-details-footer">
+          <p>Demo edits aren’t saved or included in the sample download.</p>
+          <button
+            type="button"
+            class="text-button"
+            mix={on('click', () => {
+              title = handle.props.title
+              description = handle.props.description
+              handle.update()
+            })}
+          >
+            Reset example
+          </button>
+        </div>
+      </section>
+    )
+  },
+)
 
 export const UploadForm = clientEntry(
   '/client/upload-form.js#UploadForm',
@@ -15,6 +60,7 @@ export const UploadForm = clientEntry(
     let confirmed = false,
       gaps = false,
       pending = false,
+      title = handle.props.title,
       description = handle.props.description
     return () => (
       <form
@@ -28,37 +74,19 @@ export const UploadForm = clientEntry(
         })}
       >
         <input type="hidden" name="_csrf" value={handle.props.csrf} />
-        <label class="field-label" for="activity-title">
-          Give your activity a name
-        </label>
-        <input
-          class="title-input"
-          id="activity-title"
-          name="title"
-          required
-          maxLength={100}
-          defaultValue={handle.props.title}
-        />
-        <label class="field-label" for="activity-description">
-          Description (optional)
-        </label>
-        <textarea
-          class="description-input"
-          id="activity-description"
-          name="description"
-          rows={5}
-          value={description}
-          mix={on('input', (event) => {
-            description = event.currentTarget.value
+        <ActivityFields
+          idPrefix="activity"
+          title={title}
+          description={description}
+          onTitleInput={(value) => {
+            title = value
             handle.update()
-          })}
-          aria-describedby="activity-description-help"
-          placeholder="Tell the story of your activity…"
+          }}
+          onDescriptionInput={(value) => {
+            description = value
+            handle.update()
+          }}
         />
-        <p class="description-help" id="activity-description-help">
-          Existing descriptions are combined in activity order. Edit, add to them, or leave this
-          blank.
-        </p>
         <label class="check-line">
           <input
             type="checkbox"

@@ -45,6 +45,10 @@ function part(id: number, from: number, to: number, start: number): Recording {
     activity: {
       id,
       name: id === 1 ? 'Out into the hills' : 'The way home',
+      description:
+        id === 1
+          ? 'A quiet climb into the Peaks, with a pause at the top.'
+          : 'Back through the valley and home in time for coffee.',
       start_date: new Date(start * 1000).toISOString(),
       start_date_local: new Date(start * 1000).toISOString(),
       distance,

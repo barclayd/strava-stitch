@@ -391,8 +391,8 @@ test('descriptions are prefilled, escaped, editable, and may be cleared on exist
   const c = new Client()
   await c.login(4)
   activityOverrides = {
-    101: { description: 'Outward leg\nCoffee & cake ☕' },
-    102: { description: '</textarea><script>alert("test")</script>' },
+    101: { name: 'Outward <leg>', description: 'Outward leg\nCoffee & cake ☕' },
+    102: { name: 'Home & dry', description: '</textarea><script>alert("test")</script>' },
   }
   try {
     const response = await c.post('/stitches', { activities: ['102', '101'] }),
@@ -400,7 +400,9 @@ test('descriptions are prefilled, escaped, editable, and may be cleared on exist
       id = path.split('/').at(-1)!,
       expected = 'Outward leg\nCoffee & cake ☕\n</textarea><script>alert("test")</script>'
     assert.equal((await job(id, 4))?.description, expected)
+    assert.equal((await job(id, 4))?.title, 'Outward <leg> + Home & dry')
     const preview = await c.page(path)
+    assert.match(preview.text, /value="Outward &lt;leg&gt; \+ Home &amp; dry"/)
     assert.match(preview.text, /<textarea[^>]*name="description"/)
     assert.match(preview.text, /Coffee &amp; cake ☕\n&lt;\/textarea&gt;&lt;script&gt;/)
     assert.ok(!preview.text.includes('</textarea><script>alert("test")</script>'))

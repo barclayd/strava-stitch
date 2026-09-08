@@ -43,6 +43,20 @@ export type Merge = {
   fields: string[]
 }
 export const maxPoints = 50000
+export function mergedTitle(merge: Merge): string {
+  const combined =
+    merge.records
+      .map(({ activity }) => activity.name.trim())
+      .filter(Boolean)
+      .join(' + ') || 'My activity — stitched'
+  let title = ''
+  // Keep the existing title limit without splitting an emoji or other surrogate pair.
+  for (const character of combined) {
+    if (title.length + character.length > 100) break
+    title += character
+  }
+  return title.trimEnd()
+}
 export const mergedDescription = (merge: Merge) =>
   merge.records
     .map(({ activity }) => activity.description?.trim() ?? '')
