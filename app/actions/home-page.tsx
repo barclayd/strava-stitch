@@ -122,9 +122,9 @@ export function HomePage(
             <div>
               <span class="overline">LESS ADMIN. MORE MOVEMENT.</span>
               <h2>
-                A little stitching.
+                How to combine
                 <br />
-                Every part together.
+                Strava activities into one
               </h2>
               <p>
                 From separate activities to one continuous story, with you in control of every step.

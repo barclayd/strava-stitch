@@ -17,13 +17,14 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
             <span class="eyebrow">THE STITCH GUIDE</span>
             <h1>How to merge Strava activities</h1>
             <p class="guide-deck">
-              An accidental finish shouldn’t split the story of your activity. Here’s how to put the
-              parts back together, and what to check before uploading.
+              To combine Strava activities into one, connect your account to Stitch, select two to
+              eight activities of the same sport, and review the join. Then download the merged GPX
+              or FIT file, or confirm an upload to Strava. Free to use, always.
             </p>
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}
-              <time dateTime={guideUpdated}>7 September 2026</time>
+              <time dateTime={guideUpdated}>8 September 2026</time>
             </p>
           </header>
           <figure class="guide-figure">
@@ -155,12 +156,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
                   <li>
                     <h3>Confirm an upload when you’re ready</h3>
                     <p>
-                      Choose a title, review the gap confirmation and your Strava default activity
-                      visibility, then confirm the upload. Stitch cannot set “Only You” through
-                      Strava’s documented upload API. Open the new activity in Strava to check its
-                      sport, map, totals, and visibility. Direct uploads preserve the exact Strava
-                      sport type; check the sport if you import a downloaded file yourself. If
-                      Strava reports a duplicate, follow the separate steps below.
+                      Stitch suggests a title by joining the original titles in time order and
+                      carries across any existing descriptions, separated by new lines. You can edit
+                      both fields before uploading.
+                    </p>
+                    <p>
+                      Review the gap confirmation and your Strava default activity visibility, then
+                      confirm the upload. Stitch cannot set “Only You” through Strava’s documented
+                      upload API. Open the new activity in Strava to check its sport, map, totals,
+                      and visibility. Direct uploads preserve the exact Strava sport type; check the
+                      sport if you import a downloaded file yourself. If Strava reports a duplicate,
+                      follow the separate steps below.
                     </p>
                   </li>
                 </ol>
