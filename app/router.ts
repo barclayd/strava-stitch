@@ -39,7 +39,7 @@ export const router = createRouter<AppContext>({
       response.headers.set('X-Content-Type-Options', 'nosniff')
       response.headers.set(
         'Content-Security-Policy',
-        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors https://danbarclay.dev; base-uri 'none'; form-action 'self' https://www.strava.com",
+        "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors https://danbarclay.dev; base-uri 'none'; form-action 'self' https://www.strava.com",
       )
       return response
     },

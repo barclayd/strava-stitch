@@ -27,6 +27,11 @@ and uses local Durable Object storage in `.wrangler/`. Reload after interface
 changes. The Strava client ID and local origin are in `wrangler.jsonc`.
 The local callback is `http://localhost:44100/auth/strava/callback`.
 
+Street maps use a self-hosted OpenStreetMap basemap in R2. Local development falls
+back to the route-only preview until the local `MAPS` bucket is seeded. See
+[map setup, privacy and costs](docs/map-background-options.md) for the regional QA
+extract and the global snapshot update procedure.
+
 ## Deploy to Cloudflare
 
 ```sh

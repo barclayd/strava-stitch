@@ -5,6 +5,7 @@ import { createTestHarness } from 'wrangler'
 import { createCookie } from 'remix/cookie'
 import { createSession } from 'remix/session'
 import { publicPages, publicOrigin } from '../seo.ts'
+import { basemapPath, basemapKey } from '../maps.ts'
 import { guideTopics, guideTopicKeys } from '../guide-topics.ts'
 
 // Exercise the production origin entirely inside the local Worker harness; no live account calls.
@@ -33,6 +34,58 @@ await server.listen()
 after(() => server.close())
 const get = (path: string, method = 'GET') =>
   worker.fetch(publicOrigin + path, { method, redirect: 'manual' })
+
+test('basemap serves bounded immutable ranges without creating a session', async () => {
+  const env = await worker.getEnv()
+  assert.equal((await get(basemapPath, 'HEAD')).status, 503)
+  const bytes = Uint8Array.from({ length: 256 }, (_, i) => i)
+  await env.MAPS.put(basemapKey, bytes)
+  const response = await worker.fetch(publicOrigin + basemapPath, {
+    headers: { Range: 'bytes=16-31' },
+  })
+  assert.equal(response.status, 206)
+  assert.equal(response.headers.get('content-range'), 'bytes 16-31/256')
+  assert.equal(response.headers.get('content-length'), '16')
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes.slice(16, 32))
+  assert.equal(response.headers.get('set-cookie'), null)
+  assert.match(response.headers.get('cache-control')!, /immutable/)
+  assert.equal(response.headers.get('x-robots-tag'), 'noindex')
+  const head = await get(basemapPath, 'HEAD')
+  assert.equal(head.status, 200)
+  assert.equal(head.headers.get('content-length'), '256')
+  assert.equal(await head.text(), '')
+  const clipped = await worker.fetch(publicOrigin + basemapPath, {
+    headers: { Range: 'bytes=250-300', 'If-Match': head.headers.get('etag')! },
+  })
+  assert.equal(clipped.headers.get('content-range'), 'bytes 250-255/256')
+  assert.equal((await clipped.arrayBuffer()).byteLength, 6)
+  assert.equal(
+    (
+      await worker.fetch(publicOrigin + basemapPath, {
+        headers: { Range: 'bytes=0-10', 'If-Match': '"stale"' },
+      })
+    ).status,
+    412,
+  )
+  for (const range of [
+    '',
+    'bytes=0-',
+    'bytes=-100',
+    'bytes=0-2,5-7',
+    'bytes=20-10',
+    'bytes=0-8388608',
+    'bytes=256-300',
+    'bytes=9007199254740992-9007199254740993',
+  ]) {
+    const invalid = await worker.fetch(publicOrigin + basemapPath, {
+      headers: range ? { Range: range } : {},
+    })
+    assert.equal(invalid.status, 416, range)
+    assert.equal(invalid.headers.get('set-cookie'), null)
+    assert.equal(invalid.headers.get('cache-control'), 'no-store')
+  }
+  assert.equal((await get(basemapPath, 'POST')).status, 405)
+})
 
 test('production pages restrict iframe embedding to danbarclay.dev without conflicting headers', async () => {
   for (const path of [...Object.values(publicPages).map((page) => page.path), '/example']) {

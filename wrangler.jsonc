@@ -29,6 +29,7 @@
       "STRAVA_WEBHOOK_VERIFY_TOKEN",
     ],
   },
+  "r2_buckets": [{ "binding": "MAPS", "bucket_name": "strava-stitch-maps" }],
   "analytics_engine_datasets": [{ "binding": "FUNNEL", "dataset": "strava_stitch_funnel_local" }],
   "durable_objects": {
     "bindings": [
@@ -64,6 +65,7 @@
         "STRAVA_CLIENT_ID": "262735",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "",
       },
+      "r2_buckets": [{ "binding": "MAPS", "bucket_name": "strava-stitch-maps" }],
       "analytics_engine_datasets": [
         { "binding": "FUNNEL", "dataset": "strava_stitch_funnel_staging" },
       ],
@@ -103,6 +105,7 @@
         "STRAVA_CLIENT_ID": "262735",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "371550",
       },
+      "r2_buckets": [{ "binding": "MAPS", "bucket_name": "strava-stitch-maps" }],
       "analytics_engine_datasets": [{ "binding": "FUNNEL", "dataset": "strava_stitch_funnel" }],
       "secrets": {
         "required": [
