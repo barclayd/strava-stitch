@@ -106,9 +106,7 @@ export const ExampleFlow = clientEntry(
             </div>
             <span class="flow-reassurance">Privacy first. Always your choice.</span>
           </div>
-          <p class="example-step-hint">
-            Jump to any step. These are sample activities, so no account is needed.
-          </p>
+          <p class="example-step-hint">These are sample activities. No account is needed.</p>
           {/* Keep the panels mounted so selections, map positions and demo edits survive a step change. */}
           <div
             class="example-panel"
