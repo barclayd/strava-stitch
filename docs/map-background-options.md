@@ -29,7 +29,7 @@ The global snapshot occupies about 128.4 GiB. At R2 Standard's published US$0.01
 
 There is no automatic snapshot refresh. Review the basemap quarterly, or when a newer map is needed. Copy a new global archive into R2 under a **new dated key**, using an S3-compatible multipart transfer (the archive is too large for a single Wrangler object upload). Never overwrite an immutable key. Verify its byte count, PMTiles header and representative tile reads against the source before changing `basemapKey` and `basemapPath` in `app/maps.ts`. Check style compatibility when changing tileset versions. Keep the previous object while older clients may still reference it; account for overlapping storage during updates. [Protomaps downloads](https://docs.protomaps.com/basemaps/downloads), [R2 hosting](https://docs.protomaps.com/deploy/cloudflare).
 
-The initial import used an authenticated, expiring temporary Worker to stream verified ranges from the fixed Protomaps source into R2 multipart storage. That importer is not part of the application or its deployment configuration and should be removed after verification. No daily build should download or upload the world archive.
+The initial import used an authenticated, expiring temporary Worker to stream verified ranges from the fixed Protomaps source into R2 multipart storage. After verifying the full byte count, PMTiles header and SHA-256 matches for tiles covering London, New York, Sydney and Tokyo, the importer was deleted. It is not part of the application or its deployment configuration. No daily build should download or upload the world archive.
 
 ## Local preview
 
