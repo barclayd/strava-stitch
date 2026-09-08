@@ -67,20 +67,30 @@ export function HomePage(
             hasMore={p.hasMore}
           />
           {!p.firstname && (
-            <div class="connection-note">
-              <span>Ready for your own activities?</span>
-              <form data-rmx-document method="post" action={routes.auth.connect.href()}>
-                <input type="hidden" name="_csrf" value={p.csrf} />
-                <StravaConnect source="home" />
-              </form>
-              <p>
-                Read your activities and upload when you confirm. Only you see your data in Stitch.
-              </p>
-              <p>
+            <section class="connect-section" id="connect" aria-labelledby="connect-heading">
+              <div class="connect-copy">
+                <h2 id="connect-heading">Ready for your own activities?</h2>
+                <p class="connect-description">
+                  Connect Strava to stitch your own runs, rides, swims and more. Choose activities
+                  of the same sport and preview the join.
+                </p>
+                <p class="connect-reassurance">
+                  Read your activities and upload when you confirm. Only you see your data in
+                  Stitch.
+                </p>
+              </div>
+              <div class="connect-action">
+                <form data-rmx-document method="post" action={routes.auth.connect.href()}>
+                  <input type="hidden" name="_csrf" value={p.csrf} />
+                  <StravaConnect source="home" />
+                </form>
+                <p>Free to use, always.</p>
+              </div>
+              <p class="connect-availability">
                 Stitch is in early access, with limited Strava connections. Explore the example
                 without an account.
               </p>
-            </div>
+            </section>
           )}
           {p.recent.length > 0 && (
             <section class="recent-stitches">
