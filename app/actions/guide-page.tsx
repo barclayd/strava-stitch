@@ -314,11 +314,16 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
                 </p>
                 <h3>Will my private activities become public?</h3>
                 <p>
-                  Your activity data in Stitch is available only to your connected account.
-                  Uploading creates a new Strava activity using your Strava account’s default
-                  visibility. Check that setting before uploading. Read{' '}
+                  Stitch is privacy first. Your activity data and previews are available only to
+                  your connected account. Uploading creates a new Strava activity using your Strava
+                  account’s default visibility. Check that setting before uploading. Read{' '}
                   <a href={routes.privacy.href()}>how Stitch handles your data</a> for storage,
                   backups, and disconnecting.
+                </p>
+                <p>
+                  Previews expire after 24 hours. Our interaction counts contain no activity data or
+                  identifiers that follow you between visits, and you can remove your connection and
+                  previews at any time.
                 </p>
               </section>
               <aside class="guide-cta">

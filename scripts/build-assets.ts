@@ -11,6 +11,7 @@ await build({
     entry: 'app/actions/public/entry.ts',
     analytics: 'app/actions/public/analytics.ts',
     workspace: 'app/actions/public/workspace.tsx',
+    'example-flow': 'app/actions/public/example-flow.tsx',
     'route-map': 'app/ui/public/route-map.tsx',
     'upload-form': 'app/actions/stitches/public/upload-form.tsx',
   },

@@ -220,6 +220,7 @@ test('all-sport picker and server reject mixed sports and manual entries without
     const home = await c.page()
     for (const title of ['Morning run', 'Trail run', 'Manual weights'])
       assert.ok(home.text.includes(title))
+    assert.doesNotMatch(home.text, /example-flow\.js|role="tab"|Out into the hills/)
     assert.match(home.text, /Manual entry/)
     assert.match(home.text, /disabled[^>]*aria-label="Select Manual weights"/)
     const before = uploads

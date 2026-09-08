@@ -16,8 +16,9 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
           Your data.
         </h1>
         <p class="lead">
-          Stitch uses your Strava activities to create the combined activity you ask for. Your
-          activities are shown only to your connected account.
+          Privacy first, at every step. Stitch uses your Strava activities to create the combined
+          activity you ask for. Your activities and previews are shown only to your connected
+          account, and nothing uploads until you explicitly confirm.
         </p>
         <p>
           Stitch is operated by Barksoft Ltd. and is free to use, always. It is an independent

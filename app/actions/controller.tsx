@@ -6,11 +6,11 @@ import { Session } from 'remix/session'
 import { getCsrfToken } from 'remix/middleware/csrf'
 import { account, jobs } from '../data/store.ts'
 import { listActivities } from '../data/strava.ts'
-import { hasPosition, mergedTitle, mergedDescription, toGpx } from './stitches/merge.ts'
+import { mergedTitle, toGpx } from './stitches/merge.ts'
 import { unavailableReason } from '../data/sports.ts'
 import { decodePolyline, type ActivitySummary } from './public/format.ts'
-import { exampleRecords, exampleMerge } from './example.ts'
-import { StitchPage } from './stitches/page.tsx'
+import { exampleRecords, exampleMerge, examplePreview } from './example.ts'
+import { ExamplePage } from './example-page.tsx'
 import { PrivacyPage } from './privacy-page.tsx'
 import { GuidePage } from './guide-page.tsx'
 import { pageSeo } from '../seo.ts'
@@ -46,21 +46,12 @@ export default createController(routes, {
         } catch (e) {
           error = e instanceof Error ? e.message : 'Could not load your activities.'
         }
-      } else
-        activities = exampleRecords.map((r) => ({
-          id: r.activity.id,
-          name: r.activity.name,
-          start: r.activity.start_date,
-          distance: r.activity.distance,
-          moving: r.activity.moving_time,
-          elevation: r.activity.total_elevation_gain,
-          sport: 'Ride',
-          coordinates: r.points.filter(hasPosition).map((p) => [p.lat, p.lon]),
-        }))
+      }
       return context.render(
         <HomePage
           seo={pageSeo('home', context.url, typeof id === 'number' || !!error)}
           activities={activities}
+          example={!auth ? examplePreview : undefined}
           csrf={getCsrfToken(context)}
           firstname={auth?.firstname}
           error={error}
@@ -97,22 +88,7 @@ export default createController(routes, {
       )
     },
     demo(context) {
-      return context.render(
-        <StitchPage
-          job={{
-            id: 'example',
-            owner: 0,
-            created: Date.now(),
-            title: mergedTitle(exampleMerge),
-            description: mergedDescription(exampleMerge),
-            merge: exampleMerge,
-            state: 'ready',
-          }}
-          csrf={getCsrfToken(context)}
-          canUpload={false}
-          demo
-        />,
-      )
+      return context.render(<ExamplePage example={examplePreview} csrf={getCsrfToken(context)} />)
     },
     demoDownload() {
       track('example_downloaded', 'example')

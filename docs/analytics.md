@@ -48,6 +48,9 @@ background-write failures can reduce counts; analytics is best effort.
 | `connect_click` | A Connect with Strava button is activated |
 | `stitch_click` | A CTA to combine activities is activated and links to the Stitch workspace |
 | `example_click` | An example CTA is activated |
+| `example_choose_click` | The example’s Choose activities tab is activated |
+| `example_review_click` | The example’s Review the join tab or button is activated |
+| `example_finish_click` | The example’s Bring it together tab or button is activated |
 | `guide_click` | A guide CTA is activated |
 | `preview_click` | The preview button is activated |
 | `upload_click` | The confirmed-upload button is activated |

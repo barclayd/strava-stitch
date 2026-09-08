@@ -112,6 +112,32 @@ test('analytics supports every page without exposing paths, and respects browser
   assert.equal(response.headers.get('set-cookie'), null)
 })
 
+test('the public example renders all phases with an initial selection and no upload action', async () => {
+  for (const [path, selected] of [
+    ['/', 0],
+    ['/example', 1],
+  ] as const) {
+    const html = await (await get(path)).text()
+    const tabs = [...html.matchAll(/<button\b[^>]*role="tab"[^>]*>/g)].map((match) => match[0])
+    assert.equal(tabs.length, 3)
+    assert.equal(tabs.filter((tab) => tab.includes('aria-selected="true"')).length, 1)
+    assert.match(tabs[selected], /aria-selected="true"/)
+    const panels = [...html.matchAll(/<div\b[^>]*role="tabpanel"[^>]*>/g)].map((match) => match[0])
+    assert.equal(panels.length, 3)
+    assert.doesNotMatch(panels[selected], /\bhidden\b/)
+    assert.equal(panels.filter((panel) => /\bhidden\b/.test(panel)).length, 2)
+    assert.match(html, /Out into the hills \+ The way home/)
+    assert.match(html, /A quiet climb into the Peaks/)
+    assert.match(html, /Back through the valley/)
+    assert.match(html, /href="\/example\/download" download/)
+    assert.doesNotMatch(html, /action="\/stitches\/[^" ]+\/(?:upload|removal)"/)
+    assert.match(
+      html,
+      /<form data-rmx-document action="\/auth\/strava" method="post"><input type="hidden" name="_csrf" value="[^"]+"/,
+    )
+  }
+})
+
 test('production sitemap lists only public canonicals; robots and HEAD do not create sessions', async () => {
   const xml = await get('/sitemap.xml')
   assert.equal(xml.status, 200)
