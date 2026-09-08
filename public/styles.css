@@ -656,22 +656,53 @@ svg {
   line-height: 1.7;
   max-width: 230px;
 }
-.connection-note {
-  display: flex;
-  justify-content: center;
+.connect-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px 13px;
-  padding: 33px 0 48px;
-  flex-wrap: wrap;
-  font-size: 12px;
-  color: #828c79;
+  gap: 28px 48px;
+  margin: 40px 0 56px;
+  padding: 40px;
+  border: 1px solid #dfe5d9;
+  border-radius: 12px;
+  background: #f4f6f0;
 }
-.connection-note p {
-  flex-basis: 100%;
+.connect-section h2 {
+  font-size: clamp(28px, 3vw, 36px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -1.2px;
+}
+.connect-description {
+  max-width: 58ch;
+  margin-top: 16px;
+  color: #53604c;
+  font-size: 15px;
+  line-height: 1.7;
+}
+.connect-reassurance {
+  max-width: 64ch;
+  margin-top: 14px;
+  color: #5c6855;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.connect-action {
   text-align: center;
-  font-size: 10px;
-  color: #a0a793;
-  line-height: 1.6;
+}
+.connect-action p {
+  margin-top: 12px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 550;
+}
+.connect-availability {
+  grid-column: 1 / -1;
+  padding-top: 20px;
+  border-top: 1px solid #dfe5d9;
+  color: #5c6855;
+  font-size: 12px;
+  line-height: 1.7;
 }
 .how-it-works {
   border-top: 1px solid var(--line);
@@ -1334,8 +1365,14 @@ svg {
   .ride-order {
     font-size: 9px;
   }
-  .connection-note {
-    padding: 24px 0 37px;
+  .connect-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    margin: 28px 0 36px;
+    padding: 28px 24px;
+  }
+  .connect-action {
+    justify-self: start;
   }
   .how-it-works {
     padding: 45px 0 60px;
@@ -1419,6 +1456,9 @@ svg {
   }
   .intro p {
     font-size: 12px;
+  }
+  .connect-section {
+    padding: 28px 20px;
   }
   .steps {
     gap: 12px;
@@ -1524,8 +1564,6 @@ svg {
 .north,
 .map-caption,
 .map-empty p,
-.connection-note,
-.connection-note p,
 .how-it-works p,
 .site-footer,
 .footer-brand > span,
