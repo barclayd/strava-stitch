@@ -4,7 +4,7 @@ import { RouteMap } from '../../ui/public/route-map.tsx'
 import { labelColours, duration, km, day, time } from '../public/format.ts'
 import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
-import { UploadForm, UploadStatus } from './public/upload-form.tsx'
+import { ExampleDetails, UploadForm, UploadStatus } from './public/upload-form.tsx'
 import { StravaConnect } from '../../ui/strava.tsx'
 import { fileFormat, hasPosition, mergedDescription } from './merge.ts'
 import { sportLabel } from '../../data/sports.ts'
@@ -113,6 +113,12 @@ export function StitchPage(
               <p class="fine-print">
                 Totals from the source activities. Strava may recalculate them after import.
               </p>
+              {demo && (
+                <ExampleDetails
+                  title={j.title}
+                  description={j.description ?? mergedDescription(m)}
+                />
+              )}
               <section class="timeline-section">
                 <h2>Every part, in its place.</h2>
                 <div class="timeline">
@@ -128,6 +134,9 @@ export function StitchPage(
                             {time(r.activity.start_date_local ?? r.activity.start_date)} ·{' '}
                             {km(r.activity.distance)} km · {duration(r.activity.moving_time)} moving
                           </p>
+                          {demo && r.activity.description && (
+                            <p class="source-description">{r.activity.description}</p>
+                          )}
                         </div>
                         {!demo && (
                           <a

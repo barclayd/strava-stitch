@@ -1,6 +1,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { merge, mergedDescription, recording, toGpx, type Activity, type Streams } from './merge.ts'
+import {
+  merge,
+  mergedTitle,
+  mergedDescription,
+  recording,
+  toGpx,
+  type Activity,
+  type Streams,
+} from './merge.ts'
 
 const detail = (id: number, start: string): Activity => ({
   id,
@@ -54,6 +62,20 @@ test('preserves samples, chronological order, stop, extensions, and normalized c
     m.records.flatMap((r) => r.points.map((p) => p.time)),
   )
 })
+test('combines source titles in order within the editable limit without cutting emoji', () => {
+  const records = fixture()
+  records[0].activity.name = '  Into the hills  '
+  records[1].activity.name = 'Home again ☕'
+  assert.equal(mergedTitle(merge([...records].reverse())), 'Into the hills + Home again ☕')
+  assert.equal(records[0].activity.name, '  Into the hills  ')
+  records[0].activity.name = 'A'.repeat(99) + '🚴'
+  assert.equal(mergedTitle(merge(records)), 'A'.repeat(99))
+  records[0].activity.name = ''
+  assert.equal(mergedTitle(merge(records)), 'Home again ☕')
+  records[1].activity.name = '  '
+  assert.equal(mergedTitle(merge(records)), 'My activity — stitched')
+})
+
 test('combines nonblank descriptions in chronological order without losing internal line breaks', () => {
   const records = fixture()
   records[0].activity.description = '  First part\nCoffee stop ☕  '

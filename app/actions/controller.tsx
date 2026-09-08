@@ -6,7 +6,7 @@ import { Session } from 'remix/session'
 import { getCsrfToken } from 'remix/middleware/csrf'
 import { account, jobs } from '../data/store.ts'
 import { listActivities } from '../data/strava.ts'
-import { hasPosition, toGpx } from './stitches/merge.ts'
+import { hasPosition, mergedTitle, mergedDescription, toGpx } from './stitches/merge.ts'
 import { unavailableReason } from '../data/sports.ts'
 import { decodePolyline, type ActivitySummary } from './public/format.ts'
 import { exampleRecords, exampleMerge } from './example.ts'
@@ -103,7 +103,8 @@ export default createController(routes, {
             id: 'example',
             owner: 0,
             created: Date.now(),
-            title: 'A morning in the Peaks',
+            title: mergedTitle(exampleMerge),
+            description: mergedDescription(exampleMerge),
             merge: exampleMerge,
             state: 'ready',
           }}
@@ -115,7 +116,7 @@ export default createController(routes, {
     },
     demoDownload() {
       track('example_downloaded', 'example')
-      return new Response(toGpx(exampleRecords, 'Stitch — illustrative example'), {
+      return new Response(toGpx(exampleRecords, mergedTitle(exampleMerge)), {
         headers: {
           'Content-Type': 'application/gpx+xml',
           'Content-Disposition': 'attachment; filename="stitch-example.gpx"',

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { seal, unseal } from './encryption.ts'
 import type { Account, Job, JobPatch, JobSummary } from './store.ts'
-import { mergedDescription, type Merge } from '../actions/stitches/merge.ts'
+import { mergedTitle, mergedDescription, type Merge } from '../actions/stitches/merge.ts'
 
 export type SqlValue = string | number | null
 export interface SqlDatabase {
@@ -61,7 +61,7 @@ export class AthleteRepository {
       id: randomUUID(),
       owner,
       created: Date.now(),
-      title: 'My activity — stitched',
+      title: mergedTitle(merge),
       description: mergedDescription(merge),
       merge,
       state: 'ready',
