@@ -1,4 +1,13 @@
-import { merge, separation, type Recording, type Point } from './stitches/merge.ts'
+import {
+  merge,
+  separation,
+  mergedTitle,
+  mergedDescription,
+  hasPosition,
+  type Recording,
+  type Point,
+} from './stitches/merge.ts'
+import type { ExamplePreview } from './public/example-flow.tsx'
 
 // Deliberately synthetic illustration around the Peak District. No athlete data.
 const waypoints: [number, number][] = [
@@ -62,3 +71,23 @@ function part(id: number, from: number, to: number, start: number): Recording {
 }
 export const exampleRecords = [part(1, 0, 10, base), part(2, 10, 20, base + 140 * 15 + 188 - 15)]
 export const exampleMerge = merge(exampleRecords)
+export const examplePreview: ExamplePreview = {
+  activities: exampleRecords.map(({ activity, points }) => ({
+    id: activity.id,
+    name: activity.name,
+    description: activity.description ?? '',
+    start: activity.start_date,
+    distance: activity.distance,
+    moving: activity.moving_time,
+    elevation: activity.total_elevation_gain,
+    sport: activity.sport_type,
+    coordinates: points.filter(hasPosition).map((point) => [point.lat, point.lon]),
+  })),
+  title: mergedTitle(exampleMerge),
+  description: mergedDescription(exampleMerge),
+  distance: exampleMerge.distance,
+  moving: exampleMerge.moving,
+  elapsed: exampleMerge.elapsed,
+  elevation: exampleMerge.elevation,
+  gap: { seconds: exampleMerge.joins[0].seconds, metres: exampleMerge.joins[0].metres! },
+}

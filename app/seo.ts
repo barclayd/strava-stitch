@@ -1,12 +1,12 @@
 // Public search identity is fixed; never derive canonical URLs from request headers or activity data.
 export const publicOrigin = 'https://stravastitch.com'
-export const guideUpdated = '2026-09-07'
+export const guideUpdated = '2026-09-08'
 export const publicPages = {
   home: {
     path: '/',
     title: 'Combine Strava Activities for Free | Stitch',
     description:
-      'Combine your Strava activities in seconds. Free to use, always. Join runs, rides, swims and more of the same sport. Preview, download GPX or FIT, and upload.',
+      'Combine your Strava activities in seconds. Free to use, always. Privacy first: private previews, GPX or FIT downloads, and Strava uploads only when you confirm.',
     image: '/images/stitch-social.png',
     imageAlt:
       'Stitch: Combine your Strava activities in seconds. Free to use, always. Two activities with the pause preserved.',
@@ -23,7 +23,7 @@ export const publicPages = {
     path: '/privacy',
     title: 'Privacy, Your Data & Support | Stitch',
     description:
-      'How Stitch uses your Strava data, protects your activities, handles uploads and backups, and lets you disconnect. Support from Barksoft Ltd.',
+      'Privacy first: how Stitch protects your activities, keeps previews private, handles uploads and backups, and lets you remove your data. Support from Barksoft Ltd.',
     image: '/images/stitch-social.png',
     imageAlt:
       'Stitch: Combine your Strava activities in seconds. Free to use, always. Two activities with the pause preserved.',

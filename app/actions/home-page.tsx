@@ -5,10 +5,12 @@ import type { ActivitySummary } from './public/format.ts'
 import { routes } from '../routes.ts'
 import { StravaConnect } from '../ui/strava.tsx'
 import type { PageSeo } from '../seo.ts'
+import { ExampleFlow, type ExamplePreview } from './public/example-flow.tsx'
 
 export function HomePage(
   handle: Handle<{
     activities: ActivitySummary[]
+    example?: ExamplePreview
     firstname?: string
     csrf: string
     error?: string
@@ -25,7 +27,7 @@ export function HomePage(
         csrf={p.csrf}
         firstname={p.firstname}
         seo={p.seo}
-        clientFeatures="workspace"
+        clientFeatures={p.example ? 'example' : 'workspace'}
         analyticsPage={p.firstname ? 'workspace' : 'home'}
       >
         <main id="main" class="main-content">
@@ -41,31 +43,37 @@ export function HomePage(
             <p>
               A split run. A paused ride. An accidental finish.
               <br class="desktop-break" /> Stitch activities of the same sport into one.{' '}
-              <strong>Free to use, always.</strong>
+              <strong>Free to use, always.</strong> Privacy first, from preview to upload.
             </p>
           </div>
           <Alert message={p.error} />
-          <div class="flow-header">
-            <ol class="steps" aria-label="Stitching progress">
-              <li class="current">
-                <span>1</span> Choose activities
-              </li>
-              <li>
-                <span>2</span> Review the join
-              </li>
-              <li>
-                <span>3</span> Bring it together
-              </li>
-            </ol>
-            <span class="flow-reassurance">Your originals stay yours.</span>
-          </div>
-          <Workspace
-            activities={p.activities}
-            csrf={p.csrf}
-            connected={!!p.firstname}
-            page={p.page}
-            hasMore={p.hasMore}
-          />
+          {p.example ? (
+            <ExampleFlow example={p.example} csrf={p.csrf} initialStep={0} />
+          ) : (
+            <>
+              <div class="flow-header">
+                <ol class="steps" aria-label="Stitching progress">
+                  <li class="current">
+                    <span>1</span> Choose activities
+                  </li>
+                  <li>
+                    <span>2</span> Review the join
+                  </li>
+                  <li>
+                    <span>3</span> Bring it together
+                  </li>
+                </ol>
+                <span class="flow-reassurance">Your originals stay yours.</span>
+              </div>
+              <Workspace
+                activities={p.activities}
+                csrf={p.csrf}
+                connected={!!p.firstname}
+                page={p.page}
+                hasMore={p.hasMore}
+              />
+            </>
+          )}
           {!p.firstname && (
             <section class="connect-section" id="connect" aria-labelledby="connect-heading">
               <div class="connect-copy">
@@ -75,8 +83,8 @@ export function HomePage(
                   of the same sport and preview the join.
                 </p>
                 <p class="connect-reassurance">
-                  Read your activities and upload when you confirm. Only you see your data in
-                  Stitch.
+                  Privacy first. Only you see your previews in Stitch, and nothing uploads until you
+                  confirm. Your originals stay untouched.
                 </p>
               </div>
               <div class="connect-action">
@@ -178,6 +186,20 @@ export function HomePage(
               </a>
             </div>
             <div class="home-questions">
+              <details>
+                <summary>How does Stitch protect my privacy?</summary>
+                <p>
+                  Privacy comes first. Your activities and previews are visible only to your
+                  connected account in Stitch. Previews expire after 24 hours, and you can remove
+                  your connection and previews whenever you like.
+                </p>
+                <p>
+                  We count interactions without activity data or identifiers that track you between
+                  visits. Uploads happen only after you confirm and use your Strava account’s
+                  default visibility.{' '}
+                  <a href={routes.privacy.href()}>Read how we handle your data.</a>
+                </p>
+              </details>
               <details>
                 <summary>Does Stitch support all Strava activity types?</summary>
                 <p>

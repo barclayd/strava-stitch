@@ -75,7 +75,7 @@ export function Shell(
       {handle.props.children}
       <footer class="site-footer">
         <span class="footer-brand">
-          stitch<span>Every part, together.</span>
+          stitch<span>Every part, together. Privacy first.</span>
         </span>
         <div>
           <a href="https://www.strava.com" target="_blank" rel="noreferrer" class="strava-credit">
