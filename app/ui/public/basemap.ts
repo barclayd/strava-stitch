@@ -8,13 +8,31 @@ import { mapStyle } from './map-style.ts'
 setWorkerUrl('/client/maplibre-worker.js')
 setWorkerCount(1)
 addProtocol('pmtiles', new Protocol().tile)
+export interface Basemap {
+  update(tracks: Track[]): void
+  zoom(direction: number): void
+  resize(): void
+  reset(): void
+  destroy(): void
+}
+type Owner = { ready(): void; failed(): void }
+const activeMaps = new WeakMap<HTMLElement, { acquire(owner: Owner): Basemap }>()
 
 export function createBasemap(
   container: HTMLElement,
   tracks: Track[],
   ready: () => void,
   failed: () => void,
-) {
+): Basemap {
+  // Nested client entries can adopt the same preserved host during hydration.
+  // Their leases share one renderer so every owner's controls update the visible map.
+  const existing = activeMaps.get(container)
+  if (existing) {
+    const lease = existing.acquire({ ready, failed })
+    lease.update(tracks)
+    return lease
+  }
+  const owners = new Set<Owner>()
   let geometry = routeGeometry(tracks),
     stopped = false,
     loaded = false
@@ -65,24 +83,32 @@ export function createBasemap(
     transformRequest: (url) => ({ url, credentials: 'same-origin', referrerPolicy: 'no-referrer' }),
   })
   map.touchZoomRotate.disableRotation()
+  map.keyboard.disableRotation()
   map
     .getCanvas()
     .setAttribute(
       'aria-label',
       'Activity routes on a street map. Each colour is a separate recording; gaps are not connected.',
     )
+  // Frame navigation may remove a preserved subtree without a component ref callback.
+  const removal = new MutationObserver(() => {
+    if (!container.isConnected) stop()
+  })
   const stop = () => {
     if (stopped) return
     stopped = true
     clearTimeout(timeout)
+    removal.disconnect()
     map.remove()
+    activeMaps.delete(container)
   }
   const failure = () => {
     if (stopped) return
     stop()
-    failed()
+    for (const owner of owners) owner.failed()
   }
   const timeout = setTimeout(failure, 15000)
+  removal.observe(document, { childList: true, subtree: true })
   map.on('error', failure)
   map.on('webglcontextlost', failure)
   const reset = () => {
@@ -102,9 +128,9 @@ export function createBasemap(
     loaded = true
     clearTimeout(timeout)
     update()
-    ready()
+    for (const owner of owners) owner.ready()
   })
-  return {
+  const controller = {
     update(next: Track[]) {
       if (stopped) return
       geometry = routeGeometry(next)
@@ -120,8 +146,21 @@ export function createBasemap(
       if (!stopped) map.resize()
     },
     reset,
-    destroy: stop,
   }
+  const acquire = (owner: Owner): Basemap => {
+    owners.add(owner)
+    if (loaded)
+      queueMicrotask(() => {
+        if (!stopped && owners.has(owner)) owner.ready()
+      })
+    return {
+      ...controller,
+      destroy() {
+        owners.delete(owner)
+        if (!owners.size || !container.isConnected) stop()
+      },
+    }
+  }
+  activeMaps.set(container, { acquire })
+  return acquire({ ready, failed })
 }
-
-export type Basemap = ReturnType<typeof createBasemap>

@@ -109,38 +109,34 @@ export const RouteMap = clientEntry(
             class="map-canvas"
             aria-hidden={!ready || points.length < 2}
             inert={!ready || points.length < 2}
+            mix={ref((node, signal) => {
+              container = node.querySelector<HTMLElement>('.map-surface') ?? undefined
+              const observer = new IntersectionObserver((entries) => {
+                visible = entries.some((entry) => entry.isIntersecting)
+                if (visible) {
+                  basemap?.resize()
+                  sync()
+                }
+              })
+              observer.observe(node)
+              const resize = new ResizeObserver(() => {
+                if (node.clientWidth && node.clientHeight) basemap?.resize()
+              })
+              resize.observe(node)
+              signal.addEventListener(
+                'abort',
+                () => {
+                  observer.disconnect()
+                  resize.disconnect()
+                  basemap?.destroy()
+                  container = undefined
+                },
+                { once: true },
+              )
+            })}
           >
             {/* A fixed empty innerHTML gives the map library ownership of these children. */}
-            <div
-              class="map-surface"
-              data-rmx-preserve-dom
-              innerHTML=""
-              mix={ref((node, signal) => {
-                container = node
-                const observer = new IntersectionObserver((entries) => {
-                  visible = entries.some((entry) => entry.isIntersecting)
-                  if (visible) {
-                    basemap?.resize()
-                    sync()
-                  }
-                })
-                observer.observe(node)
-                const resize = new ResizeObserver(() => {
-                  if (node.clientWidth && node.clientHeight) basemap?.resize()
-                })
-                resize.observe(node)
-                signal.addEventListener(
-                  'abort',
-                  () => {
-                    observer.disconnect()
-                    resize.disconnect()
-                    basemap?.destroy()
-                    container = undefined
-                  },
-                  { once: true },
-                )
-              })}
-            />
+            <div class="map-surface" data-rmx-preserve-dom innerHTML="" />
           </div>
           <div class="map-label">
             <span class="live-dot"></span> Route preview
