@@ -8,6 +8,27 @@ Use MapLibre GL JS with an OpenStreetMap-derived vector basemap, served from Sti
 
 The application already passes latitude/longitude arrays to `RouteMap` in `app/ui/public/route-map.tsx`. The current component draws those points on an SVG grid. The same coordinates can be drawn over map tiles, without another Strava API request. Each activity should remain a separate line, preserving the different colours and unconnected gaps.
 
+## Selected style
+
+Choose **Protomaps Light with a custom palette** as the base for Stitch’s standard map. The user’s Strava screenshot is the visual reference. Strava confirms that its activity maps use Mapbox with OpenStreetMap data; choosing an OSM tileset alone does not reproduce the same appearance. [Strava’s map documentation](https://support.strava.com/en-us/articles/15402176-about-strava-maps).
+
+Compared the Light and White presets over west London. Light already provides white local roads, green parks, coloured water and place labels. White removes the useful park/water colour distinctions. Light is the better starting point for this reference, with the following proposed overrides; these colours are design targets, not values extracted from Strava’s style:
+
+| Element | Target | Protomaps configuration |
+| --- | --- | --- |
+| Land | Neutral light grey `#eeeeec` | `background`, `earth` |
+| Local roads | White `#ffffff`, subtle grey edges | `minor_a`, `minor_b`, `minor_service`, their casing colours |
+| Main roads | Muted grey `#c8cbcd` with light edges | `major`, `highway`, `link`, matching bridge/tunnel colours |
+| Parks | Soft green `#a7d997` | `park_a`, `park_b` |
+| Woodland | Slightly deeper green `#a0cd97` | `wood_a`, `wood_b` and landcover overrides |
+| Water | Pale blue `#9fcbdc` | `water` |
+| Buildings | Low-contrast grey `#e2e3e1` | `buildings` |
+| Labels | Dark grey `#454744`; quieter neighbourhood/road labels | `city_label`, `subplace_label`, road labels; light halos |
+
+Use a flat, north-up view. Reduce nonessential POI icons and road shields at the initial route-fit zoom, keep neighbourhood and park names readable, and let the activity lines dominate. Preserve Stitch’s separate activity colours and white route outlines so users can still distinguish the join. Tune label density, road widths and the palette against the reference at comparable zoom levels before calling the result visually matched.
+
+Implement the palette by extending `namedFlavor('light')`, then adjust the generated MapLibre layers where colour overrides are insufficient. This is the documented customization path and remains compatible with serving the assets ourselves. [Flavor customization](https://docs.protomaps.com/basemaps/flavors), [typed configuration](https://maps.protomaps.com/typedoc/interfaces/Flavor.html).
+
 ## Hosting and privacy
 
 | Approach | Fit for Stitch |
