@@ -5,6 +5,8 @@ import { persistentSessions } from './app/data/sessions.ts'
 import { isPublicPath, noIndex, publicOrigin, robots, sitemap } from './app/seo.ts'
 import { routes } from './app/routes.ts'
 import { createAnalytics, receiveAnalytics } from './app/data/analytics.ts'
+import { basemapPath } from './app/maps.ts'
+import { serveBasemap } from './app/data/maps.ts'
 export { AthleteData, BrowserSession } from './app/cloudflare/durable-objects.ts'
 
 export function createRuntime(env: Env, request?: Request): Runtime {
@@ -67,6 +69,7 @@ export default {
       const url = new URL(request.url),
         runtime = createRuntime(env, request)
       if (url.origin !== runtime.config.origin) return unindexedError('Unrecognized host.', 403)
+      if (url.pathname === basemapPath) return serveBasemap(request, env.MAPS)
       if (url.pathname === routes.analytics.receive.href())
         return receiveAnalytics(request, runtime.analytics)
       if (['GET', 'HEAD'].includes(request.method)) {
@@ -105,6 +108,7 @@ export default {
           url.pathname.startsWith('/images/') ||
           [
             '/styles.css',
+            '/maps/maplibre.css',
             '/favicon.svg',
             '/favicon-96.png',
             '/apple-touch-icon.png',

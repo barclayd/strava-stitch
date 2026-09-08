@@ -1,12 +1,73 @@
-import { clientEntry, on, type Handle } from 'remix/ui'
+import { clientEntry, on, ref, type Handle } from 'remix/ui'
 import { colours, type Track } from '../../actions/public/format.ts'
+import type { Basemap } from './basemap.ts'
 
 export const RouteMap = clientEntry(
   '/client/route-map.js#RouteMap',
   function RouteMap(handle: Handle<{ tracks: Track[]; compact?: boolean }>) {
     let view = [0, 0, 900, 600],
       drag: { x: number; y: number; v: number[] } | undefined
+    let basemap: Basemap | undefined,
+      visible = false,
+      loading = false,
+      ready = false,
+      unavailable = false
+    let container: HTMLElement | undefined
+    let previous: Track[] = []
+    function sync() {
+      if (handle.signal.aborted) return
+      const next = handle.props.tracks
+      if (
+        basemap &&
+        (next.length !== previous.length ||
+          next.some((track, i) => track.coordinates !== previous[i]?.coordinates))
+      ) {
+        basemap.update(next)
+        previous = [...next]
+      }
+      if (
+        !visible ||
+        loading ||
+        basemap ||
+        unavailable ||
+        !container ||
+        !next.some((t) => t.coordinates.length > 1)
+      )
+        return
+      loading = true
+      import('./basemap.ts')
+        .then(({ createBasemap }) => {
+          if (handle.signal.aborted || !container) return
+          if (!visible || !handle.props.tracks.some((track) => track.coordinates.length > 1)) {
+            loading = false
+            return
+          }
+          basemap = createBasemap(
+            container,
+            handle.props.tracks,
+            () => {
+              ready = true
+              handle.update()
+            },
+            () => {
+              ready = false
+              unavailable = true
+              handle.update()
+            },
+          )
+          previous = [...handle.props.tracks]
+        })
+        .catch(() => {
+          if (handle.signal.aborted) return
+          unavailable = true
+          handle.update()
+        })
+    }
     function zoom(k: number) {
+      if (ready) {
+        basemap?.zoom(k < 1 ? 1 : -1)
+        return
+      }
       const w = view[2] * k,
         h = view[3] * k
       if (w < 80 || w > 3600) return
@@ -14,6 +75,7 @@ export const RouteMap = clientEntry(
       handle.update()
     }
     return () => {
+      handle.queueTask(sync)
       const tracks = handle.props.tracks
         .map((t, i) => ({ ...t, colour: colours[i % colours.length] }))
         .filter((t) => t.coordinates.length > 1)
@@ -36,7 +98,50 @@ export const RouteMap = clientEntry(
         ]
       }
       return (
-        <div class={'route-map' + (handle.props.compact ? ' compact' : '')}>
+        <div
+          class={
+            'route-map' +
+            (handle.props.compact ? ' compact' : '') +
+            (ready && points.length > 1 ? ' has-basemap' : '')
+          }
+        >
+          <div
+            class="map-canvas"
+            aria-hidden={!ready || points.length < 2}
+            inert={!ready || points.length < 2}
+          >
+            {/* A fixed empty innerHTML gives the map library ownership of these children. */}
+            <div
+              class="map-surface"
+              data-rmx-preserve-dom
+              innerHTML=""
+              mix={ref((node, signal) => {
+                container = node
+                const observer = new IntersectionObserver((entries) => {
+                  visible = entries.some((entry) => entry.isIntersecting)
+                  if (visible) {
+                    basemap?.resize()
+                    sync()
+                  }
+                })
+                observer.observe(node)
+                const resize = new ResizeObserver(() => {
+                  if (node.clientWidth && node.clientHeight) basemap?.resize()
+                })
+                resize.observe(node)
+                signal.addEventListener(
+                  'abort',
+                  () => {
+                    observer.disconnect()
+                    resize.disconnect()
+                    basemap?.destroy()
+                    container = undefined
+                  },
+                  { once: true },
+                )
+              })}
+            />
+          </div>
           <div class="map-label">
             <span class="live-dot"></span> Route preview
           </div>
@@ -130,9 +235,11 @@ export const RouteMap = clientEntry(
           )}
           {points.length > 1 && (
             <span class="map-caption">
-              {tracks.length < handle.props.tracks.length
-                ? 'Some selected activities have no route to preview.'
-                : 'Original paths. Room between the parts.'}
+              {unavailable
+                ? 'Street map unavailable. Your routes are still shown.'
+                : tracks.length < handle.props.tracks.length
+                  ? 'Some selected activities have no route to preview.'
+                  : 'Original paths. Room between the parts.'}
             </span>
           )}
           {points.length > 1 && (
@@ -147,12 +254,28 @@ export const RouteMap = clientEntry(
                 type="button"
                 aria-label="Reset map"
                 mix={on('click', () => {
+                  if (ready) {
+                    basemap?.reset()
+                    return
+                  }
                   view = [0, 0, 900, 600]
                   handle.update()
                 })}
               >
                 ↺
               </button>
+            </div>
+          )}
+          {ready && points.length > 1 && (
+            <div class="map-attribution">
+              ©{' '}
+              <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+                OpenStreetMap contributors
+              </a>{' '}
+              ·{' '}
+              <a href="https://protomaps.com" target="_blank" rel="noreferrer">
+                Protomaps
+              </a>
             </div>
           )}
         </div>

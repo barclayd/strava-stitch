@@ -1,53 +1,49 @@
-# OpenStreetMap background: feasibility
+# Street maps in Stitch
 
-Investigated 8 September 2026. This is a proposal; the map background has not been added to the application.
+Implemented 8 September 2026. The example, activity picker and personal stitch previews share the same map component.
 
-## Recommendation
+## Appearance and interaction
 
-Use MapLibre GL JS with an OpenStreetMap-derived vector basemap, served from Stitch’s Cloudflare infrastructure. A light style with muted roads, green parks, blue water and clear place names can give the route the geographic context shown in the Strava reference. MapLibre supports styled map layers and route overlays; Protomaps supplies customizable light basemap styles. This can be visually similar without depending on Strava’s map service. [MapLibre styles](https://maplibre.org/maplibre-style-spec/), [route overlay example](https://maplibre.org/maplibre-gl-js/docs/examples/add-a-geojson-line/), [Protomaps styles](https://docs.protomaps.com/basemaps/flavors).
+MapLibre GL JS renders a Protomaps Light basemap with a custom palette inspired by the user's Strava reference: neutral grey land, white local roads, grey main roads, green parks and woodland, blue water and dark place labels. Nonessential POI icons, road shields, one-way arrows and address labels are omitted. Labels use local Arial/system fonts, with no remote glyph or sprite service. This is a similar visual treatment, not Strava's proprietary map style. [Strava maps](https://support.strava.com/en-us/articles/15402176-about-strava-maps), [Protomaps customization](https://docs.protomaps.com/basemaps/flavors), [MapLibre local fonts](https://maplibre.org/maplibre-style-spec/glyphs/).
 
-The application already passes latitude/longitude arrays to `RouteMap` in `app/ui/public/route-map.tsx`. The current component draws those points on an SVG grid. The same coordinates can be drawn over map tiles, without another Strava API request. Each activity should remain a separate line, preserving the different colours and unconnected gaps.
+Each recording is a separate coloured line with a white outline and start/end markers. No lines bridge the gaps. The map fits the selected routes, supports pan, zoom and reset, stays north-up, and respects reduced motion. Touch controls have 44px targets and the map requires two fingers for touch panning so it does not trap ordinary page scrolling.
 
-## Selected style
+The SVG preview remains the initial rendering and the fallback for unavailable tiles or WebGL. Activities without GPS retain the existing empty-map explanation. JavaScript for the street map is imported only when a map with GPS becomes visible; hidden example panels do not initialize maps. Initialized maps are resized on panel/layout changes and destroyed when their component unmounts. A fixed empty `innerHTML` gives MapLibre ownership of its canvas subtree during native Remix component updates, while `data-rmx-preserve-dom` protects it during frame reconciliation.
 
-Choose **Protomaps Light with a custom palette** as the base for Stitch’s standard map. The user’s Strava screenshot is the visual reference. Strava confirms that its activity maps use Mapbox with OpenStreetMap data; choosing an OSM tileset alone does not reproduce the same appearance. [Strava’s map documentation](https://support.strava.com/en-us/articles/15402176-about-strava-maps).
-
-Compared the Light and White presets over west London. Light already provides white local roads, green parks, coloured water and place labels. White removes the useful park/water colour distinctions. Light is the better starting point for this reference, with the following proposed overrides; these colours are design targets, not values extracted from Strava’s style:
-
-| Element | Target | Protomaps configuration |
-| --- | --- | --- |
-| Land | Neutral light grey `#eeeeec` | `background`, `earth` |
-| Local roads | White `#ffffff`, subtle grey edges | `minor_a`, `minor_b`, `minor_service`, their casing colours |
-| Main roads | Muted grey `#c8cbcd` with light edges | `major`, `highway`, `link`, matching bridge/tunnel colours |
-| Parks | Soft green `#a7d997` | `park_a`, `park_b` |
-| Woodland | Slightly deeper green `#a0cd97` | `wood_a`, `wood_b` and landcover overrides |
-| Water | Pale blue `#9fcbdc` | `water` |
-| Buildings | Low-contrast grey `#e2e3e1` | `buildings` |
-| Labels | Dark grey `#454744`; quieter neighbourhood/road labels | `city_label`, `subplace_label`, road labels; light halos |
-
-Use a flat, north-up view. Reduce nonessential POI icons and road shields at the initial route-fit zoom, keep neighbourhood and park names readable, and let the activity lines dominate. Preserve Stitch’s separate activity colours and white route outlines so users can still distinguish the join. Tune label density, road widths and the palette against the reference at comparable zoom levels before calling the result visually matched.
-
-Implement the palette by extending `namedFlavor('light')`, then adjust the generated MapLibre layers where colour overrides are insufficient. This is the documented customization path and remains compatible with serving the assets ourselves. [Flavor customization](https://docs.protomaps.com/basemaps/flavors), [typed configuration](https://maps.protomaps.com/typedoc/interfaces/Flavor.html).
+The public example uses deliberately illustrative Peak District coordinates. It is not a road-routed itinerary; the application never snaps a person's GPS trace to roads or invents movement to improve its appearance.
 
 ## Hosting and privacy
 
-| Approach | Fit for Stitch |
-| --- | --- |
-| OpenStreetMap’s public tile service | Useful for ordinary interactive maps, but attribution, caching and referral requirements apply, and availability has no guarantee. It adds an external destination for map requests. |
-| A hosted OSM-based map provider | Reduces our operational work, with provider-specific terms, pricing and privacy arrangements to evaluate. |
-| Our own OSM-derived tiles on Cloudflare | Recommended for our privacy-first direction. Adds storage, requests and update maintenance, while keeping map delivery with our existing hosting provider. |
+- `MAPS` binds to the private Cloudflare R2 bucket `strava-stitch-maps` in production and staging. Local development uses emulated R2.
+- The immutable object `world-20260908.pmtiles` is the global Protomaps 8 September 2026 build: 137,855,359,979 bytes, vector tiles at zooms 0–15 (overzoomed to 18). Its source is [the Protomaps builds archive](https://maps.protomaps.com/builds/).
+- `/maps/world-20260908.pmtiles` serves only that fixed object, through Stitch's Worker. GET requires one explicit byte range of at most 8 MiB; unrestricted full-file downloads, multipart ranges and writes are rejected. HEAD provides metadata. Successful responses carry ETags and immutable browser caching; errors are not cached.
+- This public map endpoint bypasses sessions, CSRF and Durable Object lookups. It does not accept activity coordinates, identifiers or arbitrary source URLs. R2 contains only public basemap data.
+- Activity GeoJSON stays in the browser and its local map worker. The browser requests map data, JavaScript and CSS only from Stitch's own origin. No separate map provider receives visitors' requests. Cloudflare still processes ordinary hosting requests, including the area represented by the requested map bytes; this is explained on the privacy page.
+- OSM contributor attribution remains visible with links to the copyright page and Protomaps. Retain the source archive's metadata and licensing when refreshing it. [OpenStreetMap copyright](https://www.openstreetmap.org/copyright), [Protomaps security and privacy](https://docs.protomaps.com/guide/security-privacy).
 
-Direct tile requests let a provider see the visitor’s IP address and requested tile addresses. Those tile addresses identify the area being viewed, even when the full activity route is drawn locally. OSMF describes its request logging in its [privacy policy](https://osmfoundation.org/wiki/Privacy_Policy#Personal_data_we_receive_automatically). Its public [raster](https://operations.osmfoundation.org/policies/tiles/) and [vector](https://operations.osmfoundation.org/policies/vector/) services require attribution and compliant caching and referral behaviour. Stitch currently uses `Referrer-Policy: same-origin` and blocks external map requests in its CSP, so direct public tile integration would also need deliberate policy changes.
+The map library and its module worker are bundled locally. CSP allows same-origin workers and image blobs while keeping scripts, fonts and connections restricted to Stitch. The site stylesheet remains last in the document head to preserve smooth Remix navigation.
 
-Protomaps documents serving PMTiles through Cloudflare R2 and Workers. Use an archive intended for hosting, rather than scraping OSM’s public tile servers. Serve styles, fonts, icons and JavaScript ourselves too; otherwise those resources still contact external services. Cloudflare would continue processing normal hosting requests. [Cloudflare integration](https://docs.protomaps.com/deploy/cloudflare), [resource privacy](https://docs.protomaps.com/guide/security-privacy).
+## Cost and maintenance
 
-A full Protomaps world archive is roughly 120 GB; regional extracts are available for a smaller prototype. Global coverage needs a storage/request budget and an archive update plan. No infrastructure has been provisioned or paid service enabled as part of this investigation. [Basemap downloads](https://docs.protomaps.com/basemaps/downloads).
+The global snapshot occupies about 128.4 GiB. At R2 Standard's published US$0.015/GB-month rate, budget roughly US$2/month before shared free allowances, plus requests and Worker usage. R2 currently includes 10 GB-month of storage, 1 million Class A and 10 million Class B operations per month, with free egress. Each uncached map range uses one metadata read and one ranged read; browser caching avoids repeat transfers, but this implementation does not promise a shared edge cache for partial responses. [Cloudflare R2 pricing](https://developers.cloudflare.com/r2/pricing/).
 
-## Implementation considerations
+There is no automatic snapshot refresh. Review the basemap quarterly, or when a newer map is needed. Copy a new global archive into R2 under a **new dated key**, using an S3-compatible multipart transfer (the archive is too large for a single Wrangler object upload). Never overwrite an immutable key. Verify its byte count, PMTiles header and representative tile reads against the source before changing `basemapKey` and `basemapPath` in `app/maps.ts`. Check style compatibility when changing tileset versions. Keep the previous object while older clients may still reference it; account for overlapping storage during updates. [Protomaps downloads](https://docs.protomaps.com/basemaps/downloads), [R2 hosting](https://docs.protomaps.com/deploy/cloudflare).
 
-- Keep the existing SVG as the initial rendering and fallback for unavailable maps or WebGL. Preserve the current experience for activities without GPS.
-- Initialize the map inside the Remix client entry, resize it when an example panel becomes visible, and clean it up when the component unmounts. Load background tiles only for visible maps.
-- Keep activity coordinates, titles and descriptions out of tile URLs and public map storage. Public caches should contain only generic basemap data.
-- Retain start/end markers, fit-to-route, accessible zoom controls, attribution and reduced-motion behaviour.
-- Use the synthetic example for the first visual prototype. Its deliberately illustrative geometry will still look angular over real roads; do not snap private activity traces to roads or invent movement to improve the appearance.
-- Verify desktop/mobile layout, tile-failure fallback, panel switching, separate route segments and the actual outgoing requests before enabling backgrounds on personal previews.
+The initial import used an authenticated, expiring temporary Worker to stream verified ranges from the fixed Protomaps source into R2 multipart storage. That importer is not part of the application or its deployment configuration and should be removed after verification. No daily build should download or upload the world archive.
+
+## Local preview
+
+Without a local archive, the application intentionally shows the SVG fallback. For map development, use the [PMTiles CLI](https://docs.protomaps.com/pmtiles/cli) to extract the synthetic example's region and seed local R2:
+
+```sh
+mkdir -p tmp/maps
+pmtiles extract https://build.protomaps.com/20260908.pmtiles tmp/maps/peaks.pmtiles --bbox=-2.15,53.18,-1.55,53.6 --maxzoom=15
+npx wrangler r2 object put strava-stitch-maps/world-20260908.pmtiles --file tmp/maps/peaks.pmtiles --local
+npm run dev
+```
+
+This regional file is for local QA only. Production and staging use the complete world archive.
+
+## Verification
+
+Automated tests cover bounded R2 ranges, clipping at EOF, ETags, absent storage, invalid ranges, no session cookies, independent route segments, missing/invalid GPS and date-line fitting. The existing OAuth, upload, export, SEO and analytics checks remain required. Browser checks cover desktop/mobile rendering, lazy loading, source selection, step changes, zoom/reset, attribution, no external resource requests and both tile-error and unavailable-WebGL fallbacks.

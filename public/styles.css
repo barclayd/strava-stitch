@@ -654,6 +654,59 @@ svg {
 .route-map > svg:active {
   cursor: grabbing;
 }
+.map-canvas {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.map-surface {
+  width: 100%;
+  height: 100%;
+}
+.has-basemap .map-canvas {
+  opacity: 1;
+  pointer-events: auto;
+}
+.has-basemap > svg {
+  visibility: hidden;
+}
+.has-basemap .map-label,
+.has-basemap .north,
+.has-basemap .map-caption {
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: #ffffffeb;
+  color: #454744;
+}
+.has-basemap .map-caption {
+  bottom: 82px;
+  max-width: calc(100% - 40px);
+}
+.has-basemap .map-tools {
+  bottom: 38px;
+}
+.map-attribution {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 3px 7px;
+  background: #ffffffeb;
+  color: #454744;
+  font:
+    10px/1.5 Arial,
+    sans-serif;
+}
+.map-attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+@media (pointer: coarse) {
+  .map-tools button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
 .map-label {
   position: absolute;
   left: 20px;

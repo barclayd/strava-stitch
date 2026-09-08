@@ -6,6 +6,8 @@ rmSync('dist/assets', { recursive: true, force: true })
 mkdirSync('dist/assets', { recursive: true })
 cpSync('public', 'dist/assets', { recursive: true })
 await buildImages('dist/assets')
+mkdirSync('dist/assets/maps', { recursive: true })
+cpSync('node_modules/maplibre-gl/dist/maplibre-gl.css', 'dist/assets/maps/maplibre.css')
 await build({
   entryPoints: {
     entry: 'app/actions/public/entry.ts',
@@ -13,6 +15,7 @@ await build({
     workspace: 'app/actions/public/workspace.tsx',
     'example-flow': 'app/actions/public/example-flow.tsx',
     'route-map': 'app/ui/public/route-map.tsx',
+    'maplibre-worker': 'node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs',
     'upload-form': 'app/actions/stitches/public/upload-form.tsx',
   },
   outdir: 'dist/assets/client',

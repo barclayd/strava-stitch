@@ -106,6 +106,9 @@ export function Document(handle: Handle<DocumentProps>) {
               ></script>
             </>
           )}
+          {clientFeatures && (
+            <link data-rmx-key="map-styles" rel="stylesheet" href="/maps/maplibre.css" />
+          )}
           {/* Keep this keyed stylesheet last so frame reconciliation neither replaces nor moves it. */}
           <link data-rmx-key="site-styles" rel="stylesheet" href="/styles.css" />
         </head>

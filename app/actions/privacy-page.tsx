@@ -59,6 +59,13 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
           We honour your browser’s Do Not Track and Global Privacy Control signals. Cloudflare still
           processes ordinary network requests to host and protect the service.
         </p>
+        <h2>Maps and your routes</h2>
+        <p>
+          Street maps use OpenStreetMap data hosted with Stitch on Cloudflare. Your browser draws
+          your activity routes over that background; we do not send your route, title or description
+          to a separate map provider. Map requests still reveal the area being viewed to our hosting
+          provider, which processes ordinary requests to deliver the service.
+        </p>
         <h2>What a backup contains</h2>
         <p>
           GPX and FIT files contain original timestamps and available GPS, elevation, and supported
