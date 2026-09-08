@@ -46,6 +46,7 @@ background-write failures can reduce counts; analytics is best effort.
 | --- | --- |
 | `page_view` | A tracked document finishes rendering, including Remix navigation, pagination, and history traversal |
 | `connect_click` | A Connect with Strava button is activated |
+| `stitch_click` | A CTA to combine activities is activated and links to the Stitch workspace |
 | `example_click` | An example CTA is activated |
 | `guide_click` | A guide CTA is activated |
 | `preview_click` | The preview button is activated |

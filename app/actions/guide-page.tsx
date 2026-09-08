@@ -323,18 +323,26 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
               </section>
               <aside class="guide-cta">
                 <span class="overline">BRING EVERY PART TOGETHER</span>
-                <h2>See what a join looks like.</h2>
-                <p>Explore two illustrative activities, the route, and the pause between them.</p>
+                <h2>Combine your Strava activities in seconds.</h2>
+                <p>
+                  Connect Strava, choose activities of the same sport, and preview your stitch. Free
+                  to use, always.
+                </p>
                 <a
                   class="button button-dark"
+                  href={routes.home.href()}
+                  data-funnel="stitch_click"
+                  data-funnel-placement="guide"
+                >
+                  Combine your activities <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  class="inline-link"
                   href={routes.demo.href()}
                   data-funnel="example_click"
                   data-funnel-placement="guide"
                 >
-                  Explore the example <span aria-hidden="true">→</span>
-                </a>
-                <a class="inline-link" href={routes.home.href()}>
-                  Combine your activities with Stitch
+                  Explore the example
                 </a>
               </aside>
             </div>

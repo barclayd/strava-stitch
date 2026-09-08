@@ -21,6 +21,7 @@ export type AnalyticsPlacement = (typeof analyticsPlacements)[number]
 export const clientEvents = [
   'page_view',
   'connect_click',
+  'stitch_click',
   'example_click',
   'guide_click',
   'preview_click',
