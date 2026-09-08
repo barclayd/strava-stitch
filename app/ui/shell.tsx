@@ -55,7 +55,7 @@ export function Shell(
             <>
               <span class="account">
                 <span class="avatar">{handle.props.firstname[0]}</span>
-                {handle.props.firstname}
+                <span class="account-name">{handle.props.firstname}</span>
               </span>
               <form data-rmx-document method="post" action={routes.auth.logout.href()}>
                 <input type="hidden" name="_csrf" value={handle.props.csrf} />
