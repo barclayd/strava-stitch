@@ -5,6 +5,10 @@ export const analyticsPages = [
   'example',
   'preview',
   'guide',
+  'duplicateGuide',
+  'indoorGuide',
+  'runGuide',
+  'rideGuide',
   'privacy',
 ] as const
 export type AnalyticsPage = (typeof analyticsPages)[number]
