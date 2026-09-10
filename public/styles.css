@@ -1136,6 +1136,99 @@ svg {
   display: grid;
   gap: 18px;
 }
+.upload-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(580px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: clamp(22px, 5vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fbfcf9;
+  color: var(--ink);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: 0 24px 80px rgb(25 35 27 / 18%);
+}
+.upload-dialog::backdrop {
+  background: rgb(25 35 27 / 48%);
+}
+.upload-dialog-heading {
+  position: relative;
+}
+.upload-dialog h2 {
+  font-size: clamp(25px, 5vw, 31px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin: 14px 0;
+}
+.upload-dialog h2:focus {
+  outline: none;
+}
+.upload-dialog p {
+  font-size: 13px;
+  line-height: 1.75;
+  color: #596154;
+}
+.dialog-close {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 28px;
+  color: #596154;
+}
+.upload-steps {
+  padding-left: 22px;
+  margin: 24px 0;
+}
+.upload-steps li {
+  padding-left: 6px;
+  margin-top: 22px;
+}
+.upload-steps li::marker {
+  color: #365e4e;
+  font-weight: 600;
+}
+.upload-steps h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.upload-steps .button {
+  margin-top: 12px;
+}
+.upload-source-links {
+  margin: 10px 0;
+}
+.upload-dialog .source-link {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.upload-dialog .upload-loss-note {
+  padding-left: 12px;
+  border-left: 2px solid #c9b78e;
+}
+.upload-confirm-removal {
+  display: grid;
+  gap: 18px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.upload-dialog-back {
+  display: block;
+  width: fit-content;
+  margin: 20px auto 0;
+  font-size: 13px;
+}
+.upload-dialog .upload-dialog-footnote {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 11px;
+}
 .activity-fields {
   display: grid;
   gap: 18px;

@@ -272,10 +272,10 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   need to be removed before the combined file can be uploaded.
                 </p>
                 <p>
-                  Stitch never deletes an activity on Strava. After a duplicate rejection, it
-                  requires you to download a backup bundle before continuing. Inspect that backup
-                  and remember that it cannot restore photos, kudos, comments, or every device
-                  field.
+                  Stitch never deletes an activity on Strava. Choose Upload to Strava to check the
+                  originals and open the preparation steps. Download a backup bundle before removing
+                  anything. Inspect that backup and remember that it cannot restore photos, kudos,
+                  comments, or every device field.
                 </p>
                 <p>
                   If you decide to proceed, remove the relevant original activities yourself in

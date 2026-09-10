@@ -24,7 +24,17 @@ export type Job = {
   removalConfirmed?: boolean
 }
 export type JobPatch = Partial<
-  Pick<Job, 'state' | 'uploadId' | 'activityId' | 'error' | 'backupDownloaded' | 'removalConfirmed'>
+  Pick<
+    Job,
+    | 'title'
+    | 'description'
+    | 'state'
+    | 'uploadId'
+    | 'activityId'
+    | 'error'
+    | 'backupDownloaded'
+    | 'removalConfirmed'
+  >
 >
 export type JobSummary = Pick<Job, 'id' | 'title' | 'state'>
 export interface Store {

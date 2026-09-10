@@ -58,9 +58,9 @@ export const guideSections: Record<GuideTopic, Section[]> = {
       body: (
         <>
           <p>
-            Download the merged file and, after a duplicate rejection, the backup bundle offered by
-            Stitch. Open the bundle and confirm that it contains the expected activities. Keep
-            original device files too if you have them.
+            Download the merged file and the backup bundle offered by Stitch before uploading. Open
+            the bundle and confirm that it contains the expected activities. Keep original device
+            files too if you have them.
           </p>
           <p>
             Stitch’s backup is reconstructed from the data available through Strava. It is not an
@@ -84,8 +84,8 @@ export const guideSections: Record<GuideTopic, Section[]> = {
             <li>
               <h3>Download and check your backup</h3>
               <p>
-                Stitch requires a backup download before the duplicate-removal step becomes
-                available. Inspect it before continuing.
+                Choose Upload to Strava to open the preparation steps. Stitch requires a backup
+                download before you confirm removal of the originals. Inspect it before continuing.
               </p>
             </li>
             <li>

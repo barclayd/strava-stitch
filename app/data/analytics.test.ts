@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createAnalytics, receiveAnalytics } from './analytics.ts'
+import type { PreviewFailureReason } from '../analytics.ts'
 
 const origin = 'https://stravastitch.com'
 const point = { event: 'connect_click', page: 'home', placement: 'header' }
@@ -52,6 +53,7 @@ test('browser events cannot forge conversions, attach personal data, or post fro
     { ...point, page: '/stitches/private-id' },
     { ...point, placement: 'private title' },
     { ...point, athleteId: 123 },
+    { ...point, reason: 'private message' },
     { ...point, url: origin + '?private' },
     null,
     [point],
@@ -93,8 +95,25 @@ test('disabled environments and browser privacy signals suppress both browser an
     assert.equal(analytics.enabled, false)
     await receiveAnalytics(req, analytics)
     analytics.track('upload_completed', 'preview')
+    analytics.track('preview_failed', 'workspace', 'unknown', 'strava_rate_limit')
     assert.deepEqual(points, [])
   }
+})
+
+test('only allowlisted preview reasons enter the diagnostic dimension', () => {
+  const { analytics, points } = fixture()
+  analytics.track('preview_failed', 'workspace', 'unknown', 'overlapping_activities')
+  assert.deepEqual(points[0].blobs, [
+    'preview_failed',
+    'workspace',
+    'unknown',
+    'v1',
+    'overlapping_activities',
+  ])
+  analytics.track('preview_failed', 'workspace', 'unknown', 'private error' as PreviewFailureReason)
+  assert.deepEqual(points[1].blobs, ['preview_failed', 'workspace', 'unknown', 'v1'])
+  analytics.track('strava_connected', 'workspace', 'unknown', 'strava_connection')
+  assert.deepEqual(points[2].blobs, ['strava_connected', 'workspace', 'unknown', 'v1'])
 })
 
 test('an exclusion affects only the browser that sends the exact preference', () => {

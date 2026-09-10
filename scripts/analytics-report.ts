@@ -35,11 +35,11 @@ if (process.argv.includes('--help')) {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(30000),
-        body: `SELECT blob1 AS event, blob2 AS page, blob3 AS placement, SUM(_sample_interval * double1) AS total
+        body: `SELECT blob1 AS event, blob2 AS page, blob3 AS placement, blob5 AS reason, SUM(_sample_interval * double1) AS total
 FROM ${dataset}
 WHERE timestamp >= NOW() - INTERVAL '${days}' DAY AND blob4 = 'v1'
-GROUP BY event, page, placement
-ORDER BY event, page, placement
+GROUP BY event, page, placement, reason
+ORDER BY event, page, placement, reason
 FORMAT JSON`,
       },
     )

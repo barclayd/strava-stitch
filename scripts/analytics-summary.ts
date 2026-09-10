@@ -2,6 +2,7 @@ export type AnalyticsRow = {
   event: string
   page: string
   placement: string
+  reason?: string
   total: number | string
 }
 

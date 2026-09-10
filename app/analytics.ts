@@ -4,6 +4,21 @@ export const analyticsOptOutCookie = 'stitch_analytics_opt_out'
 export const analyticsOptedOut = (cookies?: string | null): boolean =>
   cookies?.split(';').some((cookie) => cookie.trim() === `${analyticsOptOutCookie}=1`) ?? false
 
+export const previewFailureReasons = [
+  'activity_load',
+  'streams_load',
+  'recording_validation',
+  'merge_validation',
+  'overlapping_activities',
+  'different_sports',
+  'export_failed',
+  'save_failed',
+  'strava_rate_limit',
+  'strava_connection',
+  'strava_unavailable',
+] as const
+export type PreviewFailureReason = (typeof previewFailureReasons)[number]
+
 export const analyticsPages = [
   'home',
   'workspace',

@@ -74,6 +74,7 @@ let activityOverrides: Record<number, Partial<Activity>> = {},
   listedIds = [101, 102],
   lastUpload: FormData | undefined,
   missingStreams = false
+let activityStatus = 200
 const originalFetch = globalThis.fetch
 globalThis.fetch = async (input, init) => {
   const url = String(input),
@@ -124,6 +125,7 @@ globalThis.fetch = async (input, init) => {
           : raw),
     )
   const match = url.match(/\/activities\/(\d+)$/)
+  if (match && activityStatus !== 200) return new Response(null, { status: activityStatus })
   if (match)
     return deleted
       ? new Response('', { status: 404 })
@@ -206,6 +208,81 @@ class Client {
   }
 }
 const confirmation = { title: 'One ride', confirm: 'upload', gaps: 'reviewed' }
+
+async function confirmTestRemoval(c: Client, id: string) {
+  await c.request(routes.stitches.backup.href({ id }))
+  deleted = true
+  try {
+    await c.post(routes.stitches.confirmRemoval.href({ id }), { confirm: 'removed' })
+  } finally {
+    deleted = false
+  }
+}
+
+test('upload opens original-removal guidance, preserves edits, and waits for backup and fresh confirmation', async () => {
+  const c = new Client()
+  await c.login(12)
+  const j = await newJob(12, makeMerge()),
+    path = routes.stitches.upload.href({ id: j.id }),
+    show = routes.stitches.show.href({ id: j.id }),
+    removal = routes.stitches.confirmRemoval.href({ id: j.id }),
+    before = uploads
+  assert.equal(await repo(12).claimUpload(j.id, 12, 'Bypass'), undefined)
+  const draft = {
+    ...confirmation,
+    title: 'One whole ride',
+    description: 'A story worth keeping ☀️',
+  }
+  assert.equal((await c.post(path, draft, false)).status, 403)
+  await c.post(path, draft)
+  const prepared = await c.page(show)
+  assert.match(prepared.text, /<dialog open/)
+  assert.match(prepared.text, /Your stitch is ready/)
+  assert.match(prepared.text, /Strava still has one or more/)
+  assert.match(prepared.text, /photos, comments and kudos/)
+  assert.match(prepared.text, /value="One whole ride"/)
+  assert.equal((await job(j.id, 12))?.description, draft.description)
+  assert.equal((await job(j.id, 12))?.state, 'ready')
+  assert.equal(uploads, before)
+  assert.doesNotMatch((await c.page(show)).text, /<dialog open/)
+  assert.equal((await c.post(removal, { confirm: 'removed' }, false)).status, 403)
+  await c.post(removal, { confirm: 'removed' })
+  assert.ok(!(await job(j.id, 12))?.removalConfirmed)
+  assert.match((await c.page(show)).text, /Download your backup and confirm/)
+  const backup = await c.request(routes.stitches.backup.href({ id: j.id })),
+    files = unzipSync(new Uint8Array(await backup.arrayBuffer()))
+  assert.equal(JSON.parse(strFromU8(files['activities.json'])).description, draft.description)
+  await c.post(removal, { confirm: 'removed' })
+  const stillPresent = (await c.page(show)).text
+  assert.match(stillPresent, /role="alert"[^>]*>Test ride 101 is still on Strava/)
+  assert.ok(!(await job(j.id, 12))?.removalConfirmed)
+  activityStatus = 503
+  try {
+    await c.post(removal, { confirm: 'removed' })
+    assert.ok(!(await job(j.id, 12))?.removalConfirmed)
+    await c.post(path, draft)
+    const unavailable = (await c.page(show)).text
+    assert.match(unavailable, /No upload was started/)
+    assert.doesNotMatch(unavailable, /Strava still has one or more/)
+  } finally {
+    activityStatus = 200
+  }
+  deleted = true
+  try {
+    await c.post(path, draft)
+    assert.match((await c.page(show)).text, /originals are no longer available/)
+    await c.post(removal, {})
+    assert.ok(!(await job(j.id, 12))?.removalConfirmed)
+    await c.post(removal, { confirm: 'removed' })
+    assert.equal((await job(j.id, 12))?.removalConfirmed, true)
+  } finally {
+    deleted = false
+  }
+  assert.equal(uploads, before)
+  await c.post(path, draft)
+  assert.equal(uploads, before + 1)
+  assert.equal(lastUpload?.get('description'), draft.description)
+})
 
 test('all-sport picker and server reject mixed sports and manual entries without hiding them', async () => {
   const c = new Client()
@@ -304,6 +381,7 @@ test('new sports complete preview, download, backup and confirmed uploads with t
       const before = uploads
       await c.post(routes.stitches.upload.href({ id }), { title: 'Missing confirmation' })
       assert.equal(uploads, before)
+      await confirmTestRemoval(c, id)
       await c.post(routes.stitches.upload.href({ id }), { ...confirmation, sport_type: 'Ride' })
       assert.equal(uploads, before + 1)
       assert.equal(lastUpload?.get('sport_type'), sport)
@@ -421,6 +499,7 @@ test('descriptions are prefilled, escaped, editable, and may be cleared on exist
     assert.match((await c.page(path)).text, /Coffee &amp; cake ☕\n&lt;\/textarea&gt;/)
 
     uploadMode = 'duplicate'
+    await confirmTestRemoval(c, id)
     await c.post(routes.stitches.upload.href({ id }), { ...confirmation, description: '' })
     assert.equal(lastUpload?.get('description'), '')
     assert.equal((await job(id, 4))?.description, '')
@@ -440,6 +519,7 @@ test('upload is explicitly confirmed, submitted once with matching edits, and po
     before = uploads
   await c.post(path, { title: 'Test' })
   assert.equal(uploads, before)
+  await confirmTestRemoval(c, j.id)
   const drafts = [
     {
       ...confirmation,
@@ -484,8 +564,10 @@ test('duplicates require a backup and separate confirmed removal, with fresh rea
     path = routes.stitches.upload.href({ id: j.id }),
     removal = routes.stitches.confirmRemoval.href({ id: j.id })
   const description = 'First part\nSecond part\nAdded in Stitch: a lovely ride ☀️'
+  await confirmTestRemoval(c, j.id)
   await c.post(path, { ...confirmation, description })
   assert.equal((await job(j.id, 1))?.state, 'duplicate')
+  assert.equal((await job(j.id, 1))?.removalConfirmed, false)
   assert.equal(lastUpload?.get('description'), description)
   assert.equal((await job(j.id, 1))?.description, description)
   const before = uploads
@@ -518,6 +600,7 @@ test('uncertain uploads cannot be silently retried; refresh and deauthorization 
   const j = await newJob(1, makeMerge()),
     path = routes.stitches.upload.href({ id: j.id })
   const value = (await account(1))!
+  await confirmTestRemoval(c, j.id)
   await saveAccount({ ...value, expires_at: 0 })
   const previousRefresh = refreshes
   await c.post(path, confirmation)
