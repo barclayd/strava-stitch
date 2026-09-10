@@ -75,10 +75,16 @@ let activityOverrides: Record<number, Partial<Activity>> = {},
   lastUpload: FormData | undefined,
   missingStreams = false
 let activityStatus = 200
+let photoEntries: Record<number, unknown[]> = {},
+  photoStatus = 200
 const originalFetch = globalThis.fetch
 globalThis.fetch = async (input, init) => {
   const url = String(input),
     method = init?.method ?? 'GET'
+  if (new URL(url).hostname === 'dgtzuqphqg23d.cloudfront.net') {
+    assert.equal(new Headers(init?.headers).has('Authorization'), false)
+    return new Response(new Uint8Array([1, 2, 3]), { headers: { 'Content-Type': 'image/jpeg' } })
+  }
   if (new URL(url).hostname !== 'www.strava.com') return originalFetch(input, init)
   if (url === 'https://www.strava.com/oauth/token') {
     const params = await new Request(url, init).formData()
@@ -124,6 +130,15 @@ globalThis.fetch = async (input, init) => {
             }
           : raw),
     )
+  const photoMatch = url.match(/\/activities\/(\d+)\/photos\?/)
+  if (photoMatch) {
+    if (photoStatus !== 200) return new Response(null, { status: photoStatus })
+    const page = Number(new URL(url).searchParams.get('page'))
+    assert.equal(new URL(url).searchParams.get('photo_sources'), 'true')
+    return Response.json(
+      (photoEntries[Number(photoMatch[1])] ?? []).slice((page - 1) * 30, page * 30),
+    )
+  }
   const match = url.match(/\/activities\/(\d+)$/)
   if (match && activityStatus !== 200) return new Response(null, { status: activityStatus })
   if (match)
@@ -736,4 +751,93 @@ test('local pages, authenticated previews, downloads, and errors stay out of sea
   assert.equal(xml.headers.get('set-cookie'), null)
   assert.doesNotMatch(await xml.text(), /<loc>/)
   assert.match(await (await c.request('/robots.txt')).text(), /Disallow: \//)
+})
+
+test('photo backups paginate, enforce ownership and keep URLs and tokens out of the browser manifest', async () => {
+  const client = new Client()
+  await client.login(41)
+  const entry = (i: number) => ({
+    activity_id: 101,
+    unique_id: `photo-${i}`,
+    urls: { '2048': `https://dgtzuqphqg23d.cloudfront.net/${i}.jpg` },
+  })
+  try {
+    activityOverrides = { 101: { total_photo_count: 31 }, 102: { total_photo_count: 0 } }
+    photoEntries = { 101: Array.from({ length: 31 }, (_, i) => entry(i)) }
+    const j = await newJob(41, makeMerge())
+    const result = await client.request(routes.stitches.photos.href({ id: j.id }))
+    assert.equal(result.status, 200)
+    assert.match(result.headers.get('cache-control')!, /no-store/)
+    const text = await result.text()
+    assert.doesNotMatch(text, /cloudfront|secret-access|secret-refresh|latitude|longitude/)
+    const manifest = JSON.parse(text)
+    assert.equal(manifest.expected, 31)
+    assert.equal(manifest.complete, true)
+    assert.equal(manifest.items.length, 31)
+    const photoPath = routes.stitches.photo.href({ id: j.id, photo: manifest.items[0].key })
+    assert.equal((await client.request(photoPath)).status, 200)
+    const stranger = new Client()
+    assert.equal((await stranger.request(photoPath)).status, 404)
+    await stranger.login(42)
+    assert.equal((await stranger.request(photoPath)).status, 404)
+    assert.equal((await stranger.request(routes.stitches.photos.href({ id: j.id }))).status, 404)
+    assert.equal(
+      (await client.request(routes.stitches.photo.href({ id: j.id, photo: 'not-in-manifest' })))
+        .status,
+      404,
+    )
+  } finally {
+    activityOverrides = {}
+    photoEntries = {}
+  }
+})
+
+test('missing photos, foreign media, unknown counts and upstream failures cannot become complete backups', async () => {
+  const client = new Client()
+  await client.login(43)
+  const read = async () => {
+    const j = await newJob(43, makeMerge())
+    return (await client.request(routes.stitches.photos.href({ id: j.id }))).json() as Promise<{
+      complete: boolean
+      expected: number | null
+      items: unknown[]
+    }>
+  }
+  try {
+    activityOverrides = { 101: { total_photo_count: 2 }, 102: { total_photo_count: 0 } }
+    photoEntries = {
+      101: [
+        {
+          activity_id: 101,
+          unique_id: 'one',
+          urls: { '2048': 'https://dgtzuqphqg23d.cloudfront.net/one.jpg' },
+        },
+      ],
+    }
+    assert.equal((await read()).complete, false)
+    photoEntries[101].push({
+      activity_id: 999,
+      unique_id: 'foreign',
+      urls: { '2048': 'https://dgtzuqphqg23d.cloudfront.net/other.jpg' },
+    })
+    const foreign = await read()
+    assert.equal(foreign.complete, false)
+    assert.equal(foreign.items.length, 1)
+    photoStatus = 503
+    assert.equal((await read()).complete, false)
+    photoStatus = 200
+    activityOverrides = {}
+    photoEntries = {}
+    const unknown = await read()
+    assert.equal(unknown.expected, null)
+    assert.equal(unknown.complete, false)
+    activityOverrides = { 101: { total_photo_count: 0 }, 102: { total_photo_count: 0 } }
+    const empty = await read()
+    assert.equal(empty.expected, 0)
+    assert.equal(empty.complete, true)
+  } finally {
+    activityOverrides = {}
+    photoEntries = {}
+    photoStatus = 200
+  }
 })

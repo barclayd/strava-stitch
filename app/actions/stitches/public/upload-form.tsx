@@ -1,6 +1,7 @@
 import { clientEntry, on, ref, type Handle } from 'remix/ui'
 import { routes } from '../../../routes.ts'
 import { ActivityFields } from '../../../ui/activity-fields.tsx'
+import { BackupChecklistBody } from './photo-backup.tsx'
 
 export const ExampleDetails = clientEntry(
   '/client/upload-form.js#ExampleDetails',
@@ -159,6 +160,7 @@ export const UploadPreparation = clientEntry(
       state: 'present' | 'removed' | 'unverified'
       error?: string
       sources: { id: number; name: string }[]
+      expires: number
     }>,
   ) {
     let dialog: HTMLDialogElement | undefined
@@ -212,13 +214,7 @@ export const UploadPreparation = clientEntry(
               Keep the merged file and reconstructed copies of each part. Open the ZIP and check its
               contents before removing anything.
             </p>
-            <a
-              class="button button-outline"
-              href={routes.stitches.backup.href({ id: handle.props.id })}
-              download
-            >
-              Download backup ↓
-            </a>
+            <BackupChecklistBody id={handle.props.id} expires={handle.props.expires} compact />
           </li>
           <li>
             <h3>
@@ -244,9 +240,9 @@ export const UploadPreparation = clientEntry(
               ))}
             </div>
             <p class="upload-loss-note">
-              Deleting originals also deletes their photos, comments and kudos. The backup cannot
-              restore these or every field from your device. You can keep the originals and use the
-              downloaded stitch instead.
+              Deleting originals also removes their photos, comments and kudos from Strava. Saved
+              photos can be added back manually; comments, kudos and every device field cannot be
+              restored. You can keep the originals and use the downloaded stitch instead.
             </p>
           </li>
           <li>

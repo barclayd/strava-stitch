@@ -2273,3 +2273,220 @@ svg {
     padding: 26px;
   }
 }
+
+/* Photo backups use the saved image bytes; this grid never embeds remote media. */
+.photo-backup {
+  margin: 36px 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--border, #deded6);
+}
+.photo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.photo-heading h2 {
+  margin: 8px 0 0;
+  font-size: 24px;
+  letter-spacing: -0.6px;
+}
+.photo-backup > p {
+  color: #656b60;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.photo-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: repeat(2, 1fr);
+  aspect-ratio: 2 / 1;
+  gap: 6px;
+  margin: 22px 0;
+}
+.photo-tile {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #eceee7;
+  min-width: 0;
+  min-height: 0;
+  cursor: pointer;
+}
+.photo-tile:first-child {
+  grid-row: span 2;
+}
+.photo-tile img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.photo-tile:focus-visible {
+  outline: 3px solid #335e50;
+  outline-offset: 3px;
+}
+.photo-grid[data-count='1'] {
+  grid-template-columns: 1fr;
+  aspect-ratio: 16 / 9;
+}
+.photo-grid[data-count='2'] {
+  grid-template-columns: 1fr 1fr;
+}
+.photo-grid[data-count='2'] .photo-tile {
+  grid-row: span 2;
+}
+.photo-grid[data-count='3'] {
+  grid-template-columns: 2fr 1fr;
+}
+.photo-grid[data-count='4'] .photo-tile:last-child {
+  grid-column: span 2;
+}
+.photo-grid-expanded {
+  aspect-ratio: auto;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: auto;
+}
+.photo-grid-expanded .photo-tile,
+.photo-grid-expanded[data-count='4'] .photo-tile:last-child {
+  aspect-ratio: 4 / 3;
+  grid-row: auto;
+  grid-column: auto;
+}
+.photo-overflow {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: #17251b88;
+  font-size: clamp(24px, 4vw, 42px);
+  font-weight: 700;
+}
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.photo-actions .button {
+  font-size: 13px;
+  min-height: 44px;
+}
+.backup-badge {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 9px;
+  border-radius: 6px;
+  background: #eeeae0;
+  color: #655c46;
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 650;
+}
+.backup-badge[data-ready='true'] {
+  color: #305b48;
+  background: #e5eee5;
+}
+.backup-checklist {
+  text-align: left;
+  font-size: 13px;
+}
+.backup-checklist ul {
+  list-style: none;
+  margin: 14px 0;
+  padding: 0;
+}
+.backup-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 0;
+  border-bottom: 1px solid #deded6;
+}
+.backup-checklist li > span:nth-child(2) {
+  flex: 1;
+}
+.backup-checklist small {
+  display: block;
+  color: #6c7168;
+  font-size: 11px;
+  margin-top: 3px;
+}
+.backup-checklist li a,
+.backup-checklist li button {
+  padding: 8px 0;
+  font-size: 12px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+.backup-checklist .check-line {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.backup-checklist .fine-print {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.backup-checklist .backup-losses {
+  font-size: 11px;
+  color: #665c4b;
+  line-height: 1.6;
+}
+.backup-error {
+  color: #8a422b !important;
+  font-size: 13px;
+  line-height: 1.6;
+}
+@media (max-width: 600px) {
+  .photo-grid {
+    aspect-ratio: 1.4 / 1;
+    gap: 4px;
+  }
+  .photo-grid-expanded {
+    aspect-ratio: auto;
+  }
+  .photo-heading h2 {
+    font-size: 22px;
+  }
+  .photo-actions {
+    align-items: stretch;
+  }
+}
+.photo-viewer {
+  width: min(900px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 16px;
+  border: 1px solid #dce0d8;
+  border-radius: 12px;
+  background: #fafbf7;
+}
+.photo-viewer::backdrop {
+  background: #17251bd9;
+}
+.photo-viewer > img {
+  display: block;
+  width: 100%;
+  height: min(65dvh, 700px);
+  object-fit: contain;
+  background: #e9ede5;
+}
+.photo-viewer-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 13px;
+}
+.photo-viewer .dialog-close {
+  position: static;
+}
+.photo-viewer .button {
+  min-height: 44px;
+  font-size: 13px;
+}

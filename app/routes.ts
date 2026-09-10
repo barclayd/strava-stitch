@@ -25,6 +25,8 @@ export const routes = route({
     show: get('/stitches/:id'),
     download: get('/stitches/:id/download'),
     backup: get('/stitches/:id/backup'),
+    photos: get('/stitches/:id/photos'),
+    photo: get('/stitches/:id/photos/:photo'),
     confirmRemoval: post('/stitches/:id/removal'),
     upload: post('/stitches/:id/upload'),
     status: get('/stitches/:id/status'),

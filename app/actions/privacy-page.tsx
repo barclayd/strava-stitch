@@ -43,6 +43,16 @@ export function PrivacyPage(
           a backup bundle containing reconstructed originals.
         </p>
         <p>
+          Photo backups retrieve available images from Strava through Stitch. Photo references are
+          encrypted with the preview on our server; image files are kept in this browser, not in our
+          server storage. Browser copies are available during the 24-hour preview and expired copies
+          are cleared when you next use this feature. Signing out or removing your connection clears
+          browser copies when JavaScript and browser storage are available. Your downloaded ZIP
+          files remain on your device. You can also clear browser copies in your browser’s site data
+          settings. Browser storage can be cleared by the browser, so download and check your files
+          before removing originals. Photos must be added to the new activity manually.
+        </p>
+        <p>
           Stitch has no advertising or AI features. Strava may collect and use API usage information
           for its business purposes, including improving its services, support, and checking
           compliance. See the{' '}

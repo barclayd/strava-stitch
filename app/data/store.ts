@@ -1,5 +1,6 @@
 import type { Merge } from '../actions/stitches/merge.ts'
 import { runtime } from './runtime.ts'
+import type { PhotoManifest } from './photos.ts'
 
 export type Account = {
   id: number
@@ -22,6 +23,7 @@ export type Job = {
   error?: string
   backupDownloaded?: boolean
   removalConfirmed?: boolean
+  photos?: PhotoManifest
 }
 export type JobPatch = Partial<
   Pick<
@@ -34,6 +36,7 @@ export type JobPatch = Partial<
     | 'error'
     | 'backupDownloaded'
     | 'removalConfirmed'
+    | 'photos'
   >
 >
 export type JobSummary = Pick<Job, 'id' | 'title' | 'state'>

@@ -17,6 +17,8 @@ export type Activity = {
   map?: { summary_polyline?: string }
   gear_id?: string
   timezone?: string
+  total_photo_count?: number
+  photos?: { count?: number }
 }
 export type Streams = Record<string, { data: unknown[]; original_size?: number }>
 export type Point = {
