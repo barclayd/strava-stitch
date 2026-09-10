@@ -13,6 +13,7 @@ import { StitchPage } from './page.tsx'
 import { unavailableReason } from '../../data/sports.ts'
 import { track } from '../../data/analytics.ts'
 import type { ServerEvent } from '../../analytics.ts'
+import { previewFailureReason, type PreviewStage } from './preview-failure.ts'
 
 function identity(session: Session) {
   const id = session.get('athleteId')
@@ -51,6 +52,7 @@ const updateStatus = async (j: Job, result: strava.Upload) => {
       error: j.error ?? '',
       uploadId: j.uploadId,
       activityId: j.activityId,
+      ...(j.state === 'duplicate' ? { removalConfirmed: false } : {}),
     },
     previous,
   )
@@ -91,17 +93,22 @@ export default createController(routes.stitches, {
         new Set(parsed.value).size !== parsed.value.length
       )
         return fail(session, 'Choose between two and eight different activities.')
+      let stage: PreviewStage = 'activity_load'
       try {
         const records = []
         let points = 0
         for (const value of parsed.value) {
+          stage = 'activity_load'
           const id = Number(value),
             detail = await strava.activity(auth.id, id)
           if (detail.id !== id || detail.athlete?.id !== auth.id)
             return fail(session, 'Every activity must belong to your connected Strava account.')
           const unavailable = unavailableReason(detail)
+          stage = 'recording_validation'
           if (unavailable) throw new Error(unavailable)
+          stage = 'streams_load'
           const source = await strava.streams(auth.id, id)
+          stage = 'recording_validation'
           points += source.time?.data?.length ?? 0
           if (points > maxPoints)
             throw new Error(
@@ -109,13 +116,16 @@ export default createController(routes.stitches, {
             )
           records.push(recording(detail, source))
         }
+        stage = 'merge_validation'
         const merged = merge(records)
+        stage = 'export_failed'
         activityFile(merged.records, 'Stitched activity')
+        stage = 'save_failed'
         const j = await newJob(auth.id, merged)
         track('preview_created', 'workspace')
         return redirect(routes.stitches.show.href({ id: j.id }), 303)
       } catch (error) {
-        track('preview_failed', 'workspace')
+        track('preview_failed', 'workspace', 'unknown', previewFailureReason(error, stage))
         return fail(session, problem(error))
       }
     },
@@ -128,6 +138,8 @@ export default createController(routes.stitches, {
         return new Response('This preview has expired or is not available to this account.', {
           status: 404,
         })
+      const preparation = session.get('uploadPreparation') as
+        { id: string; state: 'present' | 'removed' | 'unverified' } | undefined
       return context.render(
         <StitchPage
           job={j}
@@ -135,6 +147,7 @@ export default createController(routes.stitches, {
           canUpload={auth.scope.includes('activity:write')}
           csrf={getCsrfToken(context)}
           error={session.get('error') as string | undefined}
+          uploadPreparation={preparation?.id === j.id ? preparation.state : undefined}
         />,
       )
     },
@@ -199,33 +212,35 @@ export default createController(routes.stitches, {
         j = auth ? await job(params.id, auth.id) : undefined,
         target = routes.stitches.show.href({ id: params.id })
       if (!auth || !j) return new Response('Not found', { status: 404 })
+      const removalFailure = (message: string, state: 'present' | 'unverified' = 'unverified') => {
+        session.flash('uploadPreparation', { id: j.id, state })
+        return fail(session, message, target)
+      }
       if (
-        j.state !== 'duplicate' ||
+        !['ready', 'failed', 'duplicate'].includes(j.state) ||
         !j.backupDownloaded ||
         get(FormData).get('confirm') !== 'removed'
       )
-        return fail(
-          session,
+        return removalFailure(
           'Download your backup and confirm you removed the selected originals in Strava.',
-          target,
         )
       try {
         for (const r of j.merge.records) {
           try {
             await strava.activity(auth.id, r.activity.id)
-            return fail(
-              session,
+            return removalFailure(
               `${r.activity.name} is still on Strava. No upload was started.`,
-              target,
+              'present',
             )
           } catch (error) {
             if (!(error instanceof strava.StravaError && error.status === 404)) throw error
           }
         }
-        await patchJob(j.id, j.owner, { removalConfirmed: true })
+        const saved = await patchJob(j.id, j.owner, { removalConfirmed: true }, j.state)
+        if (!saved) return fail(session, 'This preview changed. Review its latest status.', target)
         return redirect(target, 303)
       } catch (error) {
-        return fail(session, problem(error), target)
+        return removalFailure(problem(error))
       }
     },
     async upload({ get, params }) {
@@ -248,8 +263,28 @@ export default createController(routes.stitches, {
         typeof description !== 'string'
       )
         return fail(session, 'Review the joins and confirm the upload before continuing.', target)
-      if (j.state === 'duplicate' && !j.removalConfirmed)
-        return fail(session, 'Complete the separate original-removal step before retrying.', target)
+      if (['ready', 'failed', 'duplicate'].includes(j.state) && !j.removalConfirmed) {
+        try {
+          // Save edits before the backup is made, without claiming or starting an upload.
+          const saved = await patchJob(j.id, j.owner, { title: title.trim(), description }, j.state)
+          if (!saved)
+            return fail(session, 'This preview changed. Review its latest status.', target)
+          let present = false
+          for (const r of j.merge.records) {
+            try {
+              await strava.activity(auth.id, r.activity.id)
+              present = true
+              break
+            } catch (error) {
+              if (!(error instanceof strava.StravaError && error.status === 404)) throw error
+            }
+          }
+          session.flash('uploadPreparation', { id: j.id, state: present ? 'present' : 'removed' })
+          return redirect(target, 303)
+        } catch (error) {
+          return fail(session, problem(error) + ' No upload was started.', target)
+        }
+      }
       const claimed = await claimUpload(j.id, auth.id, title.trim(), description)
       if (!claimed)
         return fail(
@@ -283,7 +318,11 @@ export default createController(routes.stitches, {
         const saved = await patchJob(
           claimed.id,
           claimed.owner,
-          { state: claimed.state, error: claimed.error },
+          {
+            state: claimed.state,
+            error: claimed.error,
+            ...(claimed.state === 'duplicate' ? { removalConfirmed: false } : {}),
+          },
           'submitting',
         )
         if (saved) trackUploadOutcome(saved.state)

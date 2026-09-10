@@ -1,10 +1,20 @@
-import type { AnalyticsEvent, AnalyticsPage, AnalyticsPlacement } from '../analytics.ts'
-import { analyticsOptedOut, clientPoint } from '../analytics.ts'
+import type {
+  AnalyticsEvent,
+  AnalyticsPage,
+  AnalyticsPlacement,
+  PreviewFailureReason,
+} from '../analytics.ts'
+import { analyticsOptedOut, clientPoint, previewFailureReasons } from '../analytics.ts'
 import { runtime } from './runtime.ts'
 
 export type Analytics = {
   enabled: boolean
-  track(event: AnalyticsEvent, page: AnalyticsPage, placement?: AnalyticsPlacement): void
+  track(
+    event: AnalyticsEvent,
+    page: AnalyticsPage,
+    placement?: AnalyticsPlacement,
+    reason?: PreviewFailureReason,
+  ): void
 }
 
 export function createAnalytics(
@@ -19,13 +29,21 @@ export function createAnalytics(
     !analyticsOptedOut(request?.headers.get('Cookie'))
   return {
     enabled,
-    track(event, page, placement = 'unknown') {
+    track(event, page, placement = 'unknown', reason) {
       if (!enabled) return
       try {
         // Cloudflare writes this in the background. Analytics must never block an activity operation.
         env.FUNNEL.writeDataPoint({
           indexes: [event],
-          blobs: [event, page, placement, 'v1'],
+          blobs: [
+            event,
+            page,
+            placement,
+            'v1',
+            ...(event === 'preview_failed' && reason && previewFailureReasons.includes(reason)
+              ? [reason]
+              : []),
+          ],
           doubles: [1],
         })
       } catch {
@@ -35,8 +53,12 @@ export function createAnalytics(
   }
 }
 
-export const track = (event: AnalyticsEvent, page: AnalyticsPage, placement?: AnalyticsPlacement) =>
-  runtime().analytics.track(event, page, placement)
+export const track = (
+  event: AnalyticsEvent,
+  page: AnalyticsPage,
+  placement?: AnalyticsPlacement,
+  reason?: PreviewFailureReason,
+) => runtime().analytics.track(event, page, placement, reason)
 
 // A stateless endpoint: it never loads an athlete, creates a session, or accepts conversion events.
 export async function receiveAnalytics(request: Request, analytics: Analytics): Promise<Response> {

@@ -125,6 +125,14 @@ OAuth keeps the selected placement through the callback so connections can be co
 
 No athlete IDs, job IDs, names, descriptions, GPS, activity types, search terms,
 query strings, full URLs, referrers, or IP addresses are written to the dataset.
+
+For `preview_failed`, `blob5` contains an optional fixed failure reason: `activity_load`,
+`streams_load`, `recording_validation`, `merge_validation`, `overlapping_activities`,
+`different_sports`, `export_failed`, `save_failed`, `strava_rate_limit`,
+`strava_connection`, or `strava_unavailable`. These distinguish the stage or known
+failure category without recording exception text or private activity details.
+Older events have an empty reason and cannot be diagnosed retrospectively. The
+report's full event table includes this dimension; privacy exclusions still apply.
 The browser sends events without cookies or referrers. The endpoint creates no session.
 The random document-render marker used to detect navigation is never sent to analytics
 and does not identify a person. Both browser and server collection honour DNT and GPC.
@@ -134,12 +142,12 @@ The public privacy page explains collection and the [three-month retention](http
 Always account for Cloudflare sampling when querying:
 
 ```sql
-SELECT blob1 AS event, blob2 AS page, blob3 AS placement,
+SELECT blob1 AS event, blob2 AS page, blob3 AS placement, blob5 AS reason,
        SUM(_sample_interval * double1) AS total
 FROM strava_stitch_funnel
 WHERE timestamp >= NOW() - INTERVAL '7' DAY AND blob4 = 'v1'
-GROUP BY event, page, placement
-ORDER BY event, page, placement
+GROUP BY event, page, placement, reason
+ORDER BY event, page, placement, reason
 ```
 
 This query gives daily totals for trends:

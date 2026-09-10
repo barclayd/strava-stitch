@@ -135,9 +135,11 @@ generated from Wrangler configuration; do not edit them by hand.
   directly to Strava and included in backup metadata, not embedded in GPX/FIT files.
 - OAuth requests `read`, `activity:read`, `activity:read_all`, and `activity:write`.
   Uploads always require explicit confirmation and use the athlete's privacy defaults.
-- Strava has no activity deletion API. Duplicates require a downloaded backup,
-  manual removal in Strava, and separate confirmation; Stitch checks the originals
-  are unavailable before allowing a retry. Stitch never deletes Strava activities.
+- Strava has no activity deletion API. Upload first checks the originals and opens
+  a preparation dialog; no upload is started at this point. It preserves edited
+  titles and descriptions for the backup. A downloaded backup, manual removal in
+  Strava, and separate confirmation are required; Stitch checks the originals
+  are unavailable before allowing an upload. Stitch never deletes Strava activities.
 - Check [Strava athlete capacity and review requirements](https://developers.strava.com/docs/rate-limits/)
   before opening access to other athletes.
 

@@ -4,7 +4,12 @@ import { RouteMap } from '../../ui/public/route-map.tsx'
 import { labelColours, duration, km, day, time } from '../public/format.ts'
 import { routes } from '../../routes.ts'
 import type { Job } from '../../data/store.ts'
-import { ExampleDetails, UploadForm, UploadStatus } from './public/upload-form.tsx'
+import {
+  ExampleDetails,
+  UploadForm,
+  UploadPreparation,
+  UploadStatus,
+} from './public/upload-form.tsx'
 import { StravaConnect } from '../../ui/strava.tsx'
 import { fileFormat, hasPosition, mergedDescription } from './merge.ts'
 import { sportLabel } from '../../data/sports.ts'
@@ -23,6 +28,7 @@ export function StitchPage(
     canUpload: boolean
     error?: string
     demo?: boolean
+    uploadPreparation?: 'present' | 'removed' | 'unverified'
   }>,
 ) {
   return () => {
@@ -242,57 +248,6 @@ export function StitchPage(
                     Check Strava ↗
                   </a>
                 </>
-              ) : j.state === 'duplicate' && !j.removalConfirmed ? (
-                <div class="duplicate-flow">
-                  <h3>Strava found an original.</h3>
-                  <p>
-                    Strava may reject a stitched activity while the original activities exist.
-                    Removing them also removes their photos, comments, and kudos.
-                  </p>
-                  <ol>
-                    <li>
-                      <strong>Save your backup.</strong>
-                      <p>A ZIP with the stitched file, reconstructed sources, and sport details.</p>
-                      <a
-                        class="button button-outline wide"
-                        href={routes.stitches.backup.href({ id: j.id })}
-                        download
-                      >
-                        Download backup ↓
-                      </a>
-                    </li>
-                    <li>
-                      <strong>Remove originals in Strava.</strong>
-                      <p>
-                        Stitch cannot delete activities. Open each selected activity and decide
-                        whether to remove it.
-                      </p>
-                      {m.records.map((r, i) => (
-                        <a
-                          class="source-link strava-data-link"
-                          key={r.activity.id}
-                          href={'https://www.strava.com/activities/' + r.activity.id}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          Part {i + 1} · {r.activity.name} · View on Strava ↗
-                        </a>
-                      ))}
-                    </li>
-                  </ol>
-                  <form
-                    data-rmx-document
-                    action={routes.stitches.confirmRemoval.href({ id: j.id })}
-                    method="post"
-                  >
-                    <input type="hidden" name="_csrf" value={csrf} />
-                    <label class="check-line">
-                      <input type="checkbox" name="confirm" value="removed" required />
-                      <span>I saved my backup and removed these originals in Strava.</span>
-                    </label>
-                    <button class="button button-dark wide">Check originals and continue →</button>
-                  </form>
-                </div>
               ) : !canUpload ? (
                 <>
                   <p>
@@ -306,15 +261,35 @@ export function StitchPage(
                 </>
               ) : (
                 <>
-                  <p>Review the recordings and pauses, then upload to Strava as {sport}.</p>
-                  {j.error && <Alert message={j.error} />}
+                  <p>
+                    {j.removalConfirmed
+                      ? `Your originals have been checked. Confirm below to upload your stitch as ${sport}.`
+                      : j.state === 'duplicate'
+                        ? 'Your stitch is ready. Strava found a duplicate; review the originals before trying again.'
+                        : `Review the recordings and pauses. We’ll check the originals before uploading to Strava as ${sport}.`}
+                  </p>
+                  {j.error && j.state !== 'duplicate' && <Alert message={j.error} />}
                   <UploadForm
                     id={j.id}
                     csrf={csrf}
                     title={j.title}
                     description={j.description ?? mergedDescription(j.merge)}
                     retry={j.state !== 'ready'}
+                    removalConfirmed={j.removalConfirmed}
+                    prepared={Boolean(handle.props.uploadPreparation)}
                   />
+                  {handle.props.uploadPreparation && !j.removalConfirmed && (
+                    <UploadPreparation
+                      id={j.id}
+                      csrf={csrf}
+                      state={handle.props.uploadPreparation}
+                      error={error}
+                      sources={m.records.map(({ activity }) => ({
+                        id: activity.id,
+                        name: activity.name,
+                      }))}
+                    />
+                  )}
                 </>
               )}
               {!demo && (
