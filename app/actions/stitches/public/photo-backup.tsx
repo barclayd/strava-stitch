@@ -172,12 +172,19 @@ export const PhotoBackup = clientEntry(
   '/client/photo-backup.js#PhotoBackup',
   function PhotoBackup(handle: Handle<Props>) {
     const view = backupView(handle)
-    let expanded = false
     let selected = 0,
       viewer: HTMLDialogElement | undefined,
       opener: HTMLButtonElement | undefined
-    const viewerRef = ref((node: HTMLDialogElement) => {
+    let swipe: { id: number; x: number; y: number } | undefined
+    const movePhoto = (direction: number) => {
+      const count = view.value?.photos.length ?? 0
+      if (!count) return
+      selected = (selected + direction + count) % count
+      handle.update()
+    }
+    const viewerRef = ref((node: HTMLDialogElement, signal) => {
       viewer = node
+      signal.addEventListener('abort', () => node.close())
     })
     const urls = new Map<string, string>()
     const release = () => {
@@ -252,6 +259,8 @@ export const PhotoBackup = clientEntry(
     return () => {
       const photos = view.value?.photos ?? [],
         manifest = view.value?.manifest
+      if (!photos.length && viewer?.open) viewer.close()
+      selected = Math.min(selected, Math.max(0, photos.length - 1))
       const active = new Set(photos.map((p) => p.key))
       for (const [key, url] of urls)
         if (!active.has(key)) {
@@ -292,30 +301,23 @@ export const PhotoBackup = clientEntry(
             stitched activity in Strava after uploading.
           </p>
           {photos.length > 0 && (
-            <div
-              class={'photo-grid' + (expanded ? ' photo-grid-expanded' : '')}
-              data-count={Math.min(photos.length, 5)}
-            >
-              {(expanded ? photos : photos.slice(0, 5)).map((p, index) => (
+            <div class="photo-grid" data-count={Math.min(photos.length, 5)}>
+              {photos.slice(0, 5).map((p, index) => (
                 <button
                   type="button"
                   class="photo-tile"
                   key={p.key}
+                  aria-haspopup="dialog"
                   aria-label={
-                    index === 4 && photos.length > 5 && !expanded
-                      ? `Show all ${photos.length} saved photos`
+                    index === 4 && photos.length > 5
+                      ? `View remaining ${photos.length - 4} saved photos`
                       : `View saved photo ${index + 1}`
                   }
                   mix={on('click', async (event) => {
-                    if (index === 4 && photos.length > 5 && !expanded) {
-                      expanded = true
-                      handle.update()
-                      return
-                    }
                     selected = index
                     opener = event.currentTarget
                     await handle.update()
-                    viewer?.showModal()
+                    if (!view.signal?.aborted && view.value?.photos.length) viewer?.showModal()
                   })}
                 >
                   <img
@@ -323,8 +325,10 @@ export const PhotoBackup = clientEntry(
                     alt={`Saved photo ${index + 1} from activity ${p.source}`}
                     loading="lazy"
                   />
-                  {index === 4 && photos.length > 5 && !expanded && (
-                    <span class="photo-overflow">+{photos.length - 4}</span>
+                  {index === 4 && photos.length > 5 && (
+                    <span class="photo-overflow" aria-hidden="true">
+                      +{photos.length - 4}
+                    </span>
                   )}
                 </button>
               ))}
@@ -335,54 +339,96 @@ export const PhotoBackup = clientEntry(
             aria-label="Saved photo viewer"
             mix={[
               viewerRef,
-              on('close', () => opener?.focus()),
+              on('close', () => {
+                swipe = undefined
+                opener?.focus({ preventScroll: true })
+              }),
               on('keydown', (event) => {
                 if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
                   event.preventDefault()
-                  selected =
-                    (selected + (event.key === 'ArrowLeft' ? photos.length - 1 : 1)) % photos.length
+                  movePhoto(event.key === 'ArrowLeft' ? -1 : 1)
+                } else if (event.key === 'Home' || event.key === 'End') {
+                  event.preventDefault()
+                  selected = event.key === 'Home' ? 0 : Math.max(0, photos.length - 1)
                   handle.update()
                 }
               }),
             ]}
           >
             <div class="photo-viewer-toolbar">
-              <span role="status">
-                Photo {selected + 1} of {photos.length}
-              </span>
               <button
                 type="button"
-                class="dialog-close"
+                class="photo-viewer-control"
                 aria-label="Close photo viewer"
+                autoFocus
                 mix={on('click', () => viewer?.close())}
               >
-                ×
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 6 12 12M6 18 18 6" />
+                </svg>
               </button>
             </div>
-            {photos[selected] && (
-              <img src={urls.get(photos[selected].key)} alt={`Saved photo ${selected + 1}`} />
-            )}
-            <div class="photo-viewer-toolbar">
+            <div
+              class="photo-viewer-stage"
+              mix={[
+                on('pointerdown', (event) => {
+                  if (!event.isPrimary) {
+                    swipe = undefined
+                    return
+                  }
+                  if (event.pointerType === 'mouse') return
+                  swipe = { id: event.pointerId, x: event.clientX, y: event.clientY }
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                }),
+                on('pointerup', (event) => {
+                  if (!swipe || swipe.id !== event.pointerId) return
+                  const dx = event.clientX - swipe.x,
+                    dy = event.clientY - swipe.y
+                  swipe = undefined
+                  if (Math.abs(dx) >= 50 && Math.abs(dx) > Math.abs(dy) * 1.25)
+                    movePhoto(dx < 0 ? 1 : -1)
+                }),
+                on('pointercancel', () => {
+                  swipe = undefined
+                }),
+              ]}
+            >
+              {photos[selected] && (
+                <img
+                  src={urls.get(photos[selected].key)}
+                  alt={`Saved photo ${selected + 1}`}
+                  draggable={false}
+                />
+              )}
+            </div>
+            <div class="photo-viewer-navigation" hidden={photos.length < 2}>
               <button
                 type="button"
-                class="button button-outline"
-                mix={on('click', () => {
-                  selected = (selected + photos.length - 1) % photos.length
-                  handle.update()
-                })}
+                class="photo-viewer-control"
+                aria-label="Previous photo"
+                mix={on('click', () => movePhoto(-1))}
               >
-                ← Previous
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m15 5-7 7 7 7" />
+                </svg>
               </button>
               <button
                 type="button"
-                class="button button-outline"
-                mix={on('click', () => {
-                  selected = (selected + 1) % photos.length
-                  handle.update()
-                })}
+                class="photo-viewer-control"
+                aria-label="Next photo"
+                mix={on('click', () => movePhoto(1))}
               >
-                Next →
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m9 5 7 7-7 7" />
+                </svg>
               </button>
+            </div>
+            <div
+              class="photo-viewer-counter"
+              role="status"
+              aria-label={`Photo ${selected + 1} of ${photos.length}`}
+            >
+              {selected + 1} / {photos.length}
             </div>
           </dialog>
           <div class="photo-actions">
@@ -406,18 +452,6 @@ export const PhotoBackup = clientEntry(
                 {allPhotosSaved(view.value)
                   ? 'Download photos ↓'
                   : `Download ${photos.length} saved photos ↓`}
-              </button>
-            )}
-            {expanded && (
-              <button
-                type="button"
-                class="text-button"
-                mix={on('click', () => {
-                  expanded = false
-                  handle.update()
-                })}
-              >
-                Collapse gallery
               </button>
             )}
           </div>
