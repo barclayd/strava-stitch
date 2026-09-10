@@ -1,4 +1,5 @@
 import { createController } from 'remix/router'
+import { SuperHeaders } from 'remix/headers'
 
 import { routes } from '../routes.ts'
 import { HomePage } from './home-page.tsx'
@@ -16,6 +17,12 @@ import { GuidePage } from './guide-page.tsx'
 import { TopicGuidePage } from './topic-guide-page.tsx'
 import { pageSeo } from '../seo.ts'
 import { track } from '../data/analytics.ts'
+import { analyticsOptedOut, analyticsOptOutCookie } from '../analytics.ts'
+
+async function guideFirstname(session: Session) {
+  const id = session.get('athleteId')
+  return typeof id === 'number' ? (await account(id))?.firstname : undefined
+}
 
 export default createController(routes, {
   actions: {
@@ -72,13 +79,34 @@ export default createController(routes, {
         <PrivacyPage
           seo={pageSeo('privacy', context.url, typeof id === 'number')}
           csrf={getCsrfToken(context)}
+          analyticsOptOut={analyticsOptedOut(context.request.headers.get('Cookie'))}
           firstname={typeof id === 'number' ? (await account(id))?.firstname : undefined}
         />,
       )
     },
-    guide(context) {
+    analyticsPreference({ get, url }) {
+      const preference = get(FormData).get('analytics')
+      if (preference !== 'exclude' && preference !== 'include')
+        return new Response('Choose whether to exclude this browser from interaction counts.', {
+          status: 400,
+        })
+      const headers = new SuperHeaders({
+        Location: routes.privacy.href() + '#analytics',
+        setCookie: {
+          name: analyticsOptOutCookie,
+          value: preference === 'exclude' ? '1' : '',
+          path: '/',
+          sameSite: 'Lax',
+          secure: url.protocol === 'https:',
+          maxAge: preference === 'exclude' ? 31536000 : 0,
+        },
+      })
+      return new Response(null, { status: 303, headers })
+    },
+    async guide(context) {
       return context.render(
         <GuidePage
+          firstname={await guideFirstname(context.get(Session))}
           csrf={getCsrfToken(context)}
           seo={pageSeo(
             'guide',
@@ -88,10 +116,11 @@ export default createController(routes, {
         />,
       )
     },
-    duplicateGuide(context) {
+    async duplicateGuide(context) {
       return context.render(
         <TopicGuidePage
           topic="duplicateGuide"
+          firstname={await guideFirstname(context.get(Session))}
           csrf={getCsrfToken(context)}
           seo={pageSeo(
             'duplicateGuide',
@@ -101,10 +130,11 @@ export default createController(routes, {
         />,
       )
     },
-    indoorGuide(context) {
+    async indoorGuide(context) {
       return context.render(
         <TopicGuidePage
           topic="indoorGuide"
+          firstname={await guideFirstname(context.get(Session))}
           csrf={getCsrfToken(context)}
           seo={pageSeo(
             'indoorGuide',
@@ -114,10 +144,11 @@ export default createController(routes, {
         />,
       )
     },
-    runGuide(context) {
+    async runGuide(context) {
       return context.render(
         <TopicGuidePage
           topic="runGuide"
+          firstname={await guideFirstname(context.get(Session))}
           csrf={getCsrfToken(context)}
           seo={pageSeo(
             'runGuide',
@@ -127,10 +158,11 @@ export default createController(routes, {
         />,
       )
     },
-    rideGuide(context) {
+    async rideGuide(context) {
       return context.render(
         <TopicGuidePage
           topic="rideGuide"
+          firstname={await guideFirstname(context.get(Session))}
           csrf={getCsrfToken(context)}
           seo={pageSeo(
             'rideGuide',

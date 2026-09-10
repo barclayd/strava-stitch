@@ -1,4 +1,10 @@
-import { analyticsPages, clientEvents, placement, type ClientEvent } from '../../analytics.ts'
+import {
+  analyticsOptedOut,
+  analyticsPages,
+  clientEvents,
+  placement,
+  type ClientEvent,
+} from '../../analytics.ts'
 
 // A small independent entry also covers reading pages without loading the Remix UI runtime.
 function page() {
@@ -9,6 +15,7 @@ function track(event: ClientEvent, source: unknown = 'unknown') {
   const { name } = page()
   if (
     !name ||
+    analyticsOptedOut(document.cookie) ||
     navigator.doNotTrack === '1' ||
     ('globalPrivacyControl' in navigator && navigator.globalPrivacyControl === true)
   )

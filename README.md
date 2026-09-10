@@ -150,6 +150,11 @@ Cloudflare Analytics Engine records aggregate CTA clicks, completed Strava conne
 previews, downloads, and upload outcomes. It is enabled in production and disabled in
 development/staging by default. See [the event catalogue and reporting instructions](docs/analytics.md).
 Run `npm run analytics -- 7` with an Account Analytics Read token to view the last week's counts.
+The report separates real previews, merged-file downloads, and completed uploads from
+demo exploration. Before testing production, use **Exclude this browser** at
+[Privacy & your data → Interaction counts](https://stravastitch.com/privacy#analytics).
+This suppresses browser and server events from that browser, including OAuth callbacks,
+and persists through sign-out. Repeat for each browser used for testing.
 
 ## Search visibility
 

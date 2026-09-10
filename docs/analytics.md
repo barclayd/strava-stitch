@@ -27,8 +27,12 @@ npm run analytics         # Last 7 days
 npm run analytics -- 30   # Last 30 days
 ```
 
-The report shows the main funnel counts followed by every event broken down by page
-and CTA placement. Account and dataset settings come from `wrangler.jsonc`.
+The report leads with **real stitch outcomes**: previews created, merged activity
+files served, backup bundles served, and completed uploads. Acquisition and upload
+attempts follow, then **demo exploration** in its own table. Demo step clicks from
+both the homepage and the standalone example stay separate from real previews and
+downloads. Every event is also broken down by page and CTA placement. Account and
+dataset settings come from `wrangler.jsonc`.
 The read token is only used locally; it is not needed by the application to collect events.
 The same queries can be used with the [SQL API](https://developers.cloudflare.com/analytics/analytics-engine/sql-api/)
 or Cloudflare's supported analytics integrations.
@@ -39,6 +43,30 @@ no separate registration form: `strava_connected` is the successful onboarding s
 and includes returning users reconnecting. We do not create identifiers to join an
 individual's journey across steps or visits. Ad blockers, opt-outs, closed tabs, and
 background-write failures can reduce counts; analytics is best effort.
+
+## Excluding your own browser when testing
+
+Before testing production, open [Privacy & your data → Interaction counts](https://stravastitch.com/privacy#analytics)
+and choose **Exclude this browser**. This works without connecting Strava. The
+CSRF-protected native form sets the host-only `stitch_analytics_opt_out=1` cookie
+at `/`, with SameSite=Lax, Secure on HTTPS, and a one-year lifetime. It stores only
+the same boolean value for everyone, never a browser or athlete identifier.
+
+The server checks it on every request, including OAuth callbacks, downloads,
+uploads, and status polls. Excluded pages omit the analytics script and context.
+Already-open tabs check the cookie before sending an event, including restored
+pages, without attaching cookies to analytics requests. The preference is readable
+by the browser script for this purpose; it is not an authentication credential.
+
+The exclusion survives sign-out and reconnection. Enable it separately in each
+browser/profile/device used for testing. **Remove this browser’s exclusion** clears
+the cookie; Do Not Track and Global Privacy Control still override collection.
+Clearing cookies also removes the preference. It affects future events only:
+earlier testing cannot be identified or subtracted from these anonymous totals.
+
+Review real outcomes weekly with `npm run analytics -- 7`. Downloads mean a file
+was served, not proof it was saved. Do not sum previews, downloads, and uploads as
+unique completed stitches, or treat demo clicks as new signups.
 
 ## Event definitions
 
@@ -90,7 +118,9 @@ Cloudflare supplies the timestamp and sampling weight. Page labels are `home`,
 `workspace`, `example`, `preview`, `guide`, `duplicateGuide`, `indoorGuide`,
 `runGuide`, `rideGuide`, and `privacy`. These fixed topic labels distinguish guide
 visits without collecting URLs or search terms. Placement labels are
-`header`, `home`, `example`, `preview`, `guide`, `footer`, or `unknown`.
+`header`, `home`, `example`, `preview`, `guide`, `guide_intro`, `footer`, or `unknown`.
+`guide_intro` identifies the opening actions across the guide pages; existing CTA
+placements and event names are unchanged.
 OAuth keeps the selected placement through the callback so connections can be compared by CTA.
 
 No athlete IDs, job IDs, names, descriptions, GPS, activity types, search terms,

@@ -3,8 +3,9 @@ import { Shell } from '../ui/shell.tsx'
 import { routes } from '../routes.ts'
 import { guideUpdated, type PageSeo } from '../seo.ts'
 import { guideTopics, guideTopicKeys } from '../guide-topics.ts'
+import { GuideActions } from '../ui/guide-actions.tsx'
 
-export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
+export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname?: string }>) {
   return () => (
     <Shell {...handle.props} analyticsPage="guide">
       <main id="main" class="guide-page">
@@ -22,6 +23,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo }>) {
               eight activities of the same sport, and review the join. Then download the merged GPX
               or FIT file, or confirm an upload to Strava. Free to use, always.
             </p>
+            <GuideActions firstname={handle.props.firstname} />
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}

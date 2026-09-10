@@ -1,4 +1,5 @@
 import { unstable_readConfig } from 'wrangler'
+import { analyticsSummary, type AnalyticsRow } from './analytics-summary.ts'
 
 if (process.argv.includes('--help')) {
   console.log(
@@ -47,24 +48,21 @@ FORMAT JSON`,
         `Cloudflare returned HTTP ${response.status}. Check Account Analytics Read permission and that production has received its first event.`,
       )
     const result = (await response.json()) as {
-      data?: { event: string; page: string; placement: string; total: number | string }[]
+      data?: AnalyticsRow[]
     }
     if (!Array.isArray(result.data)) throw new Error('Cloudflare did not return analytics rows.')
     const rows = result.data,
-      count = (event: string, page?: string) =>
-        rows
-          .filter((row) => row.event === event && (!page || row.page === page))
-          .reduce((total, row) => total + Number(row.total), 0)
+      summary = analyticsSummary(rows)
     console.log(`Stitch funnel — last ${days} days (event counts, not unique people)`)
-    console.table([
-      { step: 'Homepage views', events: count('page_view', 'home') },
-      { step: 'Connect CTA clicks', events: count('connect_click') },
-      { step: 'Strava connections started', events: count('strava_connect_started') },
-      { step: 'Strava connections completed', events: count('strava_connected') },
-      { step: 'Previews created', events: count('preview_created') },
-      { step: 'Uploads started (including retries)', events: count('upload_started') },
-      { step: 'Uploads completed', events: count('upload_completed') },
-    ])
+    console.log('Real stitch outcomes:')
+    console.table(summary.outcomes)
+    console.log('Acquisition and upload attempts:')
+    console.table(summary.acquisition)
+    console.log('Demo exploration (separate from real outcomes):')
+    console.table(summary.demo)
+    console.log(
+      'Downloads count files served, not confirmed saves. Earlier testing traffic cannot be removed retrospectively.',
+    )
     console.log('All events, broken down by page and placement:')
     console.table(rows)
     if (!rows.length) console.log('No recorded events in this period.')

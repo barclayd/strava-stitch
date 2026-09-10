@@ -3,7 +3,9 @@ import { Shell } from '../ui/shell.tsx'
 import { routes } from '../routes.ts'
 import type { PageSeo } from '../seo.ts'
 
-export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; seo: PageSeo }>) {
+export function PrivacyPage(
+  handle: Handle<{ csrf: string; firstname?: string; seo: PageSeo; analyticsOptOut: boolean }>,
+) {
   return () => (
     <Shell {...handle.props} title="Your data — Stitch" analyticsPage="privacy">
       <main id="main" class="prose-page">
@@ -47,18 +49,49 @@ export function PrivacyPage(handle: Handle<{ csrf: string; firstname?: string; s
           <a href="https://www.strava.com/legal/privacy">Strava Privacy Policy</a> for Strava’s own
           processing of your information.
         </p>
-        <h2>Understanding how Stitch is used</h2>
+        <h2 id="analytics">Understanding how Stitch is used</h2>
         <p>
           We use Cloudflare Analytics Engine to count page views, button clicks, successful Strava
           connections, previews, downloads, and upload outcomes. These events contain fixed page and
           action labels. They do not contain your identity, IP address, activity details,
-          descriptions, GPS data, search terms, or full URLs. We do not add analytics cookies or
+          descriptions, GPS data, search terms, or full URLs. We do not use tracking cookies or
           identifiers to follow you between visits. Events are kept for three months.
         </p>
         <p>
           We honour your browser’s Do Not Track and Global Privacy Control signals. Cloudflare still
           processes ordinary network requests to host and protect the service.
         </p>
+        <div class="analytics-preference">
+          <h3>Interaction counts for this browser</h3>
+          <p>
+            Exclude this browser when testing Stitch, or whenever you prefer not to be counted. This
+            stops page, click, connection, preview, download and upload events from this browser.
+          </p>
+          <p>
+            We save only an exclusion preference in a cookie for one year. It contains no
+            identifier, stays in place when you sign out, and can be removed here at any time. Set
+            it separately in each browser or device you use.
+          </p>
+          <p role="status">
+            {handle.props.analyticsOptOut
+              ? 'This browser is excluded from interaction counts.'
+              : 'This browser follows your Do Not Track and Global Privacy Control settings.'}
+          </p>
+          <form data-rmx-document method="post" action={routes.analyticsPreference.href()}>
+            <input type="hidden" name="_csrf" value={handle.props.csrf} />
+            <button
+              type="submit"
+              class="button button-outline"
+              name="analytics"
+              value={handle.props.analyticsOptOut ? 'include' : 'exclude'}
+            >
+              {handle.props.analyticsOptOut
+                ? 'Remove this browser’s exclusion'
+                : 'Exclude this browser'}
+            </button>
+          </form>
+          <p>Removing the exclusion still respects your browser’s privacy settings.</p>
+        </div>
         <h2>Maps and your routes</h2>
         <p>
           Street maps use OpenStreetMap data hosted with Stitch on Cloudflare. Your browser draws

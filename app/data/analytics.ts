@@ -1,5 +1,5 @@
 import type { AnalyticsEvent, AnalyticsPage, AnalyticsPlacement } from '../analytics.ts'
-import { clientPoint } from '../analytics.ts'
+import { analyticsOptedOut, clientPoint } from '../analytics.ts'
 import { runtime } from './runtime.ts'
 
 export type Analytics = {
@@ -15,7 +15,8 @@ export function createAnalytics(
     env.ANALYTICS_ENABLED === 'true' &&
     request?.method !== 'HEAD' &&
     request?.headers.get('DNT') !== '1' &&
-    request?.headers.get('Sec-GPC') !== '1'
+    request?.headers.get('Sec-GPC') !== '1' &&
+    !analyticsOptedOut(request?.headers.get('Cookie'))
   return {
     enabled,
     track(event, page, placement = 'unknown') {

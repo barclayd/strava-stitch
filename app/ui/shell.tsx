@@ -53,6 +53,19 @@ export function Shell(
           </a>
           {handle.props.firstname ? (
             <>
+              {handle.props.analyticsPage &&
+                ['guide', 'duplicateGuide', 'indoorGuide', 'runGuide', 'rideGuide'].includes(
+                  handle.props.analyticsPage,
+                ) && (
+                  <a
+                    class="nav-link"
+                    href={routes.home.href()}
+                    data-funnel="stitch_click"
+                    data-funnel-placement="header"
+                  >
+                    Return to your activities
+                  </a>
+                )}
               <span class="account">
                 <span class="avatar">{handle.props.firstname[0]}</span>
                 <span class="account-name">{handle.props.firstname}</span>

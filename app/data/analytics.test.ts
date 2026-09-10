@@ -86,11 +86,36 @@ test('disabled environments and browser privacy signals suppress both browser an
     ['false', {}],
     ['true', { DNT: '1' }],
     ['true', { 'Sec-GPC': '1' }],
+    ['true', { Cookie: 'stitch_session=private; stitch_analytics_opt_out=1; another=value' }],
   ] as const) {
     const req = request(point, headers),
       { analytics, points } = fixture(enabled, req)
     assert.equal(analytics.enabled, false)
     await receiveAnalytics(req, analytics)
+    analytics.track('upload_completed', 'preview')
+    assert.deepEqual(points, [])
+  }
+})
+
+test('an exclusion affects only the browser that sends the exact preference', () => {
+  for (const cookie of ['', 'stitch_analytics_opt_out=0', 'other_stitch_analytics_opt_out=1']) {
+    const { analytics, points } = fixture('true', request(point, { Cookie: cookie }))
+    analytics.track('activity_downloaded', 'preview')
+    assert.equal(points.length, 1)
+  }
+  for (const path of [
+    '/auth/strava/callback?code=private',
+    '/stitches/test/download',
+    '/stitches/test/status',
+  ]) {
+    const { analytics, points } = fixture(
+      'true',
+      new Request(origin + path, {
+        headers: { Cookie: 'stitch_analytics_opt_out=1' },
+      }),
+    )
+    analytics.track('strava_connected', 'workspace')
+    analytics.track('activity_downloaded', 'preview')
     analytics.track('upload_completed', 'preview')
     assert.deepEqual(points, [])
   }

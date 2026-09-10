@@ -1,4 +1,9 @@
 // Only these fixed labels may leave the application. Never add activity or account data here.
+export const analyticsOptOutCookie = 'stitch_analytics_opt_out'
+// A shared boolean preference, never a browser identifier. Read on each request/click.
+export const analyticsOptedOut = (cookies?: string | null): boolean =>
+  cookies?.split(';').some((cookie) => cookie.trim() === `${analyticsOptOutCookie}=1`) ?? false
+
 export const analyticsPages = [
   'home',
   'workspace',
@@ -18,6 +23,7 @@ export const analyticsPlacements = [
   'example',
   'preview',
   'guide',
+  'guide_intro',
   'footer',
   'unknown',
 ] as const
