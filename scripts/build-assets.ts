@@ -17,6 +17,7 @@ await build({
     'route-map': 'app/ui/public/route-map.tsx',
     'maplibre-worker': 'node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs',
     'upload-form': 'app/actions/stitches/public/upload-form.tsx',
+    'photo-backup': 'app/actions/stitches/public/photo-backup.tsx',
   },
   outdir: 'dist/assets/client',
   bundle: true,

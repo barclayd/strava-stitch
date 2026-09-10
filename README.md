@@ -129,6 +129,23 @@ generated from Wrangler configuration; do not edit them by hand.
   may detect a broader sport from GPX/FIT; check the result. Backup ZIPs contain reconstructed
   sources, the stitched file, sport and description metadata in `activities.json`, and a limitations README.
   These are not original device files.
+- Photos are fetched on the private preview using Strava's undocumented activity-photo
+  read route (as used by [stravalib](https://stravalib.readthedocs.io/en/latest/reference/api/stravalib.client.Client.get_activity_photos.html)).
+  Fetches require ownership, paginate, compare independent photo counts and fail closed on
+  missing media. Only Strava's known photo CDN is permitted; redirects and non-image or
+  oversized responses are rejected. Limits are 80 photos, 10 MiB per image and 64 MiB of
+  browser image data per preview. This integration needs live multi-photo verification
+  with the application's Strava access; mocked tests do not establish endpoint availability.
+  The gallery renders decoded blobs committed to IndexedDB, never remote image URLs.
+  Local copies expire with the 24-hour preview and are removed on the next storage access;
+  sign-out/disconnect clears them when browser storage and JavaScript are available.
+  Photo references remain encrypted in the existing preview store; server image storage
+  and new OAuth scopes are not required. Photos download separately as a ZIP and must
+  be added back manually in Strava. Camera resolution, videos and social history are not guaranteed.
+  The checklist records completed response/archive preparation, not an unverifiable disk save;
+  a green "Backups checked" badge additionally requires the user to open and check the files.
+  Partial, failed, unknown-count and expired backups cannot earn that badge. It describes
+  backups for this preview, not a guarantee that deleting an activity is lossless.
 - The upload form combines nonblank source descriptions in chronological order, separated
   by a newline. Users can edit or clear the description before confirming an upload.
   Submitted edits are saved with the title and kept for retries. Descriptions are sent

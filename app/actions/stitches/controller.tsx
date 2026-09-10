@@ -14,6 +14,7 @@ import { unavailableReason } from '../../data/sports.ts'
 import { track } from '../../data/analytics.ts'
 import type { ServerEvent } from '../../analytics.ts'
 import { previewFailureReason, type PreviewStage } from './preview-failure.ts'
+import { collectPhotos, readPhoto } from '../../data/photos.ts'
 
 function identity(session: Session) {
   const id = session.get('athleteId')
@@ -163,6 +164,36 @@ export default createController(routes.stitches, {
           'Content-Disposition': `attachment; filename="stitched-activity.${file.format}"`,
         },
       })
+    },
+    async photos({ get, params }) {
+      const auth = await identity(get(Session)),
+        j = auth ? await job(params.id, auth.id) : undefined
+      if (!auth || !j) return new Response('Not found', { status: 404 })
+      const photos = j.photos?.complete
+        ? j.photos
+        : await collectPhotos(
+            auth.id,
+            j.merge.records.map((r) => r.activity),
+          )
+      if (j.photos && !photos.complete) {
+        photos.items = [
+          ...new Map([...j.photos.items, ...photos.items].map((p) => [p.key, p])).values(),
+        ].slice(0, 80)
+        if (j.photos.expected !== null)
+          photos.expected = Math.max(photos.expected ?? 0, j.photos.expected)
+      }
+      await patchJob(j.id, auth.id, { photos })
+      return Response.json({
+        ...photos,
+        items: photos.items.map(({ key, source }) => ({ key, source })),
+      })
+    },
+    async photo({ get, params }) {
+      const auth = await identity(get(Session)),
+        j = auth ? await job(params.id, auth.id) : undefined
+      const photo = j?.photos?.items.find((p) => p.key === params.photo)
+      if (!photo) return new Response('Not found', { status: 404 })
+      return readPhoto(photo.url)
     },
     async backup({ get, params }) {
       const auth = await identity(get(Session)),

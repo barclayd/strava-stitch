@@ -1,4 +1,38 @@
 import { run } from 'remix/ui'
+import {
+  backupChanged,
+  backupClearing,
+  clearLocalBackups,
+} from '../stitches/public/backup-storage.ts'
+
+// Clear private browser copies before completing a native sign-out/disconnect.
+// Downloads saved by the user remain theirs; other open tabs refresh their views.
+const backupChannel =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('stitch-backups') : undefined
+backupChannel?.addEventListener('message', (event) =>
+  window.dispatchEvent(new Event(event.data === 'clearing' ? backupClearing : backupChanged)),
+)
+document.addEventListener(
+  'submit',
+  (event) => {
+    const form = event.target
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !['/auth/logout', '/auth/disconnect'].includes(new URL(form.action).pathname)
+    )
+      return
+    event.preventDefault()
+    window.dispatchEvent(new Event(backupClearing))
+    backupChannel?.postMessage('clearing')
+    void clearLocalBackups()
+      .catch(() => {})
+      .finally(() => {
+        backupChannel?.postMessage('cleared')
+        HTMLFormElement.prototype.submit.call(form)
+      })
+  },
+  { capture: true },
+)
 
 const app = run({
   async loadModule(moduleUrl, exportName) {

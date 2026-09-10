@@ -13,6 +13,7 @@ import {
 import { StravaConnect } from '../../ui/strava.tsx'
 import { fileFormat, hasPosition, mergedDescription } from './merge.ts'
 import { sportLabel } from '../../data/sports.ts'
+import { PhotoBackup, BackupChecklist } from './public/photo-backup.tsx'
 
 function joinLocation(metres: number | null) {
   if (metres === null)
@@ -125,6 +126,7 @@ export function StitchPage(
                   description={j.description ?? mergedDescription(m)}
                 />
               )}
+              {!demo && <PhotoBackup id={j.id} expires={j.created + 86400000} />}
               <section class="timeline-section">
                 <h2>Every part, in its place.</h2>
                 <div class="timeline">
@@ -218,7 +220,7 @@ export function StitchPage(
                 <>
                   <p>
                     Your stitched activity is on Strava. Open it to review the sport, totals, and
-                    visibility.
+                    visibility, then add your saved photos using Edit Activity → Media.
                   </p>
                   <a
                     class="button button-dark wide"
@@ -281,6 +283,7 @@ export function StitchPage(
                   {handle.props.uploadPreparation && !j.removalConfirmed && (
                     <UploadPreparation
                       id={j.id}
+                      expires={j.created + 86400000}
                       csrf={csrf}
                       state={handle.props.uploadPreparation}
                       error={error}
@@ -294,11 +297,7 @@ export function StitchPage(
               )}
               {!demo && (
                 <div class="backup-option">
-                  <span>Keep a copy for yourself.</span>
-                  <a href={routes.stitches.backup.href({ id: j.id })} download>
-                    Download backup bundle ↓
-                  </a>
-                  <p>Includes reconstructed originals, not original device files.</p>
+                  <BackupChecklist id={j.id} expires={j.created + 86400000} />
                 </div>
               )}
               <div class="finish-footnote">Originals are never removed by Stitch.</div>

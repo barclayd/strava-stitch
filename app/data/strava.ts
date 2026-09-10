@@ -76,7 +76,8 @@ export function permittedGet(path: string) {
     /^\/activities\/\d+(?:\/streams\?keys=time,latlng,altitude,distance,heartrate,cadence,temp&key_by_type=true)?$/.test(
       path,
     ) ||
-    /^\/uploads\/\d+$/.test(path)
+    /^\/uploads\/\d+$/.test(path) ||
+    /^\/activities\/\d+\/photos\?size=2048&photo_sources=true&per_page=30&page=[1-3]$/.test(path)
   )
 }
 export async function get<T>(id: number, path: string): Promise<T> {
