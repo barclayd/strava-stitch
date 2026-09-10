@@ -4,8 +4,11 @@ import { routes } from '../routes.ts'
 import type { PageSeo } from '../seo.ts'
 import { guideTopics, guideTopicKeys, type GuideTopic } from '../guide-topics.ts'
 import { guideSections } from './guide-sections.tsx'
+import { GuideActions } from '../ui/guide-actions.tsx'
 
-export function TopicGuidePage(handle: Handle<{ csrf: string; seo: PageSeo; topic: GuideTopic }>) {
+export function TopicGuidePage(
+  handle: Handle<{ csrf: string; seo: PageSeo; topic: GuideTopic; firstname?: string }>,
+) {
   return () => {
     const topic = guideTopics[handle.props.topic]
     const sections = guideSections[handle.props.topic]
@@ -24,6 +27,7 @@ export function TopicGuidePage(handle: Handle<{ csrf: string; seo: PageSeo; topi
               <span class="eyebrow">THE STITCH GUIDE</span>
               <h1>{topic.heading}</h1>
               <p class="guide-deck">{topic.intro}</p>
+              <GuideActions firstname={handle.props.firstname} />
               <p class="article-byline">
                 By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
                 <span aria-hidden="true">·</span>Updated{' '}

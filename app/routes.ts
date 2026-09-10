@@ -4,6 +4,7 @@ import { publicPages } from './seo.ts'
 export const routes = route({
   home: publicPages.home.path,
   privacy: get(publicPages.privacy.path),
+  analyticsPreference: post('/privacy/analytics'),
   guide: get(publicPages.guide.path),
   duplicateGuide: get(publicPages.duplicateGuide.path),
   indoorGuide: get(publicPages.indoorGuide.path),

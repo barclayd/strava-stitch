@@ -154,7 +154,11 @@ test('analytics supports every page without exposing paths, and respects browser
     ]
     assert.match(headResources.at(-1)![0], /data-rmx-key="site-styles"/)
   }
-  for (const headers of [{ DNT: '1' }, { 'Sec-GPC': '1' }]) {
+  for (const headers of [
+    { DNT: '1' },
+    { 'Sec-GPC': '1' },
+    { Cookie: 'stitch_analytics_opt_out=1' },
+  ]) {
     const response = await worker.fetch(publicOrigin + '/', { headers })
     assert.doesNotMatch(await response.text(), /stitch-analytics|\/client\/analytics.js/)
   }
@@ -165,6 +169,106 @@ test('analytics supports every page without exposing paths, and respects browser
   })
   assert.equal(response.status, 204)
   assert.equal(response.headers.get('set-cookie'), null)
+})
+
+test('guides keep OAuth in the nav and offer one quiet, account-aware opening link', async () => {
+  const env = await worker.getEnv()
+  const session = createSession()
+  session.set('athleteId', 7654321)
+  await env.ATHLETES.getByName('7654321').saveAccount({
+    id: 7654321,
+    firstname: 'Guide tester',
+    scope: ['read', 'activity:read_all'],
+    access_token: 'test-access',
+    refresh_token: 'test-refresh',
+    expires_at: Date.now() / 1000 + 3600,
+  })
+  await env.SESSIONS.getByName(createHash('sha256').update(session.id).digest('hex')).save(
+    session.data,
+  )
+  const cookie = (
+    await createCookie('stitch_session', { secrets: [sessionSecret] }).serialize(session.id)
+  ).split(';')[0]
+  for (const path of [
+    publicPages.guide.path,
+    ...guideTopicKeys.map((key) => guideTopics[key].path),
+  ]) {
+    const anonymous = await (await get(path)).text()
+    const opening = anonymous.match(/<header class="guide-heading">(.*?)<\/header>/s)![1]
+    assert.doesNotMatch(opening, /<form|strava-connect|button-dark/)
+    assert.equal((anonymous.match(/action="\/auth\/strava"/g) ?? []).length, 1)
+    assert.match(anonymous, /<form data-rmx-document method="post" action="\/auth\/strava">/)
+    assert.match(anonymous, /name="_csrf" value="[^"]+"/)
+    assert.match(opening, /data-funnel-placement="guide_intro"/)
+    assert.match(opening, /Try the example without an account/)
+    assert.match(opening, /Previewing leaves your originals untouched/)
+    const response = await worker.fetch(publicOrigin + path, { headers: { Cookie: cookie } })
+    const connected = await response.text()
+    assert.equal(response.status, 200)
+    assert.match(connected, /Return to your activities/)
+    assert.match(connected, /Guide tester/)
+    assert.doesNotMatch(connected, /action="\/auth\/strava"|test-access|test-refresh|7654321/)
+    assert.match(response.headers.get('x-robots-tag')!, /noindex/)
+  }
+})
+
+test('browser exclusion is CSRF-protected, reversible, and survives sign-out', async () => {
+  const cookies = new Map<string, string>()
+  const send = async (path: string, body?: URLSearchParams, origin = publicOrigin) => {
+    const response = await worker.fetch(publicOrigin + path, {
+      method: body ? 'POST' : 'GET',
+      redirect: 'manual',
+      body,
+      headers: { Cookie: [...cookies.values()].join('; '), Origin: origin },
+    })
+    for (const value of response.headers.getSetCookie()) {
+      const pair = value.split(';')[0],
+        name = pair.split('=')[0]
+      if (/max-age=0(?:;|$)/i.test(value)) cookies.delete(name)
+      else cookies.set(name, pair)
+    }
+    return response
+  }
+  const privacy = await (await send('/privacy')).text()
+  const csrf = privacy.match(/name="_csrf" value="([^"]+)"/)![1]
+  const values = new URLSearchParams({ _csrf: csrf, analytics: 'exclude' })
+  assert.equal(
+    (await send('/privacy/analytics', new URLSearchParams({ analytics: 'exclude' }))).status,
+    403,
+  )
+  assert.equal((await send('/privacy/analytics', values, 'https://another-site.test')).status, 403)
+  assert.equal(
+    (await send('/privacy/analytics', new URLSearchParams({ _csrf: csrf, analytics: 'invalid' })))
+      .status,
+    400,
+  )
+  assert.equal(cookies.has('stitch_analytics_opt_out'), false)
+  const excluded = await send('/privacy/analytics', values)
+  assert.equal(excluded.status, 303)
+  assert.equal(excluded.headers.get('location'), '/privacy#analytics')
+  const preference = excluded.headers
+    .getSetCookie()
+    .find((value) => value.startsWith('stitch_analytics_opt_out='))!
+  assert.match(preference, /stitch_analytics_opt_out=1/)
+  assert.match(preference, /Max-Age=31536000/i)
+  assert.match(preference, /Path=\//i)
+  assert.match(preference, /SameSite=Lax/i)
+  assert.match(preference, /Secure/i)
+  assert.doesNotMatch(preference, /HttpOnly|Domain=/i)
+  const after = await (await send('/privacy')).text()
+  assert.match(after, /This browser is excluded from interaction counts/)
+  assert.doesNotMatch(after, /stitch-analytics|\/client\/analytics.js/)
+  assert.equal((await send('/auth/logout', new URLSearchParams({ _csrf: csrf }))).status, 303)
+  const signedOut = await (await send('/privacy')).text()
+  assert.match(signedOut, /This browser is excluded from interaction counts/)
+  const nextCsrf = signedOut.match(/name="_csrf" value="([^"]+)"/)![1]
+  const included = await send(
+    '/privacy/analytics',
+    new URLSearchParams({ _csrf: nextCsrf, analytics: 'include' }),
+  )
+  assert.equal(included.status, 303)
+  assert.equal(cookies.has('stitch_analytics_opt_out'), false)
+  assert.match(await (await send('/privacy')).text(), /\/client\/analytics.js/)
 })
 
 test('the public example renders all phases with an initial selection and no upload action', async () => {
