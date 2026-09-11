@@ -2277,18 +2277,22 @@ svg {
 /* Photo backups use the saved image bytes; this grid never embeds remote media. */
 .photo-backup {
   margin: 36px 0;
-  padding-top: 28px;
+  padding-top: 32px;
   border-top: 1px solid var(--border, #deded6);
 }
 .photo-heading {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.photo-heading .eyebrow {
+  margin-bottom: 12px;
 }
 .photo-heading h2 {
-  margin: 8px 0 0;
+  margin: 0;
   font-size: 24px;
   letter-spacing: -0.6px;
 }
@@ -2297,13 +2301,19 @@ svg {
   font-size: 14px;
   line-height: 1.65;
 }
+.photo-backup > .fine-print {
+  margin-top: 16px;
+}
+.photo-backup > .backup-error {
+  margin-top: 12px;
+}
 .photo-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   grid-template-rows: repeat(2, 1fr);
   aspect-ratio: 2 / 1;
   gap: 6px;
-  margin: 22px 0;
+  margin: 24px 0;
 }
 .photo-tile {
   position: relative;
@@ -2432,8 +2442,12 @@ svg {
   line-height: 1.6;
 }
 @media (max-width: 600px) {
+  .photo-backup {
+    padding-top: 24px;
+  }
   .photo-grid {
     gap: 4px;
+    margin: 20px 0;
   }
   .photo-heading h2 {
     font-size: 22px;
