@@ -62,10 +62,11 @@ export function PrivacyPage(
         <h2 id="analytics">Understanding how Stitch is used</h2>
         <p>
           We use Cloudflare Analytics Engine to count page views, button clicks, successful Strava
-          connections, previews, downloads, and upload outcomes. These events contain fixed page and
-          action labels. They do not contain your identity, IP address, activity details,
-          descriptions, GPS data, search terms, or full URLs. We do not use tracking cookies or
-          identifiers to follow you between visits. Events are kept for three months.
+          connections, previews, downloads, and upload outcomes. These events contain fixed page,
+          action, and error labels to help diagnose connection and preview problems. They do not
+          contain your identity, IP address, activity details, descriptions, GPS data, search terms,
+          or full URLs. We do not use tracking cookies or identifiers to follow you between visits.
+          Events are kept for three months.
         </p>
         <p>
           We honour your browser’s Do Not Track and Global Privacy Control signals. Cloudflare still

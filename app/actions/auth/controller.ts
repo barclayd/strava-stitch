@@ -8,6 +8,7 @@ import { exchange, SCOPES } from '../../data/strava.ts'
 import { saveAccount, forgetAccount } from '../../data/store.ts'
 import { placement, type AnalyticsPlacement } from '../../analytics.ts'
 import { track } from '../../data/analytics.ts'
+import { connectionFailureReason, type ConnectionStage } from './connection-failure.ts'
 
 export default createController(routes.auth, {
   actions: {
@@ -50,20 +51,24 @@ export default createController(routes.auth, {
       }
       const code = url.searchParams.get('code')
       if (!code) {
-        track('strava_connect_failed', 'home', pending.source)
+        track('strava_connect_failed', 'home', pending.source, 'missing_code')
         return new Response('Missing authorization code.', { status: 400 })
       }
+      let stage: ConnectionStage = 'token_exchange_failed'
       try {
         const data = await exchange({ grant_type: 'authorization_code', code })
+        stage = 'invalid_athlete'
         const scope = String(data.scope ?? url.searchParams.get('scope') ?? '')
           .split(/[ ,]+/)
           .filter(Boolean)
         if (!data.athlete || !Number.isSafeInteger(data.athlete.id))
           throw new Error('Strava did not return an athlete account.')
+        stage = 'missing_activity_permission'
         if (!scope.includes('activity:read_all'))
           throw new Error(
             'Allow access to your activities, including Only You activities, to use Stitch.',
           )
+        stage = 'save_failed'
         await saveAccount({
           id: data.athlete.id,
           firstname: String(data.athlete.firstname ?? 'Athlete'),
@@ -72,12 +77,18 @@ export default createController(routes.auth, {
           refresh_token: data.refresh_token,
           expires_at: data.expires_at,
         })
+        stage = 'session_failed'
         session.regenerateId(true)
         session.set('athleteId', data.athlete.id)
         track('strava_connected', 'workspace', pending.source)
         return redirect(routes.home.href(), 303)
       } catch (error) {
-        track('strava_connect_failed', 'home', pending.source)
+        track(
+          'strava_connect_failed',
+          'home',
+          pending.source,
+          connectionFailureReason(error, stage),
+        )
         session.flash(
           'error',
           error instanceof Error ? error.message : 'Could not connect to Strava.',
