@@ -1,7 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createAnalytics, receiveAnalytics } from './analytics.ts'
-import type { PreviewFailureReason } from '../analytics.ts'
+import {
+  connectionFailureReasons,
+  type AnalyticsFailureReason,
+  type PreviewFailureReason,
+} from '../analytics.ts'
 
 const origin = 'https://stravastitch.com'
 const point = { event: 'connect_click', page: 'home', placement: 'header' }
@@ -50,6 +54,7 @@ test('browser events cannot forge conversions, attach personal data, or post fro
   for (const invalid of [
     { ...point, event: 'upload_completed' },
     { ...point, event: 'strava_connected' },
+    { ...point, event: 'strava_connect_failed', reason: 'missing_code' },
     { ...point, page: '/stitches/private-id' },
     { ...point, placement: 'private title' },
     { ...point, athleteId: 123 },
@@ -96,7 +101,34 @@ test('disabled environments and browser privacy signals suppress both browser an
     await receiveAnalytics(req, analytics)
     analytics.track('upload_completed', 'preview')
     analytics.track('preview_failed', 'workspace', 'unknown', 'strava_rate_limit')
+    for (const reason of connectionFailureReasons)
+      analytics.track('strava_connect_failed', 'home', 'header', reason)
     assert.deepEqual(points, [])
+  }
+})
+
+test('connection reasons are allowlisted per event and cannot expose arbitrary error details', () => {
+  const { analytics, points } = fixture()
+  for (const reason of connectionFailureReasons) {
+    analytics.track('strava_connect_failed', 'home', 'header', reason)
+    assert.deepEqual(points.at(-1)?.blobs, [
+      'strava_connect_failed',
+      'home',
+      'header',
+      'v1',
+      reason,
+    ])
+  }
+  for (const reason of [
+    'overlapping_activities',
+    'secret-code-and-token',
+  ] as AnalyticsFailureReason[]) {
+    analytics.track('strava_connect_failed', 'home', 'header', reason)
+    assert.deepEqual(points.at(-1)?.blobs, ['strava_connect_failed', 'home', 'header', 'v1'])
+  }
+  for (const event of ['strava_connected', 'strava_connect_cancelled', 'preview_failed'] as const) {
+    analytics.track(event, 'home', 'header', 'missing_code')
+    assert.deepEqual(points.at(-1)?.blobs, [event, 'home', 'header', 'v1'])
   }
 })
 

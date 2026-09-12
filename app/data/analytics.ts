@@ -2,9 +2,14 @@ import type {
   AnalyticsEvent,
   AnalyticsPage,
   AnalyticsPlacement,
-  PreviewFailureReason,
+  AnalyticsFailureReason,
 } from '../analytics.ts'
-import { analyticsOptedOut, clientPoint, previewFailureReasons } from '../analytics.ts'
+import {
+  analyticsOptedOut,
+  clientPoint,
+  connectionFailureReasons,
+  previewFailureReasons,
+} from '../analytics.ts'
 import { runtime } from './runtime.ts'
 
 export type Analytics = {
@@ -13,7 +18,7 @@ export type Analytics = {
     event: AnalyticsEvent,
     page: AnalyticsPage,
     placement?: AnalyticsPlacement,
-    reason?: PreviewFailureReason,
+    reason?: AnalyticsFailureReason,
   ): void
 }
 
@@ -31,6 +36,12 @@ export function createAnalytics(
     enabled,
     track(event, page, placement = 'unknown', reason) {
       if (!enabled) return
+      const reasons =
+        event === 'preview_failed'
+          ? previewFailureReasons
+          : event === 'strava_connect_failed'
+            ? connectionFailureReasons
+            : []
       try {
         // Cloudflare writes this in the background. Analytics must never block an activity operation.
         env.FUNNEL.writeDataPoint({
@@ -40,9 +51,7 @@ export function createAnalytics(
             page,
             placement,
             'v1',
-            ...(event === 'preview_failed' && reason && previewFailureReasons.includes(reason)
-              ? [reason]
-              : []),
+            ...(reason && reasons.some((allowed) => allowed === reason) ? [reason] : []),
           ],
           doubles: [1],
         })
@@ -57,7 +66,7 @@ export const track = (
   event: AnalyticsEvent,
   page: AnalyticsPage,
   placement?: AnalyticsPlacement,
-  reason?: PreviewFailureReason,
+  reason?: AnalyticsFailureReason,
 ) => runtime().analytics.track(event, page, placement, reason)
 
 // A stateless endpoint: it never loads an athlete, creates a session, or accepts conversion events.

@@ -126,13 +126,26 @@ OAuth keeps the selected placement through the callback so connections can be co
 No athlete IDs, job IDs, names, descriptions, GPS, activity types, search terms,
 query strings, full URLs, referrers, or IP addresses are written to the dataset.
 
+For `strava_connect_failed`, `blob5` contains an optional fixed failure reason:
+`missing_code`, `token_exchange_failed`, `token_exchange_timeout`, `token_exchange_rejected`,
+`strava_rate_limit`, `strava_unavailable`, `invalid_athlete`, `missing_activity_permission`,
+`save_failed`, or `session_failed`. Token exchange failures distinguish timeouts, HTTP
+rejections, rate limits (429), and Strava server errors (5xx). Other exchange failures,
+including network errors and malformed/incomplete token responses, use
+`token_exchange_failed`. Storage and session failures keep their own stage even when
+their error resembles a Strava or timeout error. No response bodies, codes, tokens,
+granted scopes, account details, or exception messages are recorded. Invalid or expired
+OAuth state still produces no event; cancellations keep their separate event without
+a failure reason.
+
 For `preview_failed`, `blob5` contains an optional fixed failure reason: `activity_load`,
 `streams_load`, `recording_validation`, `merge_validation`, `overlapping_activities`,
 `different_sports`, `export_failed`, `save_failed`, `strava_rate_limit`,
 `strava_connection`, or `strava_unavailable`. These distinguish the stage or known
 failure category without recording exception text or private activity details.
-Older events have an empty reason and cannot be diagnosed retrospectively. The
-report's full event table includes this dimension; privacy exclusions still apply.
+For both failure events, older events have an empty reason and cannot be diagnosed
+retrospectively. The report's full event table includes this dimension; privacy
+exclusions still apply.
 The browser sends events without cookies or referrers. The endpoint creates no session.
 The random document-render marker used to detect navigation is never sent to analytics
 and does not identify a person. Both browser and server collection honour DNT and GPC.

@@ -19,6 +19,21 @@ export const previewFailureReasons = [
 ] as const
 export type PreviewFailureReason = (typeof previewFailureReasons)[number]
 
+export const connectionFailureReasons = [
+  'missing_code',
+  'token_exchange_failed',
+  'token_exchange_timeout',
+  'token_exchange_rejected',
+  'strava_rate_limit',
+  'strava_unavailable',
+  'invalid_athlete',
+  'missing_activity_permission',
+  'save_failed',
+  'session_failed',
+] as const
+export type ConnectionFailureReason = (typeof connectionFailureReasons)[number]
+export type AnalyticsFailureReason = PreviewFailureReason | ConnectionFailureReason
+
 export const analyticsPages = [
   'home',
   'workspace',
