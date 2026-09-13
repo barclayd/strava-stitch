@@ -33,6 +33,11 @@ attempts follow, then **demo exploration** in its own table. Demo step clicks fr
 both the homepage and the standalone example stay separate from real previews and
 downloads. Every event is also broken down by page and CTA placement. Account and
 dataset settings come from `wrangler.jsonc`.
+Guide introduction buttons use the existing `guide_intro` placement. Their client
+clicks include the specific guide page; OAuth start, success, cancellation, and failure
+events retain this placement through the connection flow. OAuth events still use
+`home` or `workspace` as their page, so filter by placement to count guide-originated
+connections. Header connections retain the separate `header` placement.
 The read token is only used locally; it is not needed by the application to collect events.
 The same queries can be used with the [SQL API](https://developers.cloudflare.com/analytics/analytics-engine/sql-api/)
 or Cloudflare's supported analytics integrations.

@@ -1,6 +1,7 @@
 // Public search identity is fixed; never derive canonical URLs from request headers or activity data.
 export const publicOrigin = 'https://stravastitch.com'
-export const guideUpdated = '2026-09-08'
+export const guideUpdated = '2026-09-13'
+export const guideHeading = 'How to merge two Strava activities for free'
 export const publicPages = {
   home: {
     path: '/',
@@ -13,9 +14,9 @@ export const publicPages = {
   },
   guide: {
     path: '/guides/merge-strava-activities',
-    title: 'How to Merge Strava Activities | Stitch',
+    title: 'How to Merge Two Strava Activities for Free | Stitch',
     description:
-      'Learn how to merge Strava activities of the same sport, including runs, rides, swims and indoor workouts. Review gaps, download GPX or FIT, and upload safely.',
+      'Merge two to eight Strava activities of the same sport for free. Connect, select your activities, preview the join, then download GPX or FIT or upload to Strava.',
     image: '/images/merge-guide-social.png',
     imageAlt: 'Two separate activities become one, with the pause between them preserved.',
   },
@@ -105,7 +106,7 @@ function guideSchema(page: 'guide' | GuideTopic): Record<string, unknown> {
       {
         '@type': 'Article',
         '@id': url + '#article',
-        headline: page === 'guide' ? 'How to merge Strava activities' : guideTopics[page].heading,
+        headline: page === 'guide' ? guideHeading : guideTopics[page].heading,
         description: value.description,
         mainEntityOfPage: url,
         url,

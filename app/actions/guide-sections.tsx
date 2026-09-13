@@ -65,8 +65,14 @@ export const guideSections: Record<GuideTopic, Section[]> = {
           <p>
             Stitch’s backup is reconstructed from the data available through Strava. It is not an
             archive of the original Strava pages or a complete replacement for device files. It
-            cannot restore photos, kudos, comments, power, original laps, swimming lengths or
-            workout sets.
+            cannot restore kudos, comments, power, original laps, swimming lengths or workout sets.
+          </p>
+          <p>
+            Photos have a separate backup: save the available images in Stitch’s photo gallery, then
+            download the photo ZIP. Open and check the activity and photo ZIPs before removing
+            anything. Photos are not included in GPX or FIT files; add them manually to the new
+            activity in Strava after uploading. Videos are not backed up, and downloaded images may
+            not be at their original camera resolution.
           </p>
           <p>
             If that history matters more than having one activity, keep the originals and retain the
@@ -85,7 +91,8 @@ export const guideSections: Record<GuideTopic, Section[]> = {
               <h3>Download and check your backup</h3>
               <p>
                 Choose Upload to Strava to open the preparation steps. Stitch requires a backup
-                download before you confirm removal of the originals. Inspect it before continuing.
+                download before you confirm removal of the originals. Save available photos and
+                download their separate ZIP too. Inspect both backups before continuing.
               </p>
             </li>
             <li>

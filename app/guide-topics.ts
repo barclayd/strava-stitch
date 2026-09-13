@@ -1,7 +1,7 @@
 const artwork = {
   image: '/images/merge-guide-social.png',
   imageAlt: 'Two separate activities become one, with the pause between them preserved.',
-  updated: '2026-09-08',
+  updated: '2026-09-13',
 }
 
 // Public editorial metadata only. These topics have distinct examples and limitations.

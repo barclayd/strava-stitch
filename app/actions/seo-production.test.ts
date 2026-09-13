@@ -171,7 +171,7 @@ test('analytics supports every page without exposing paths, and respects browser
   assert.equal(response.headers.get('set-cookie'), null)
 })
 
-test('guides keep OAuth in the nav and offer one quiet, account-aware opening link', async () => {
+test('guides offer a native, CSRF-protected opening connection and account-aware return action', async () => {
   const env = await worker.getEnv()
   const session = createSession()
   session.set('athleteId', 7654321)
@@ -193,19 +193,50 @@ test('guides keep OAuth in the nav and offer one quiet, account-aware opening li
     publicPages.guide.path,
     ...guideTopicKeys.map((key) => guideTopics[key].path),
   ]) {
-    const anonymous = await (await get(path)).text()
+    const page = await get(path)
+    const anonymousCookie = page.headers
+      .getSetCookie()
+      .map((value) => value.split(';')[0])
+      .join('; ')
+    const anonymous = await page.text()
     const opening = anonymous.match(/<header class="guide-heading">(.*?)<\/header>/s)![1]
-    assert.doesNotMatch(opening, /<form|strava-connect|button-dark/)
-    assert.equal((anonymous.match(/action="\/auth\/strava"/g) ?? []).length, 1)
-    assert.match(anonymous, /<form data-rmx-document method="post" action="\/auth\/strava">/)
-    assert.match(anonymous, /name="_csrf" value="[^"]+"/)
-    assert.match(opening, /data-funnel-placement="guide_intro"/)
+    const form = opening.match(
+      /<form data-rmx-document method="post" action="\/auth\/strava">(.*?)<\/form>/s,
+    )![1]
+    const csrf = form.match(/name="_csrf" value="([^"]+)"/)![1]
+    assert.match(form, /name="source" value="guide_intro"/)
+    assert.match(form, /data-funnel="connect_click" data-funnel-placement="guide_intro"/)
+    assert.equal((anonymous.match(/action="\/auth\/strava"/g) ?? []).length, 2)
     assert.match(opening, /Try the example without an account/)
     assert.match(opening, /Previewing leaves your originals untouched/)
+    const connect = (token: string) =>
+      worker.fetch(publicOrigin + '/auth/strava', {
+        method: 'POST',
+        redirect: 'manual',
+        headers: { Cookie: anonymousCookie, Origin: publicOrigin },
+        body: new URLSearchParams({ _csrf: token, source: 'guide_intro' }),
+      })
+    assert.equal((await connect('invalid')).status, 403)
+    const authorized = await connect(csrf)
+    assert.equal(authorized.status, 303)
+    const destination = new URL(authorized.headers.get('location')!)
+    assert.equal(
+      destination.origin + destination.pathname,
+      'https://www.strava.com/oauth/authorize',
+    )
+    assert.match(destination.searchParams.get('state')!, /^[a-f0-9]{64}$/)
+    assert.equal(
+      destination.searchParams.get('redirect_uri'),
+      publicOrigin + '/auth/strava/callback',
+    )
     const response = await worker.fetch(publicOrigin + path, { headers: { Cookie: cookie } })
     const connected = await response.text()
+    const connectedOpening = connected.match(/<header class="guide-heading">(.*?)<\/header>/s)![1]
     assert.equal(response.status, 200)
-    assert.match(connected, /Return to your activities/)
+    const returnLink = connectedOpening.match(/<a\b[^>]*data-funnel="stitch_click"[^>]*>/)![0]
+    assert.match(returnLink, /href="\/"/)
+    assert.match(returnLink, /data-funnel-placement="guide_intro"/)
+    assert.match(connectedOpening, /Return to your activities/)
     assert.match(connected, /Guide tester/)
     assert.doesNotMatch(connected, /action="\/auth\/strava"|test-access|test-refresh|7654321/)
     assert.match(response.headers.get('x-robots-tag')!, /noindex/)

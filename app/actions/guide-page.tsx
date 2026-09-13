@@ -1,7 +1,7 @@
 import type { Handle } from 'remix/ui'
 import { Shell } from '../ui/shell.tsx'
 import { routes } from '../routes.ts'
-import { guideUpdated, type PageSeo } from '../seo.ts'
+import { guideHeading, guideUpdated, type PageSeo } from '../seo.ts'
 import { guideTopics, guideTopicKeys } from '../guide-topics.ts'
 import { GuideActions } from '../ui/guide-actions.tsx'
 
@@ -17,17 +17,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
         <article>
           <header class="guide-heading">
             <span class="eyebrow">THE STITCH GUIDE</span>
-            <h1>How to merge Strava activities</h1>
+            <h1>{guideHeading}</h1>
             <p class="guide-deck">
               To combine Strava activities into one, connect your account to Stitch, select two to
               eight activities of the same sport, and review the join. Then download the merged GPX
               or FIT file, or confirm an upload to Strava. Free to use, always.
             </p>
-            <GuideActions firstname={handle.props.firstname} />
+            <GuideActions csrf={handle.props.csrf} firstname={handle.props.firstname} />
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}
-              <time dateTime={guideUpdated}>8 September 2026</time>
+              <time dateTime={guideUpdated}>13 September 2026</time>
             </p>
           </header>
           <figure class="guide-figure">
@@ -76,9 +76,25 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   upload to Strava.
                 </p>
                 <p>
-                  It suits a ride split by a café stop, an accidentally ended activity, or a restart
-                  after changing your route. Combining two devices that recorded the same ride at
-                  the same time is a different task; Stitch rejects overlapping activities.
+                  It suits a{' '}
+                  <a
+                    href={routes.rideGuide.href()}
+                    data-funnel="guide_click"
+                    data-funnel-placement="guide"
+                  >
+                    ride split by a café stop
+                  </a>
+                  , an{' '}
+                  <a
+                    href={routes.runGuide.href()}
+                    data-funnel="guide_click"
+                    data-funnel-placement="guide"
+                  >
+                    accidentally ended run
+                  </a>
+                  , or a restart after changing your route. Combining two devices that recorded the
+                  same ride at the same time is a different task; Stitch rejects overlapping
+                  activities.
                 </p>
                 <aside class="article-note">
                   <strong>Try the preview first.</strong> Stitch is in early access and Strava
@@ -102,10 +118,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   e-bike rides, swims, hikes, walks, skiing, and indoor workouts.
                 </p>
                 <p>
-                  Each activity needs at least two recorded timestamps. GPS is optional. Manual
-                  entries and activities with no recorded timeline cannot be stitched. Overlapping
-                  recordings are rejected. Sport types must match exactly: Run and Trail Run, or
-                  Ride and E-bike Ride, belong in separate stitches.
+                  Each activity needs at least two recorded timestamps. GPS is optional; see how to{' '}
+                  <a
+                    href={routes.indoorGuide.href()}
+                    data-funnel="guide_click"
+                    data-funnel-placement="guide"
+                  >
+                    combine indoor workouts or swims without GPS
+                  </a>
+                  . Manual entries and activities with no recorded timeline cannot be stitched.
+                  Overlapping recordings are rejected. Sport types must match exactly: Run and Trail
+                  Run, or Ride and E-bike Ride, belong in separate stitches.
                 </p>
                 <p>
                   Decide whether the activities belong together. A short stop and restart is
@@ -228,9 +251,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                         </td>
                       </tr>
                       <tr>
-                        <th scope="row">Photos, kudos, comments</th>
+                        <th scope="row">Photos</th>
                         <td>
-                          Not transferred to the new activity. Deleting originals loses their social
+                          Available photos can be saved in a separate photo ZIP. Check the files
+                          before removing originals, then add the photos manually to the merged
+                          activity in Strava. Photos are not included in GPX or FIT files.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Kudos and comments</th>
+                        <td>
+                          Not transferred or backed up. Deleting originals loses their social
                           history.
                         </td>
                       </tr>
@@ -274,14 +305,27 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 <p>
                   Stitch never deletes an activity on Strava. Choose Upload to Strava to check the
                   originals and open the preparation steps. Download a backup bundle before removing
-                  anything. Inspect that backup and remember that it cannot restore photos, kudos,
-                  comments, or every device field.
+                  anything. Save available photos in the separate photo ZIP and inspect both ZIPs.
+                  You can add those photos manually to the new activity in Strava. These backups
+                  cannot restore kudos or comments and do not include every original device field.
                 </p>
                 <p>
                   If you decide to proceed, remove the relevant original activities yourself in
                   Strava. Return to Stitch and confirm their removal separately. Stitch checks that
                   the originals are no longer available before allowing another upload attempt. You
                   can also keep the originals and retain the stitched file without uploading it.
+                </p>
+                <p>
+                  Follow the{' '}
+                  <a
+                    href={routes.duplicateGuide.href()}
+                    data-funnel="guide_click"
+                    data-funnel-placement="guide"
+                  >
+                    Strava duplicate-upload guide
+                  </a>{' '}
+                  to check whether an upload already succeeded, inspect your backups, and retry a
+                  confirmed duplicate.
                 </p>
               </section>
               <section id="questions">
