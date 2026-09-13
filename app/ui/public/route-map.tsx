@@ -229,13 +229,11 @@ export const RouteMap = clientEntry(
               </p>
             </div>
           )}
-          {points.length > 1 && (
+          {points.length > 1 && (unavailable || tracks.length < handle.props.tracks.length) && (
             <span class="map-caption">
               {unavailable
                 ? 'Street map unavailable. Your routes are still shown.'
-                : tracks.length < handle.props.tracks.length
-                  ? 'Some selected activities have no route to preview.'
-                  : 'Original paths. Room between the parts.'}
+                : 'Some selected activities have no route to preview.'}
             </span>
           )}
           {points.length > 1 && (

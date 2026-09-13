@@ -42,8 +42,9 @@ export function HomePage(
             </h1>
             <p>
               A split run. A paused ride. An accidental finish.
-              <br class="desktop-break" /> Stitch activities of the same sport into one.{' '}
-              <strong>Free to use, always.</strong> Privacy first, from preview to upload.
+              <br class="desktop-break" /> Stitch activities of the same sport into one merged
+              Strava activity. <strong>Free to use, always.</strong> Privacy first, from preview to
+              upload.
             </p>
           </div>
           <Alert message={p.error} />
@@ -63,7 +64,6 @@ export function HomePage(
                     <span>3</span> Bring it together
                   </li>
                 </ol>
-                <span class="flow-reassurance">Your originals stay yours.</span>
               </div>
               <Workspace
                 activities={p.activities}
