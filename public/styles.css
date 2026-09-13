@@ -2065,6 +2065,12 @@ svg {
 .guide-start {
   margin-top: 24px;
 }
+.guide-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+}
 .guide-start .inline-link {
   font-size: 14px;
 }

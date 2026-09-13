@@ -27,7 +27,7 @@ export function TopicGuidePage(
               <span class="eyebrow">THE STITCH GUIDE</span>
               <h1>{topic.heading}</h1>
               <p class="guide-deck">{topic.intro}</p>
-              <GuideActions firstname={handle.props.firstname} />
+              <GuideActions csrf={handle.props.csrf} firstname={handle.props.firstname} />
               <p class="article-byline">
                 By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
                 <span aria-hidden="true">·</span>Updated{' '}
