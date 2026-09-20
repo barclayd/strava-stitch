@@ -285,6 +285,8 @@ export function StitchPage(
                       id={j.id}
                       expires={j.created + 86400000}
                       csrf={csrf}
+                      title={j.title}
+                      description={j.description ?? mergedDescription(j.merge)}
                       state={handle.props.uploadPreparation}
                       error={error}
                       sources={m.records.map(({ activity }) => ({

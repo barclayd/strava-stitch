@@ -8,6 +8,7 @@ const artwork = {
 export const guideTopics = {
   duplicateGuide: {
     ...artwork,
+    updated: '2026-09-20',
     path: '/guides/strava-duplicate-upload',
     title: 'Fix a Strava Duplicate Upload After Merging | Stitch',
     heading: 'Why Strava says your merged activity is a duplicate',
