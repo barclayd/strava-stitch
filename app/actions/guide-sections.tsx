@@ -90,7 +90,7 @@ export const guideSections: Record<GuideTopic, Section[]> = {
             <li>
               <h3>Download and check your backup</h3>
               <p>
-                Choose Upload to Strava to open the preparation steps. Stitch requires a backup
+                Choose Continue to upload to open the preparation steps. Stitch requires a backup
                 download before you confirm removal of the originals. Save available photos and
                 download their separate ZIP too. Inspect both backups before continuing.
               </p>
@@ -103,17 +103,18 @@ export const guideSections: Record<GuideTopic, Section[]> = {
               </p>
             </li>
             <li>
-              <h3>Confirm their removal in Stitch</h3>
+              <h3>Verify and upload in Stitch</h3>
               <p>
-                This is a separate confirmation. Stitch checks that the originals are no longer
-                available before allowing another upload attempt.
+                Confirm that you saved and checked your backups and removed the originals. Choose
+                Verify and upload to Strava. Stitch checks that the originals are no longer
+                available, then starts the upload using the title and description you reviewed.
               </p>
             </li>
             <li>
-              <h3>Review and confirm the upload again</h3>
+              <h3>Check the uploaded activity</h3>
               <p>
-                Check the title, description, gaps and your Strava default activity visibility.
-                After processing completes, open the new activity on Strava.
+                After processing completes, open the new activity on Strava. Check its title,
+                description, gaps and visibility, and add your saved photos manually.
               </p>
             </li>
           </ol>

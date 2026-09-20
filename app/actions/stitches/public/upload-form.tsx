@@ -135,7 +135,12 @@ export const UploadForm = clientEntry(
             </>
           ) : (
             <>
-              {handle.props.retry ? 'Retry upload' : 'Upload to Strava'} <span>↗</span>
+              {handle.props.removalConfirmed
+                ? handle.props.retry
+                  ? 'Retry upload'
+                  : 'Upload to Strava'
+                : 'Continue to upload'}{' '}
+              <span>↗</span>
             </>
           )}
         </button>
@@ -157,13 +162,16 @@ export const UploadPreparation = clientEntry(
     handle: Handle<{
       id: string
       csrf: string
+      title: string
+      description: string
       state: 'present' | 'removed' | 'unverified'
       error?: string
       sources: { id: number; name: string }[]
       expires: number
     }>,
   ) {
-    let dialog: HTMLDialogElement | undefined
+    let dialog: HTMLDialogElement | undefined,
+      pending = false
     return () => (
       <dialog
         open
@@ -198,7 +206,7 @@ export const UploadPreparation = clientEntry(
               ? 'Strava still has one or more of your original activities. To accept the merged recording, Strava needs those originals to be removed first.'
               : handle.props.state === 'removed'
                 ? 'The selected originals are no longer available on Strava. Save your backup and confirm their removal before uploading.'
-                : 'Save your backup and confirm the originals have been removed. We’ll check with Strava before you continue.'}{' '}
+                : 'Save your backup and confirm the originals have been removed. We’ll check with Strava before uploading.'}{' '}
             Your stitched file is ready to download. This check hasn’t started an upload.
           </p>
           {handle.props.error && (
@@ -246,25 +254,48 @@ export const UploadPreparation = clientEntry(
             </p>
           </li>
           <li>
-            <h3>Come back to finish</h3>
+            <h3>Verify and upload</h3>
             <p>
-              We’ll check that the originals are gone. You’ll then confirm the upload separately.
-              This preview is available for 24 hours after it was created.
+              Confirm below to upload using your Strava account’s default visibility. We’ll check
+              that the originals are gone and send your stitched activity straight to Strava. This
+              preview is available for 24 hours after it was created.
             </p>
           </li>
         </ol>
         <form
           data-rmx-document
-          action={routes.stitches.confirmRemoval.href({ id: handle.props.id })}
+          action={routes.stitches.upload.href({ id: handle.props.id })}
           method="post"
           class="upload-confirm-removal"
+          mix={on('submit', () => {
+            pending = true
+            handle.update()
+          })}
         >
           <input type="hidden" name="_csrf" value={handle.props.csrf} />
+          <input type="hidden" name="title" value={handle.props.title} />
+          <input type="hidden" name="description" value={handle.props.description} />
+          <input type="hidden" name="gaps" value="reviewed" />
+          <input type="hidden" name="confirm" value="upload" />
           <label class="check-line">
-            <input type="checkbox" name="confirm" value="removed" required />
+            <input type="checkbox" name="removal" value="removed" required />
             <span>I saved and checked my backup and removed these originals in Strava.</span>
           </label>
-          <button class="button button-dark wide">Check originals and continue →</button>
+          <button
+            class="button button-dark wide"
+            type="submit"
+            data-funnel="upload_click"
+            data-funnel-placement="preview"
+            disabled={pending}
+          >
+            {pending ? (
+              <>
+                <span class="spinner" /> Verifying and uploading…
+              </>
+            ) : (
+              'Verify and upload to Strava ↗'
+            )}
+          </button>
         </form>
         <a
           class="upload-dialog-back inline-link"

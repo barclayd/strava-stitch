@@ -27,7 +27,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}
-              <time dateTime={guideUpdated}>13 September 2026</time>
+              <time dateTime={guideUpdated}>20 September 2026</time>
             </p>
           </header>
           <figure class="guide-figure">
@@ -303,7 +303,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   need to be removed before the combined file can be uploaded.
                 </p>
                 <p>
-                  Stitch never deletes an activity on Strava. Choose Upload to Strava to check the
+                  Stitch never deletes an activity on Strava. Choose Continue to upload to check the
                   originals and open the preparation steps. Download a backup bundle before removing
                   anything. Save available photos in the separate photo ZIP and inspect both ZIPs.
                   You can add those photos manually to the new activity in Strava. These backups
@@ -311,9 +311,10 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 </p>
                 <p>
                   If you decide to proceed, remove the relevant original activities yourself in
-                  Strava. Return to Stitch and confirm their removal separately. Stitch checks that
-                  the originals are no longer available before allowing another upload attempt. You
-                  can also keep the originals and retain the stitched file without uploading it.
+                  Strava. Return to Stitch, confirm their removal, and choose Verify and upload to
+                  Strava. Stitch checks that the originals are no longer available, then starts the
+                  upload. You can also keep the originals and retain the stitched file without
+                  uploading it.
                 </p>
                 <p>
                   Follow the{' '}

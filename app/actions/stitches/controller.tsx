@@ -300,6 +300,11 @@ export default createController(routes.stitches, {
           const saved = await patchJob(j.id, j.owner, { title: title.trim(), description }, j.state)
           if (!saved)
             return fail(session, 'This preview changed. Review its latest status.', target)
+          const confirmRemoval = form.get('removal') === 'removed'
+          if (confirmRemoval && !saved.backupDownloaded) {
+            session.flash('uploadPreparation', { id: j.id, state: 'unverified' })
+            return fail(session, 'Download and check your backup before uploading.', target)
+          }
           let present = false
           for (const r of j.merge.records) {
             try {
@@ -310,9 +315,22 @@ export default createController(routes.stitches, {
               if (!(error instanceof strava.StravaError && error.status === 404)) throw error
             }
           }
-          session.flash('uploadPreparation', { id: j.id, state: present ? 'present' : 'removed' })
-          return redirect(target, 303)
+          if (!confirmRemoval || present) {
+            session.flash('uploadPreparation', { id: j.id, state: present ? 'present' : 'removed' })
+            return confirmRemoval
+              ? fail(
+                  session,
+                  'An original activity is still on Strava. No upload was started.',
+                  target,
+                )
+              : redirect(target, 303)
+          }
+          const verified = await patchJob(j.id, j.owner, { removalConfirmed: true }, j.state)
+          if (!verified)
+            return fail(session, 'This preview changed. Review its latest status.', target)
         } catch (error) {
+          if (form.get('removal') === 'removed')
+            session.flash('uploadPreparation', { id: j.id, state: 'unverified' })
           return fail(session, problem(error) + ' No upload was started.', target)
         }
       }
