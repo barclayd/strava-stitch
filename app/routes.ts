@@ -10,6 +10,7 @@ export const routes = route({
   indoorGuide: get(publicPages.indoorGuide.path),
   runGuide: get(publicPages.runGuide.path),
   rideGuide: get(publicPages.rideGuide.path),
+  garminGuide: get(publicPages.garminGuide.path),
   crawl: { robots: get('/robots.txt'), sitemap: get('/sitemap.xml') },
   demo: get('/example'),
   demoDownload: get('/example/download'),

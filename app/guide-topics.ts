@@ -31,6 +31,7 @@ export const guideTopics = {
   },
   runGuide: {
     ...artwork,
+    updated: '2026-09-20',
     path: '/guides/combine-strava-runs',
     title: 'Combine Two Strava Runs into One | Stitch',
     heading: 'Combine two Strava runs after an accidental stop',
@@ -42,6 +43,7 @@ export const guideTopics = {
   },
   rideGuide: {
     ...artwork,
+    updated: '2026-09-20',
     path: '/guides/combine-strava-rides',
     title: 'Combine Two Strava Rides into One | Stitch',
     heading: 'Combine a Strava ride split across recordings',
@@ -50,6 +52,18 @@ export const guideTopics = {
       'Merge Strava rides split by a stop or device restart. Preview the gap, check ride types and sensor limitations, then download or upload with Stitch for free.',
     intro:
       'A café stop, an accidental finish or restarting a bike computer can leave one outing in separate activities. Stitch joins consecutive rides of the same sport type, keeps the original timestamps and lets you check every gap before uploading.',
+  },
+  garminGuide: {
+    ...artwork,
+    updated: '2026-09-20',
+    path: '/guides/merge-garmin-activities-strava',
+    title: 'How to Merge Garmin Activities into One Strava Activity | Stitch',
+    heading: 'How to merge Garmin activities into one Strava activity',
+    label: 'Garmin activities',
+    description:
+      'Combine separate Garmin rides or runs into one Strava activity for free. Sync the parts, preview the gaps, save backups and upload the merged activity with Stitch.',
+    intro:
+      'Recorded one outing as several Garmin activities? Once each part has synced to Strava, Stitch can merge two to eight recordings of the same sport into one Strava activity, for free.',
   },
 } as const
 

@@ -44,6 +44,7 @@ export const analyticsPages = [
   'indoorGuide',
   'runGuide',
   'rideGuide',
+  'garminGuide',
   'privacy',
 ] as const
 export type AnalyticsPage = (typeof analyticsPages)[number]

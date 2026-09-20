@@ -118,6 +118,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   e-bike rides, swims, hikes, walks, skiing, and indoor workouts.
                 </p>
                 <p>
+                  Recorded the parts on a Garmin watch or bike computer? Follow the{' '}
+                  <a
+                    href={routes.garminGuide.href()}
+                    data-funnel="guide_click"
+                    data-funnel-placement="guide"
+                  >
+                    Garmin-to-Strava merge guide
+                  </a>{' '}
+                  to sync the recordings and combine them into one Strava activity.
+                </p>
+                <p>
                   Each activity needs at least two recorded timestamps. GPS is optional; see how to{' '}
                   <a
                     href={routes.indoorGuide.href()}
