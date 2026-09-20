@@ -121,7 +121,7 @@ Each row contains `blob1 = event`, `blob2 = page`, `blob3 = placement`,
 `blob4 = schema version (v1)`, and `double1 = 1`. `index1` is the event name and
 Cloudflare supplies the timestamp and sampling weight. Page labels are `home`,
 `workspace`, `example`, `preview`, `guide`, `duplicateGuide`, `indoorGuide`,
-`runGuide`, `rideGuide`, and `privacy`. These fixed topic labels distinguish guide
+`runGuide`, `rideGuide`, `garminGuide`, and `privacy`. These fixed topic labels distinguish guide
 visits without collecting URLs or search terms. Placement labels are
 `header`, `home`, `example`, `preview`, `guide`, `guide_intro`, `footer`, or `unknown`.
 `guide_intro` identifies the opening actions across the guide pages; existing CTA

@@ -54,9 +54,14 @@ export function Shell(
           {handle.props.firstname ? (
             <>
               {handle.props.analyticsPage &&
-                ['guide', 'duplicateGuide', 'indoorGuide', 'runGuide', 'rideGuide'].includes(
-                  handle.props.analyticsPage,
-                ) && (
+                [
+                  'guide',
+                  'duplicateGuide',
+                  'indoorGuide',
+                  'runGuide',
+                  'rideGuide',
+                  'garminGuide',
+                ].includes(handle.props.analyticsPage) && (
                   <a
                     class="nav-link"
                     href={routes.home.href()}

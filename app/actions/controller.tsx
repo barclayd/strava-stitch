@@ -172,6 +172,20 @@ export default createController(routes, {
         />,
       )
     },
+    async garminGuide(context) {
+      return context.render(
+        <TopicGuidePage
+          topic="garminGuide"
+          firstname={await guideFirstname(context.get(Session))}
+          csrf={getCsrfToken(context)}
+          seo={pageSeo(
+            'garminGuide',
+            context.url,
+            typeof context.get(Session).get('athleteId') === 'number',
+          )}
+        />,
+      )
+    },
     demo(context) {
       return context.render(<ExamplePage example={examplePreview} csrf={getCsrfToken(context)} />)
     },
