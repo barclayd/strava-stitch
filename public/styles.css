@@ -2191,10 +2191,29 @@ svg {
   color: var(--green);
   font-weight: 600;
 }
+.guide-screenshot {
+  max-width: 592px;
+  margin: 24px 0 32px;
+}
+.guide-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+.guide-screenshot figcaption {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #60675d;
+}
 .table-scroll {
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
+}
+.article-body .table-scroll + p {
+  margin-top: 18px;
 }
 .article-body table {
   width: 100%;

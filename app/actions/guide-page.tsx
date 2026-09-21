@@ -19,15 +19,15 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
             <span class="eyebrow">THE STITCH GUIDE</span>
             <h1>{guideHeading}</h1>
             <p class="guide-deck">
-              To combine Strava activities into one, connect your account to Stitch, select two to
-              eight activities of the same sport, and review the join. Then download the merged GPX
-              or FIT file, or confirm an upload to Strava. Free to use, always.
+              Turn a split run or ride into one new Strava activity for free. Select two to eight
+              recordings of the same sport directly from Strava, without exporting each file first.
+              Preview the join and save your backups before choosing whether to upload.
             </p>
             <GuideActions csrf={handle.props.csrf} firstname={handle.props.firstname} />
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}
-              <time dateTime={guideUpdated}>20 September 2026</time>
+              <time dateTime={guideUpdated}>21 September 2026</time>
             </p>
           </header>
           <figure class="guide-figure">
@@ -50,6 +50,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
             <nav class="article-toc" aria-label="On this page">
               <strong>IN THIS GUIDE</strong>
               <a href="#can-you-merge">Can you merge on Strava?</a>
+              <a href="#choose-a-method">Choose a merging method</a>
               <a href="#before-you-start">Before you start</a>
               <a href="#join-your-activities">Join your activities</a>
               <a href="#what-is-preserved">What carries across</a>
@@ -64,7 +65,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 <p>
                   Yes, you can combine the data from separate activities and upload it as one new
                   activity. Strava itself does not have a built-in merge feature. Its{' '}
-                  <a href="https://support.strava.com/en-us/articles/15401839-merge-or-combine-activities">
+                  <a href="https://support.strava.com/en-us/articles/15401839-how-do-i-merge-or-combine-activities-on-strava">
                     official guidance on merging activities
                   </a>{' '}
                   points to third-party tools.
@@ -108,6 +109,62 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   </a>{' '}
                   is available without connecting an account.
                 </aside>
+              </section>
+              <section id="choose-a-method">
+                <h2>Which way should you merge your activities?</h2>
+                <p>
+                  The right method depends on where your recordings are saved and whether they
+                  happened one after another or at the same time.
+                </p>
+                <div
+                  class="table-scroll"
+                  role="region"
+                  aria-label="Compare activity merging methods"
+                  tabIndex={0}
+                >
+                  <table>
+                    <caption>Choose a method for your recordings</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Your recordings</th>
+                        <th scope="col">Where to start</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th scope="row">Separate parts already on Strava</th>
+                        <td>
+                          Use Stitch to select two to eight consecutive activities of the same sport
+                          directly from your account. You can preview the join without exporting
+                          each activity first.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">GPX, FIT, or TCX files on your device</th>
+                        <td>
+                          Use a file merging tool such as GOTOES, or sync the separate recordings to
+                          Strava first and then use Stitch. Stitch does not import local files.
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Two devices recording the same outing at once</th>
+                        <td>
+                          Choose a tool that handles overlapping recordings. Strava’s guidance lists
+                          GOTOES for this. Stitch rejects overlaps instead of combining simultaneous
+                          tracks.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>
+                  For the file-based options, see{' '}
+                  <a href="https://support.strava.com/en-us/articles/15401839-how-do-i-merge-or-combine-activities-on-strava">
+                    Strava’s merging instructions
+                  </a>{' '}
+                  and <a href="https://gotoes.org/tools/merge-gps-files">GOTOES</a>. With any
+                  method, check which data survives the merge before replacing your originals.
+                </p>
               </section>
               <section id="before-you-start">
                 <h2>Before you start</h2>
@@ -155,6 +212,18 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
               </section>
               <section id="join-your-activities">
                 <h2>How to join your Strava activities with Stitch</h2>
+                <p>
+                  Here is the process, illustrated with two rides from our{' '}
+                  <a
+                    href={routes.demo.href()}
+                    data-funnel="example_click"
+                    data-funnel-placement="guide"
+                  >
+                    public example
+                  </a>
+                  . The screenshots use sample recordings. You can try the example without
+                  connecting Strava; it never uploads an activity.
+                </p>
                 <ol class="article-steps">
                   <li>
                     <h3>Connect your Strava account</h3>
@@ -172,6 +241,20 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                       date, or sport in your activity list. Stitch orders them by their start times.
                       Check the dates and titles so you select the parts of the same outing.
                     </p>
+                    <figure class="guide-screenshot">
+                      <img
+                        src="/images/guide-select-activities.webp"
+                        alt="Two sample rides selected in Stitch: Out into the hills, 13.53 km, and The way home, 12.98 km."
+                        width="592"
+                        height="518"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <figcaption>
+                        These two ride recordings total 26.51 km in the preview. Choose Review this
+                        join to check how the parts fit together.
+                      </figcaption>
+                    </figure>
                   </li>
                   <li>
                     <h3>Review the route and every join</h3>
@@ -181,6 +264,20 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                       Stitch does not draw a made-up GPS track between the end of one activity and
                       the start of the next.
                     </p>
+                    <figure class="guide-screenshot">
+                      <img
+                        src="/images/guide-review-join.webp"
+                        alt="The sample ride timeline shows a 3 minute 8 second gap, with the endpoints 123 metres apart and no connecting points added."
+                        width="592"
+                        height="518"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <figcaption>
+                        The pause stays in elapsed time. The 123 metres between endpoints are not
+                        turned into a recorded route or added distance.
+                      </figcaption>
+                    </figure>
                   </li>
                   <li>
                     <h3>Download the merged file</h3>
@@ -200,11 +297,18 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                     </p>
                     <p>
                       Review the gap confirmation and your Strava default activity visibility, then
-                      confirm the upload. Stitch cannot set “Only You” through Strava’s documented
-                      upload API. Open the new activity in Strava to check its sport, map, totals,
-                      and visibility. Direct uploads preserve the exact Strava sport type; check the
-                      sport if you import a downloaded file yourself. If Strava reports a duplicate,
-                      follow the separate steps below.
+                      choose Continue to upload. Download and inspect the backup bundle and save any
+                      available photos before removing originals yourself in Strava. Kudos and
+                      comments cannot be transferred or restored from these backups. See the{' '}
+                      <a href="#duplicates">duplicate-upload steps</a> before removing anything.
+                    </p>
+                    <p>
+                      Return to Stitch, confirm the originals’ removal, and choose Verify and upload
+                      to Strava. When the checks pass, that action starts the upload. Open the new
+                      activity in Strava to check its sport, map, totals, and visibility. Stitch
+                      cannot set “Only You” through Strava’s documented upload API. Direct uploads
+                      preserve the exact Strava sport type; check the sport if you import a
+                      downloaded file yourself.
                     </p>
                   </li>
                 </ol>
