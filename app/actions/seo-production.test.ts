@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import { createHash, randomBytes } from 'node:crypto'
 import { createTestHarness } from 'wrangler'
 import { createCookie } from 'remix/cookie'
-import { createSession } from 'remix/session'
+import { session as sessionMiddleware } from 'remix/middleware/session'
+import { createRouter } from 'remix/router'
+import { createSession, type Session } from 'remix/session'
 import { publicPages, publicOrigin } from '../seo.ts'
 import { basemapPath, basemapKey } from '../maps.ts'
 import { guideTopics, guideTopicKeys } from '../guide-topics.ts'
@@ -34,6 +36,24 @@ await server.listen()
 after(() => server.close())
 const get = (path: string, method = 'GET') =>
   worker.fetch(publicOrigin + path, { method, redirect: 'manual' })
+
+// Let the middleware encode its signed expiration metadata for seeded sessions.
+async function sessionCookie(storedSession: Session) {
+  const router = createRouter({
+    middleware: [
+      sessionMiddleware(
+        createCookie('stitch_session', { secrets: [sessionSecret], maxAge: 604800 }),
+        {
+          read: async () => storedSession,
+          save: async (session) => session.id,
+        },
+      ),
+    ],
+  })
+  router.get('/', () => new Response(null))
+  const response = await router.fetch(publicOrigin + '/')
+  return response.headers.getSetCookie()[0].split(';')[0]
+}
 
 test('basemap serves bounded immutable ranges without creating a session', async () => {
   const env = await worker.getEnv()
@@ -186,9 +206,7 @@ test('guides offer a native, CSRF-protected opening connection and account-aware
   await env.SESSIONS.getByName(createHash('sha256').update(session.id).digest('hex')).save(
     session.data,
   )
-  const cookie = (
-    await createCookie('stitch_session', { secrets: [sessionSecret] }).serialize(session.id)
-  ).split(';')[0]
+  const cookie = await sessionCookie(session)
   for (const path of [
     publicPages.guide.path,
     ...guideTopicKeys.map((key) => guideTopics[key].path),
@@ -397,9 +415,7 @@ test('an athlete session makes every public page unindexable', async () => {
   const id = session.id
   const env = await worker.getEnv()
   await env.SESSIONS.getByName(createHash('sha256').update(id).digest('hex')).save(session.data)
-  const cookie = (
-    await createCookie('stitch_session', { secrets: [sessionSecret] }).serialize(id)
-  ).split(';')[0]
+  const cookie = await sessionCookie(session)
   for (const { path } of Object.values(publicPages)) {
     const response = await worker.fetch(publicOrigin + path, { headers: { Cookie: cookie } })
     assert.equal(response.status, 200)

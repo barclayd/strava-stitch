@@ -1,5 +1,5 @@
 import type { Handle, RemixNode } from 'remix/ui'
-import { css } from 'remix/ui'
+import { css, unsafeHTML } from 'remix/ui'
 import { entryHref, entryPreloads, type ClientFeatures } from '../assets.ts'
 import { guideUpdated, indexRobots, noIndex, serializeJsonLd, type PageSeo } from '../seo.ts'
 import type { AnalyticsPage } from '../analytics.ts'
@@ -51,7 +51,7 @@ export function Document(handle: Handle<DocumentProps>) {
               {seo.structuredData && (
                 <script
                   type="application/ld+json"
-                  innerHTML={serializeJsonLd(seo.structuredData)}
+                  innerHTML={unsafeHTML(serializeJsonLd(seo.structuredData))}
                 />
               )}
             </>

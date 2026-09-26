@@ -17,20 +17,25 @@
     "node": ">=24.3.0"
   },
   "dependencies": {
-    "@garmin/fitsdk": "^21.214.0",
+    "@garmin/fitsdk": "^21.217.0",
     "@protomaps/basemaps": "^5.7.2",
     "fflate": "^0.8.3",
-    "maplibre-gl": "^6.8.0",
+    "maplibre-gl": "^6.11.2",
     "pmtiles": "^4.5.0",
-    "remix": "^3.0.0-rc.1"
+    "remix": "^3.0.0-rc.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260906.1",
-    "@types/node": "latest",
+    "@cloudflare/workers-types": "^5.20260926.1",
+    "@types/node": "^26.6.3",
     "esbuild": "^0.28.2",
-    "prettier": "^3.9.6",
-    "sharp": "^0.35.2",
+    "prettier": "^3.9.9",
+    "sharp": "^0.35.4",
     "typescript": "latest",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.141.0"
+  },
+  "overrides": {
+    "@remix-run/test": {
+      "esbuild": "$esbuild"
+    }
   }
 }
