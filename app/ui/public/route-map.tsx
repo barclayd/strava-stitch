@@ -1,4 +1,4 @@
-import { clientEntry, on, ref, type Handle } from 'remix/ui'
+import { clientEntry, on, ref, unsafeHTML, type Handle } from 'remix/ui'
 import { colours, type Track } from '../../actions/public/format.ts'
 import type { Basemap } from './basemap.ts'
 
@@ -136,7 +136,7 @@ export const RouteMap = clientEntry(
             })}
           >
             {/* A fixed empty innerHTML gives the map library ownership of these children. */}
-            <div class="map-surface" data-rmx-preserve-dom innerHTML="" />
+            <div class="map-surface" data-rmx-preserve-dom innerHTML={unsafeHTML('')} />
           </div>
           <div class="map-label">
             <span class="live-dot"></span> Route preview
