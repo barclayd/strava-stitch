@@ -944,7 +944,7 @@ svg {
 }
 .site-footer {
   max-width: 1400px;
-  margin: auto;
+  margin: 0 auto 232px;
   padding: 29px 54px 40px;
   border-top: 1px solid var(--line);
   display: flex;
@@ -982,6 +982,85 @@ svg {
 .strava-credit img {
   display: block;
   height: auto;
+}
+.free-forever-ribbon {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 232px;
+  height: 232px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.free-forever-ribbon-band {
+  position: absolute;
+  top: 115px;
+  left: -15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 330px;
+  height: 67px;
+  transform: rotate(-45deg);
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 3px 9px rgb(34 54 43 / 14%);
+  text-align: center;
+}
+.free-forever-ribbon-band::before,
+.free-forever-ribbon-band::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px dashed #b9d1b7;
+}
+.free-forever-ribbon-band::before {
+  top: 7px;
+}
+.free-forever-ribbon-band::after {
+  bottom: 7px;
+}
+.free-forever-ribbon p {
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.2px;
+}
+.free-forever-ribbon p > span {
+  display: block;
+  margin-top: 3px;
+  color: #d7e7d0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.6px;
+}
+@media (max-width: 780px) {
+  .site-footer {
+    margin-bottom: 184px;
+  }
+  .free-forever-ribbon {
+    width: 184px;
+    height: 184px;
+  }
+  .free-forever-ribbon-band {
+    top: 93px;
+    left: -39px;
+    width: 310px;
+    height: 57px;
+  }
+  .free-forever-ribbon p {
+    font-size: 14px;
+  }
+}
+@media print {
+  .free-forever-ribbon {
+    display: none;
+  }
+  .site-footer {
+    margin-bottom: 0;
+  }
 }
 .strava-data-link {
   font-size: 11px;

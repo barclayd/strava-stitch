@@ -266,7 +266,7 @@ export function WorkspaceContent(
               <h3>
                 {chosen.length
                   ? `${chosen.length} ${chosen.length === 1 ? 'part' : 'parts'}. One story.`
-                  : 'Every part belongs.'}
+                  : 'Merge in seconds.'}
               </h3>
             </div>
             <div class="summary-number">

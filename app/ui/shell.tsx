@@ -106,6 +106,14 @@ export function Shell(
           <a href={routes.privacy.href() + '#support'}>Support</a>
         </div>
       </footer>
+      <aside class="free-forever-ribbon" aria-label="Free activity merging">
+        <div class="free-forever-ribbon-band">
+          <p>
+            Free merging. Forever.
+            <span>Merge in seconds</span>
+          </p>
+        </div>
+      </aside>
     </Document>
   )
 }

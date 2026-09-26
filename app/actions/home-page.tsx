@@ -33,7 +33,7 @@ export function HomePage(
         <main id="main" class="main-content">
           <div class="intro">
             <div class="eyebrow">
-              <span class="little-line" /> EVERY PART BELONGS
+              <span class="little-line" /> MERGE IN SECONDS
             </div>
             <h1>
               Combine your
