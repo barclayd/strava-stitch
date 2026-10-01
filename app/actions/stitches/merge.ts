@@ -1,4 +1,15 @@
 import { isSport, unavailableReason } from '../../data/sports.ts'
+import type { RecordingFailureReason } from '../../analytics.ts'
+
+export class RecordingValidationError extends Error {
+  constructor(
+    public readonly reason: RecordingFailureReason,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'RecordingValidationError'
+  }
+}
 
 export type Activity = {
   id: number
@@ -84,24 +95,39 @@ export function separation(a: { lat: number; lon: number }, b: { lat: number; lo
   return 6371008.8 * 2 * Math.asin(Math.min(1, Math.sqrt(q)))
 }
 
-export function recording(activity: Activity, streams: Streams): Recording {
+export function validateRecordingActivity(activity: Activity) {
   const unavailable = unavailableReason(activity)
-  if (unavailable) throw new Error(unavailable)
+  if (unavailable)
+    throw new RecordingValidationError(
+      activity.manual ? 'manual_activity' : 'unsupported_sport',
+      unavailable,
+    )
+}
+
+export function recording(activity: Activity, streams: Streams): Recording {
+  validateRecordingActivity(activity)
   const times = streams.time?.data,
     gps = streams.latlng?.data
   if (!Array.isArray(times) || times.length < 2)
-    throw new Error(
+    throw new RecordingValidationError(
+      'missing_timeline',
       'This activity has no recorded timeline to stitch. At least two timestamped samples are needed.',
     )
   if (times.length > maxPoints)
-    throw new Error('This activity is too large for this version of Stitch.')
+    throw new RecordingValidationError(
+      'sample_limit',
+      'This activity is too large for this version of Stitch.',
+    )
   for (const stream of Object.values(streams)) {
     if (
       !Array.isArray(stream.data) ||
       stream.data.length !== times.length ||
       (stream.original_size !== undefined && stream.original_size !== times.length)
     )
-      throw new Error('Strava returned incomplete or misaligned samples. Nothing was stitched.')
+      throw new RecordingValidationError(
+        'misaligned_streams',
+        'Strava returned incomplete or misaligned samples. Nothing was stitched.',
+      )
   }
   const start = Date.parse(activity.start_date) / 1000
   if (
@@ -109,15 +135,24 @@ export function recording(activity: Activity, streams: Streams): Recording {
     !/(Z|[+-]\d\d:\d\d)$/.test(activity.start_date) ||
     /T00:00:01Z?$/.test(activity.start_date_local ?? '')
   )
-    throw new Error('The original start time is unavailable. Stitch will not invent one.')
+    throw new RecordingValidationError(
+      'missing_start_time',
+      'The original start time is unavailable. Stitch will not invent one.',
+    )
   for (const key of ['distance', 'moving_time', 'total_elevation_gain'] as const)
     if (!finite(activity[key]) || activity[key] < 0)
-      throw new Error('The activity summary is incomplete.')
+      throw new RecordingValidationError(
+        'incomplete_summary',
+        'The activity summary is incomplete.',
+      )
   let lastTime = -1,
     lastDistance = -1
   const points = times.map((time, i) => {
     if (!finite(time) || !Number.isInteger(time) || time < 0 || time <= lastTime)
-      throw new Error('Timestamps must be strictly increasing.')
+      throw new RecordingValidationError(
+        'invalid_timestamp',
+        'Timestamps must be strictly increasing.',
+      )
     lastTime = time
     const p: Point = { time: start + time }
     if (gps !== undefined) {
@@ -129,17 +164,27 @@ export function recording(activity: Activity, streams: Streams): Recording {
         Math.abs(ll[0]) > 90 ||
         Math.abs(ll[1]) > 180
       )
-        throw new Error('An activity contains an invalid GPS point.')
+        throw new RecordingValidationError(
+          'invalid_gps',
+          'An activity contains an invalid GPS point.',
+        )
       p.lat = ll[0]
       p.lon = ll[1]
     }
     for (const key of ['altitude', 'distance', 'temp', 'heartrate', 'cadence'] as const) {
       const value = streams[key]?.data[i]
       if (value !== undefined && value !== null) {
-        if (!finite(value)) throw new Error('An activity contains an invalid sensor sample.')
+        if (!finite(value))
+          throw new RecordingValidationError(
+            'invalid_sensor',
+            'An activity contains an invalid sensor sample.',
+          )
         if (key === 'distance') {
           if (value < 0 || value < lastDistance)
-            throw new Error('Recorded distance moves backwards.')
+            throw new RecordingValidationError(
+              'distance_backwards',
+              'Recorded distance moves backwards.',
+            )
           lastDistance = value
         }
         p[key] = value
@@ -164,7 +209,8 @@ export function merge(input: Recording[]): Merge {
       'Choose activities with the same sport type. For example, Run and Trail Run are separate sports.',
     )
   if (input.reduce((n, r) => n + r.points.length, 0) > maxPoints)
-    throw new Error(
+    throw new RecordingValidationError(
+      'sample_limit',
       'Choose activities with up to 50,000 recorded samples in total. No samples have been removed.',
     )
   const records = [...input].sort((a, b) => a.points[0].time - b.points[0].time)

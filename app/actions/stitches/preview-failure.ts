@@ -1,5 +1,6 @@
 import { StravaError } from '../../data/strava.ts'
 import type { PreviewFailureReason } from '../../analytics.ts'
+import { RecordingValidationError } from './merge.ts'
 
 export type PreviewStage =
   | 'activity_load'
@@ -11,6 +12,11 @@ export type PreviewStage =
 
 // Classify only into fixed labels. Never send an exception message or activity data.
 export function previewFailureReason(error: unknown, stage: PreviewStage): PreviewFailureReason {
+  if (
+    (stage === 'recording_validation' || stage === 'merge_validation') &&
+    error instanceof RecordingValidationError
+  )
+    return error.reason
   if (error instanceof StravaError) {
     if (error.status === 429) return 'strava_rate_limit'
     if (error.status === 401 || error.status === 403) return 'strava_connection'

@@ -148,9 +148,30 @@ For `preview_failed`, `blob5` contains an optional fixed failure reason: `activi
 `different_sports`, `export_failed`, `save_failed`, `strava_rate_limit`,
 `strava_connection`, or `strava_unavailable`. These distinguish the stage or known
 failure category without recording exception text or private activity details.
-For both failure events, older events have an empty reason and cannot be diagnosed
-retrospectively. The report's full event table includes this dimension; privacy
-exclusions still apply.
+Known recording validation failures now use more specific fixed reasons:
+
+| Reason | Meaning |
+| --- | --- |
+| `manual_activity` | A manually entered activity has no recorded samples |
+| `unsupported_sport` | Stitch does not support the activity's sport |
+| `missing_timeline` | The timeline is missing or has fewer than two samples |
+| `sample_limit` | One activity or the combined selection exceeds 50,000 samples |
+| `misaligned_streams` | Streams are incomplete, have different lengths, or disagree with their original sample count |
+| `missing_start_time` | The original start time is invalid, lacks a timezone, or is unavailable |
+| `incomplete_summary` | Distance, moving time, or elevation gain is missing, invalid, or negative |
+| `invalid_timestamp` | A recorded timestamp is invalid, fractional, negative, repeated, or out of order |
+| `invalid_gps` | A recorded coordinate is malformed or outside the valid range |
+| `invalid_sensor` | A provided sensor sample is not a finite number |
+| `distance_backwards` | Recorded distance is negative or decreases between samples |
+
+These reasons come from typed validation errors, not exception message matching.
+Unexpected recording errors retain `recording_validation`. Validation rules and
+user-facing messages are unchanged. Only the fixed reason is stored; no sample
+values, counts, activity identifiers, sport types, or raw exception messages are added.
+The report's full event table already includes this dimension; privacy exclusions
+still apply. Specific reasons start after this change is deployed. Older
+`recording_validation` events and events with an empty reason cannot be diagnosed
+more precisely retrospectively.
 The browser sends events without cookies or referrers. The endpoint creates no session.
 The random document-render marker used to detect navigation is never sent to analytics
 and does not identify a person. Both browser and server collection honour DNT and GPC.

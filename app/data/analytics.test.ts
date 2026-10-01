@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { createAnalytics, receiveAnalytics } from './analytics.ts'
 import {
   connectionFailureReasons,
+  previewFailureReasons,
   type AnalyticsFailureReason,
   type PreviewFailureReason,
 } from '../analytics.ts'
@@ -101,6 +102,8 @@ test('disabled environments and browser privacy signals suppress both browser an
     await receiveAnalytics(req, analytics)
     analytics.track('upload_completed', 'preview')
     analytics.track('preview_failed', 'workspace', 'unknown', 'strava_rate_limit')
+    for (const reason of previewFailureReasons)
+      analytics.track('preview_failed', 'workspace', 'unknown', reason)
     for (const reason of connectionFailureReasons)
       analytics.track('strava_connect_failed', 'home', 'header', reason)
     assert.deepEqual(points, [])
@@ -134,18 +137,16 @@ test('connection reasons are allowlisted per event and cannot expose arbitrary e
 
 test('only allowlisted preview reasons enter the diagnostic dimension', () => {
   const { analytics, points } = fixture()
-  analytics.track('preview_failed', 'workspace', 'unknown', 'overlapping_activities')
-  assert.deepEqual(points[0].blobs, [
-    'preview_failed',
-    'workspace',
-    'unknown',
-    'v1',
-    'overlapping_activities',
-  ])
+  for (const reason of previewFailureReasons) {
+    analytics.track('preview_failed', 'workspace', 'unknown', reason)
+    assert.deepEqual(points.at(-1)?.blobs, ['preview_failed', 'workspace', 'unknown', 'v1', reason])
+  }
   analytics.track('preview_failed', 'workspace', 'unknown', 'private error' as PreviewFailureReason)
-  assert.deepEqual(points[1].blobs, ['preview_failed', 'workspace', 'unknown', 'v1'])
+  assert.deepEqual(points.at(-1)?.blobs, ['preview_failed', 'workspace', 'unknown', 'v1'])
   analytics.track('strava_connected', 'workspace', 'unknown', 'strava_connection')
-  assert.deepEqual(points[2].blobs, ['strava_connected', 'workspace', 'unknown', 'v1'])
+  assert.deepEqual(points.at(-1)?.blobs, ['strava_connected', 'workspace', 'unknown', 'v1'])
+  analytics.track('strava_connect_failed', 'home', 'header', 'invalid_gps')
+  assert.deepEqual(points.at(-1)?.blobs, ['strava_connect_failed', 'home', 'header', 'v1'])
 })
 
 test('an exclusion affects only the browser that sends the exact preference', () => {

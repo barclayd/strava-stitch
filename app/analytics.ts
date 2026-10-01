@@ -4,10 +4,26 @@ export const analyticsOptOutCookie = 'stitch_analytics_opt_out'
 export const analyticsOptedOut = (cookies?: string | null): boolean =>
   cookies?.split(';').some((cookie) => cookie.trim() === `${analyticsOptOutCookie}=1`) ?? false
 
+export const recordingFailureReasons = [
+  'manual_activity',
+  'unsupported_sport',
+  'missing_timeline',
+  'sample_limit',
+  'misaligned_streams',
+  'missing_start_time',
+  'incomplete_summary',
+  'invalid_timestamp',
+  'invalid_gps',
+  'invalid_sensor',
+  'distance_backwards',
+] as const
+export type RecordingFailureReason = (typeof recordingFailureReasons)[number]
+
 export const previewFailureReasons = [
   'activity_load',
   'streams_load',
   'recording_validation',
+  ...recordingFailureReasons,
   'merge_validation',
   'overlapping_activities',
   'different_sports',

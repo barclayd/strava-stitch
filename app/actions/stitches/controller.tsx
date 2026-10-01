@@ -7,10 +7,16 @@ import * as s from 'remix/data-schema'
 import { routes } from '../../routes.ts'
 import { account, newJob, job, patchJob, claimUpload, type Job } from '../../data/store.ts'
 import * as strava from '../../data/strava.ts'
-import { merge, recording, maxPoints, mergedDescription } from './merge.ts'
+import {
+  merge,
+  recording,
+  maxPoints,
+  mergedDescription,
+  validateRecordingActivity,
+  RecordingValidationError,
+} from './merge.ts'
 import { activityFile } from './export.ts'
 import { StitchPage } from './page.tsx'
-import { unavailableReason } from '../../data/sports.ts'
 import { track } from '../../data/analytics.ts'
 import type { ServerEvent } from '../../analytics.ts'
 import { previewFailureReason, type PreviewStage } from './preview-failure.ts'
@@ -104,15 +110,15 @@ export default createController(routes.stitches, {
             detail = await strava.activity(auth.id, id)
           if (detail.id !== id || detail.athlete?.id !== auth.id)
             return fail(session, 'Every activity must belong to your connected Strava account.')
-          const unavailable = unavailableReason(detail)
           stage = 'recording_validation'
-          if (unavailable) throw new Error(unavailable)
+          validateRecordingActivity(detail)
           stage = 'streams_load'
           const source = await strava.streams(auth.id, id)
           stage = 'recording_validation'
           points += source.time?.data?.length ?? 0
           if (points > maxPoints)
-            throw new Error(
+            throw new RecordingValidationError(
+              'sample_limit',
               'Choose activities with up to 50,000 recorded samples in total. No samples have been removed.',
             )
           records.push(recording(detail, source))
