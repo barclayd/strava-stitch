@@ -12,7 +12,7 @@ import {
   type Mesg,
 } from '@garmin/fitsdk'
 import { isSport, sports, type Sport } from '../../data/sports.ts'
-import { fileFormat, hasPosition, toGpx, type Recording } from './merge.ts'
+import { fileFormat, hasPosition, gpxBytes, type Recording } from './merge.ts'
 
 export type ActivityFile = {
   data: Uint8Array<ArrayBuffer>
@@ -154,7 +154,7 @@ export function toFit(records: Recording[]): Uint8Array<ArrayBuffer> {
   return new Uint8Array(encoder.close())
 }
 
-export function activityFile(records: Recording[], name: string): ActivityFile {
+export function activityFileInfo(records: Recording[]): Omit<ActivityFile, 'data'> {
   const sport = sportOf(records),
     format = fileFormat(records)
   return {
@@ -162,6 +162,13 @@ export function activityFile(records: Recording[], name: string): ActivityFile {
     trainer: records.every((r) => r.activity.trainer === true),
     format,
     contentType: format === 'gpx' ? 'application/gpx+xml' : 'application/vnd.ant.fit',
-    data: format === 'gpx' ? new TextEncoder().encode(toGpx(records, name)) : toFit(records),
+  }
+}
+
+export function activityFile(records: Recording[], name: string): ActivityFile {
+  const info = activityFileInfo(records)
+  return {
+    ...info,
+    data: info.format === 'gpx' ? gpxBytes(records, name) : toFit(records),
   }
 }

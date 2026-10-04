@@ -55,7 +55,10 @@ export type Merge = {
   start: string
   fields: string[]
 }
-export const maxPoints = 50000
+// Keep headroom for the Worker's 128 MB memory and encrypted preview storage.
+// See scripts/benchmark-stitches.ts and docs/large-recordings.md before raising this.
+export const maxPoints = 100000
+export const sampleLimitMessage = `Choose activities with up to ${maxPoints.toLocaleString('en-GB')} recorded samples in total. No samples have been removed.`
 export function mergedTitle(merge: Merge): string {
   const combined =
     merge.records
@@ -114,10 +117,7 @@ export function recording(activity: Activity, streams: Streams): Recording {
       'This activity has no recorded timeline to stitch. At least two timestamped samples are needed.',
     )
   if (times.length > maxPoints)
-    throw new RecordingValidationError(
-      'sample_limit',
-      'This activity is too large for this version of Stitch.',
-    )
+    throw new RecordingValidationError('sample_limit', sampleLimitMessage)
   for (const stream of Object.values(streams)) {
     if (
       !Array.isArray(stream.data) ||
@@ -209,10 +209,7 @@ export function merge(input: Recording[]): Merge {
       'Choose activities with the same sport type. For example, Run and Trail Run are separate sports.',
     )
   if (input.reduce((n, r) => n + r.points.length, 0) > maxPoints)
-    throw new RecordingValidationError(
-      'sample_limit',
-      'Choose activities with up to 50,000 recorded samples in total. No samples have been removed.',
-    )
+    throw new RecordingValidationError('sample_limit', sampleLimitMessage)
   const records = [...input].sort((a, b) => a.points[0].time - b.points[0].time)
   const joins: Join[] = []
   for (let i = 1; i < records.length; i++) {
@@ -250,37 +247,68 @@ export function merge(input: Recording[]): Merge {
   }
 }
 
-export function toGpx(records: Recording[], name: string): string {
+function* gpxParts(records: Recording[], name: string): Generator<string> {
   if (fileFormat(records) !== 'gpx')
     throw new Error('Activities without GPS need a FIT file. No coordinates have been invented.')
   let offset = 0
   const useDistance = records.every((r) => r.points.every((p) => p.distance !== undefined))
-  const tracks = records
-    .map((r) => {
-      const points = r.points
-        .map((p) => {
-          const distance = useDistance
-            ? `<gpxdata:distance>${Math.round((offset + p.distance! - r.points[0].distance!) * 1000) / 1000}</gpxdata:distance>`
-            : ''
-          const sensor = (
-            [
-              ['temp', 'atemp'],
-              ['heartrate', 'hr'],
-              ['cadence', 'cad'],
-            ] as const
-          )
-            .map(([k, tag]) => (p[k] === undefined ? '' : `<gpxtpx:${tag}>${p[k]}</gpxtpx:${tag}>`))
-            .join('')
-          const ext =
-            distance +
-            (sensor ? `<gpxtpx:TrackPointExtension>${sensor}</gpxtpx:TrackPointExtension>` : '')
-          return `<trkpt lat="${p.lat}" lon="${p.lon}">${p.altitude === undefined ? '' : `<ele>${p.altitude}</ele>`}<time>${timestamp(p.time)}</time>${ext ? `<extensions>${ext}</extensions>` : ''}</trkpt>`
-        })
-        .join('\n')
-      if (useDistance) offset += r.points.at(-1)!.distance! - r.points[0].distance!
-      return `<trkseg>\n${points}\n</trkseg>`
-    })
-    .join('\n')
   const sport = records[0].activity.sport_type
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Stitch" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxdata="http://www.cluetrust.com/XML/GPXDATA/1/0"><metadata><name>${escape(name)}</name><desc>Stitched activities. Original timestamps and track boundaries preserved. Strava sport: ${escape(sport)}.</desc></metadata><trk><name>${escape(name)}</name><type>${sport === 'Ride' ? 'cycling' : escape(sport)}</type>${tracks}</trk></gpx>`
+  yield `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Stitch" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns:gpxdata="http://www.cluetrust.com/XML/GPXDATA/1/0"><metadata><name>${escape(name)}</name><desc>Stitched activities. Original timestamps and track boundaries preserved. Strava sport: ${escape(sport)}.</desc></metadata><trk><name>${escape(name)}</name><type>${sport === 'Ride' ? 'cycling' : escape(sport)}</type>`
+  for (const [index, r] of records.entries()) {
+    yield `${index ? '\n' : ''}<trkseg>\n`
+    for (const [i, p] of r.points.entries()) {
+      const distance = useDistance
+        ? `<gpxdata:distance>${Math.round((offset + p.distance! - r.points[0].distance!) * 1000) / 1000}</gpxdata:distance>`
+        : ''
+      const sensor = (
+        [
+          ['temp', 'atemp'],
+          ['heartrate', 'hr'],
+          ['cadence', 'cad'],
+        ] as const
+      )
+        .map(([k, tag]) => (p[k] === undefined ? '' : `<gpxtpx:${tag}>${p[k]}</gpxtpx:${tag}>`))
+        .join('')
+      const ext =
+        distance +
+        (sensor ? `<gpxtpx:TrackPointExtension>${sensor}</gpxtpx:TrackPointExtension>` : '')
+      yield `${i ? '\n' : ''}<trkpt lat="${p.lat}" lon="${p.lon}">${p.altitude === undefined ? '' : `<ele>${p.altitude}</ele>`}<time>${timestamp(p.time)}</time>${ext ? `<extensions>${ext}</extensions>` : ''}</trkpt>`
+    }
+    if (useDistance) offset += r.points.at(-1)!.distance! - r.points[0].distance!
+    yield '\n</trkseg>'
+  }
+  yield '</trk></gpx>'
+}
+
+// Small chunks avoid retaining a separate XML string for every sample.
+export function* gpxChunks(records: Recording[], name: string): Generator<string> {
+  let parts: string[] = [],
+    length = 0
+  for (const part of gpxParts(records, name)) {
+    parts.push(part)
+    length += part.length
+    if (length >= 65536) {
+      yield parts.join('')
+      parts = []
+      length = 0
+    }
+  }
+  if (parts.length) yield parts.join('')
+}
+
+export function toGpx(records: Recording[], name: string): string {
+  return [...gpxChunks(records, name)].join('')
+}
+
+export function gpxBytes(records: Recording[], name: string): Uint8Array<ArrayBuffer> {
+  const encoder = new TextEncoder()
+  let length = 0
+  // Count UTF-8 bytes first, then fill one buffer. A whole-file string plus its
+  // encoded copy can exceed Worker memory on long recordings.
+  for (const chunk of gpxChunks(records, name)) length += encoder.encode(chunk).length
+  const data = new Uint8Array(length)
+  let offset = 0
+  for (const chunk of gpxChunks(records, name))
+    offset += encoder.encodeInto(chunk, data.subarray(offset)).written
+  return data
 }

@@ -111,7 +111,11 @@ generated from Wrangler configuration; do not edit them by hand.
 
 ## Activity handling
 
-- Supports two to eight activities of the same exact sport, up to 50,000 recorded samples.
+- Supports two to eight activities of the same exact sport, up to 100,000 recorded samples
+  in total (about 27 hours 47 minutes at one sample per second). GPX exports use bounded
+  chunks and backups compress one file at a time to limit temporary memory use.
+  Response-size and encrypted-storage safeguards also apply; see
+  [large-recording limits and benchmarks](docs/large-recordings.md).
   All sport types in [Strava's upload API](https://developers.strava.com/docs/uploads/) are
   listed in `app/data/sports.ts`. Manual entries, unsupported types, overlapping recordings,
   and activities without at least two recorded timestamps are rejected. Search by name,

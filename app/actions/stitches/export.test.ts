@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import { Decoder, Stream } from '@garmin/fitsdk'
 import { sports, isSport } from '../../data/sports.ts'
 import { activityFile, toFit } from './export.ts'
-import { merge, recording, toGpx, type Activity, type Streams } from './merge.ts'
+import { merge, recording, toGpx, maxPoints, type Activity, type Streams } from './merge.ts'
+import { BackupArchive } from './backup.ts'
+import { unzipSync, strFromU8 } from 'fflate'
 
 const activity = (id: number, sport_type = 'Run'): Activity => ({
   id,
@@ -183,19 +185,42 @@ test('FIT rejects out-of-range values before they can wrap or disappear', () => 
   assert.throws(() => toFit(source), /distance/)
 })
 
-test('FIT preserves the full 50,000-sample limit and rejects larger stitches', () => {
+test('FIT preserves the full sample limit and rejects larger stitches', () => {
   const source: Streams = {
-    time: { data: Array.from({ length: 25000 }, (_, i) => i) },
-    distance: { data: Array.from({ length: 25000 }, (_, i) => i * 5) },
-    heartrate: { data: Array.from({ length: 25000 }, () => 120) },
+    time: { data: Array.from({ length: maxPoints / 2 }, (_, i) => i) },
+    distance: { data: Array.from({ length: maxPoints / 2 }, (_, i) => i * 5) },
+    heartrate: { data: Array.from({ length: maxPoints / 2 }, () => 120) },
   }
   const a = recording(activity(1, 'VirtualRide'), source),
-    b = recording({ ...activity(2, 'VirtualRide'), start_date: '2026-09-07T18:00:00Z' }, source),
+    b = recording({ ...activity(2, 'VirtualRide'), start_date: '2026-09-08T18:00:00Z' }, source),
     m = merge([b, a]),
     samples = decode(activityFile(m.records, 'Long virtual ride').data).recordMesgs!
-  assert.equal(samples.length, 50000)
+  assert.equal(samples.length, maxPoints)
   assert.equal(Number(samples.at(-1)!.timestamp), b.points.at(-1)!.time * 1000)
-  assert.equal(samples.at(-1)!.distance, 249990)
+  assert.equal(samples.at(-1)!.distance, (maxPoints - 2) * 5)
   b.points.push({ ...b.points.at(-1)!, time: b.points.at(-1)!.time + 1 })
-  assert.throws(() => merge([a, b]), /50,000/)
+  assert.throws(() => merge([a, b]), /100,000/)
+})
+
+test('chunked GPX encoding and ZIP backups preserve Unicode, all sensors and every source', () => {
+  for (const [sport, data] of [
+    ['Run', outdoor],
+    ['VirtualRide', indoor],
+  ] as const) {
+    const source = records(sport, data)
+    const title = 'Ride ☕ & <home> 日本語'
+    const stitched = activityFile(source, title)
+    if (stitched.format === 'gpx') assert.equal(strFromU8(stitched.data), toGpx(source, title))
+    const archive = new BackupArchive()
+    archive.addActivity('stitched', source, title)
+    archive.addBytes('notes.txt', new TextEncoder().encode(title))
+    for (const r of source) archive.addActivity(`source-${r.activity.id}`, [r], r.activity.name)
+    const files = unzipSync(archive.finish())
+    assert.deepEqual(files[`stitched.${stitched.format}`], stitched.data)
+    assert.equal(strFromU8(files['notes.txt']), title)
+    for (const r of source) {
+      const original = activityFile([r], r.activity.name)
+      assert.deepEqual(files[`source-${r.activity.id}.${original.format}`], original.data)
+    }
+  }
 })

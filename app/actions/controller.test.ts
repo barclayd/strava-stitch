@@ -4,7 +4,7 @@ import { createTestHarness } from 'wrangler'
 import { seal, unseal } from '../data/encryption.ts'
 import { randomBytes } from 'node:crypto'
 import { unzipSync, strFromU8 } from 'fflate'
-import { merge, recording, type Activity, type Streams } from './stitches/merge.ts'
+import { merge, recording, maxPoints, type Activity, type Streams } from './stitches/merge.ts'
 import { Decoder, Stream } from '@garmin/fitsdk'
 import { isSport } from '../data/sports.ts'
 
@@ -120,17 +120,25 @@ globalThis.fetch = async (input, init) => {
   if (url.includes('/athlete/activities?'))
     return Response.json(listedIds.map((id) => ({ ...detail(id), ...activityOverrides[id] })))
   if (url.includes('/streams?') && missingStreams) return new Response(null, { status: 404 })
-  if (url.includes('/streams?'))
+  if (url.includes('/streams?')) {
+    const sampleCount = maxPoints * (url.includes('/activities/101/') ? 0.75 : 0.25)
     return Response.json(
       streamOverrides[Number(url.match(/\/activities\/(\d+)\//)?.[1])] ??
         (longRide
           ? {
-              time: { data: Array.from({ length: 6000 }, (_, i) => i) },
-              latlng: { data: Array.from({ length: 6000 }, (_, i) => [51 + i / 100000, -1]) },
-              distance: { data: Array.from({ length: 6000 }, (_, i) => i * 5) },
+              time: { data: Array.from({ length: sampleCount }, (_, i) => i) },
+              latlng: {
+                data: Array.from({ length: sampleCount }, (_, i) => [51 + i / 100000, -1]),
+              },
+              distance: { data: Array.from({ length: sampleCount }, (_, i) => i * 5) },
+              altitude: { data: Array.from({ length: sampleCount }, (_, i) => 100 + i / 100) },
+              heartrate: { data: Array.from({ length: sampleCount }, () => 120) },
+              cadence: { data: Array.from({ length: sampleCount }, () => 80) },
+              temp: { data: Array.from({ length: sampleCount }, () => 15) },
             }
           : raw),
     )
+  }
   const photoMatch = url.match(/\/activities\/(\d+)\/photos\?/)
   if (photoMatch) {
     if (photoStatus !== 200) return new Response(null, { status: photoStatus })
@@ -151,7 +159,7 @@ globalThis.fetch = async (input, init) => {
           ...(longRide
             ? {
                 start_date: new Date(
-                  Date.UTC(2026, 8, 6, Number(match[1]) === 101 ? 8 : 10),
+                  Date.UTC(2026, 8, Number(match[1]) === 101 ? 6 : 7, 8),
                 ).toISOString(),
               }
             : {}),
@@ -703,7 +711,7 @@ test('Worker serves bundled assets, rejects oversized requests, and keeps privat
   assert.equal(tooLarge.status, 413)
 })
 
-test('large encrypted previews survive object restarts and late updates preserve completion and backups', async () => {
+test('maximum-size GPS previews survive restarts, downloads, backups and confirmed uploads', async () => {
   const c = new Client()
   await c.login(3)
   longRide = true
@@ -721,18 +729,61 @@ test('large encrypted previews survive object restarts and late updates preserve
     description: 'The full route\nWith a coffee stop ☕',
   })
   await server.getWorker().evictDurableObject('ATHLETES', { name: '3' })
-  assert.equal((await job(id, 3))?.merge.pointCount, 12000)
+  assert.equal((await job(id, 3))?.merge.pointCount, maxPoints)
   assert.equal((await job(id, 3))?.description, 'The full route\nWith a coffee stop ☕')
   const zip = await c.request(routes.stitches.backup.href({ id: id }))
   assert.equal(zip.status, 200)
   const files = unzipSync(new Uint8Array(await zip.arrayBuffer()))
-  assert.equal((strFromU8(files['stitched-activity.gpx']).match(/<trkpt /g) ?? []).length, 12000)
-  await repo(3).patchJob(id, 3, { state: 'complete', activityId: 500 })
+  const xml = strFromU8(files['stitched-activity.gpx'])
+  assert.equal((xml.match(/<trkpt /g) ?? []).length, maxPoints)
+  assert.equal((xml.match(/<gpxtpx:hr>120<\/gpxtpx:hr>/g) ?? []).length, maxPoints)
+  assert.equal(
+    (strFromU8(files['original-101.gpx']).match(/<trkpt /g) ?? []).length,
+    maxPoints * 0.75,
+  )
+  assert.equal(
+    (strFromU8(files['original-102.gpx']).match(/<trkpt /g) ?? []).length,
+    maxPoints * 0.25,
+  )
+  const downloaded = await c.request(routes.stitches.download.href({ id }))
+  assert.equal(downloaded.status, 200)
+  assert.equal(await downloaded.text(), xml)
+  const page = await c.page(routes.stitches.show.href({ id }))
+  assert.equal(page.response.status, 200)
+  assert.match(page.text, /100,000 recorded samples/)
+  deleted = true
+  try {
+    await c.post(routes.stitches.confirmRemoval.href({ id }), { confirm: 'removed' })
+    const uploaded = await c.post(routes.stitches.upload.href({ id }), confirmation)
+    assert.equal(uploaded.status, 303)
+  } finally {
+    deleted = false
+  }
+  await c.request(routes.stitches.status.href({ id }))
+  assert.equal((await job(id, 3))?.state, 'complete')
   await repo(3).patchJob(id, 3, { state: 'processing' })
   const saved = await job(id, 3)
   assert.equal(saved?.state, 'complete')
   assert.equal(saved?.backupDownloaded, true)
   assert.equal(await repo(3).claimUpload(id, 3, 'Again'), undefined)
+})
+
+test('oversized selections still fail before a preview or upload is created', async () => {
+  const c = new Client()
+  await c.login(17)
+  const data = Array.from({ length: maxPoints / 2 + 1 }, (_, i) => i)
+  streamOverrides = { 101: { time: { data } }, 102: { time: { data } } }
+  const before = uploads
+  try {
+    const response = await c.post('/stitches', { activities: ['101', '102'] })
+    assert.equal(response.status, 303)
+    assert.equal(response.headers.get('location'), '/')
+    assert.match((await c.page()).text, /up to 100,000 recorded samples/)
+    assert.deepEqual(await repo(17).jobs(17), [])
+    assert.equal(uploads, before)
+  } finally {
+    streamOverrides = {}
+  }
 })
 
 test('Strava webhook verification accepts an empty GET body and rejects the wrong token', async () => {

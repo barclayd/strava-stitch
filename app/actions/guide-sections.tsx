@@ -199,8 +199,8 @@ export const guideSections: Record<GuideTopic, Section[]> = {
         <>
           <p>
             Stitch supports two to eight recordings with matching Strava sport types and up to
-            50,000 recorded samples in total. Run and Trail Run are different types, as are Ride and
-            Virtual Ride. A ride followed by a run needs separate stitches.
+            100,000 recorded samples in total. Run and Trail Run are different types, as are Ride
+            and Virtual Ride. A ride followed by a run needs separate stitches.
           </p>
           <p>
             The recordings must not overlap. A Garmin watch and bike computer recording the same
