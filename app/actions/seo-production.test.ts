@@ -148,6 +148,13 @@ test('public production pages send complete, consistent SEO in the initial HTML'
         ),
       )
       assert.doesNotMatch(raw, /aggregateRating|FAQPage|private-id|secret-access/)
+      const article = graph.find((item: { '@type': string }) => item['@type'] === 'Article')
+      if (article) {
+        const modified = html.match(/property="article:modified_time" content="([^"]+)"/)![1]
+        assert.equal(modified, article.dateModified, `${page.path}: article dates agree`)
+        const visibleDate = html.match(/<time date[Tt]ime="([^"]+)"/)![1]
+        assert.equal(visibleDate, modified.slice(0, 10), `${page.path}: visible date agrees`)
+      }
     }
     if (key === 'home') assert.match(html, /modulepreload/)
     else {

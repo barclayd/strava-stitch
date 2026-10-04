@@ -1,7 +1,7 @@
 import type { Handle, RemixNode } from 'remix/ui'
 import { css, unsafeHTML } from 'remix/ui'
 import { entryHref, entryPreloads, type ClientFeatures } from '../assets.ts'
-import { guideUpdated, indexRobots, noIndex, serializeJsonLd, type PageSeo } from '../seo.ts'
+import { indexRobots, noIndex, serializeJsonLd, type PageSeo } from '../seo.ts'
 import type { AnalyticsPage } from '../analytics.ts'
 import { runtime } from '../data/runtime.ts'
 
@@ -45,9 +45,7 @@ export function Document(handle: Handle<DocumentProps>) {
               <meta name="twitter:description" content={seo.description} />
               <meta name="twitter:image" content={seo.image} />
               <meta name="twitter:image:alt" content={seo.imageAlt} />
-              {seo.type === 'article' && (
-                <meta property="article:modified_time" content={guideUpdated + 'T00:00:00+00:00'} />
-              )}
+              {seo.modified && <meta property="article:modified_time" content={seo.modified} />}
               {seo.structuredData && (
                 <script
                   type="application/ld+json"

@@ -221,6 +221,71 @@ export const guideSections: Record<GuideTopic, Section[]> = {
   ],
   duplicateGuide: [
     {
+      id: 'uploading-activity',
+      title: 'What to do about “duplicate of an uploading activity”',
+      body: (
+        <>
+          <p>
+            If Strava says “duplicate of an uploading activity”, check the original upload before
+            sending the file again. Strava’s{' '}
+            <a href="https://developers.strava.com/docs/uploads/">upload documentation</a> explains
+            that files are queued for processing and an activity may not appear until that finishes.
+            The message alone does not confirm that a new activity was created.
+          </p>
+          <div
+            class="table-scroll"
+            role="region"
+            aria-label="Choose the next step for your upload"
+            tabIndex={0}
+          >
+            <table>
+              <caption>Check the existing upload before retrying</caption>
+              <thead>
+                <tr>
+                  <th scope="col">What you find</th>
+                  <th scope="col">What to do next</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">The upload is still processing</th>
+                  <td>
+                    Wait and check its status again. Avoid submitting the same recording again.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">The activity already exists</th>
+                  <td>
+                    Check its recording, date, sport and visibility. If it is correct, keep it;
+                    there is no need to upload it again.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">A duplicate error identifies an existing activity</th>
+                  <td>
+                    Inspect that activity. For a merged recording, follow the backup and replacement
+                    steps below before deciding whether to remove any originals.
+                  </td>
+                </tr>
+                <tr>
+                  <th scope="row">The outcome is unclear</th>
+                  <td>
+                    Keep your recordings and the error details. Check the original uploader’s status
+                    or contact its support before starting another upload.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            In Stitch, return to the existing preview to check its upload status. If it needs
+            review, <a href={routes.privacy.href() + '#support'}>contact Stitch support</a>. Keep
+            your originals while the outcome is uncertain.
+          </p>
+        </>
+      ),
+    },
+    {
       id: 'check-first',
       title: 'Check whether the upload already succeeded',
       body: (

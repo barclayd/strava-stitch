@@ -95,8 +95,8 @@ export function HomePage(
                 <p>Free to use, always.</p>
               </div>
               <p class="connect-availability">
-                Stitch is in early access, with limited Strava connections. Explore the example
-                without an account.
+                Try the example above without an account, or connect Strava to use your own
+                activities.
               </p>
             </section>
           )}
@@ -184,6 +184,32 @@ export function HomePage(
               >
                 Read the guide to merging activities <span aria-hidden="true">→</span>
               </a>
+              <nav class="home-guide-links" aria-label="Find a guide for your activity">
+                <a
+                  class="inline-link"
+                  href={routes.runGuide.href()}
+                  data-funnel="guide_click"
+                  data-funnel-placement="home"
+                >
+                  Fix an accidentally stopped run <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  class="inline-link"
+                  href={routes.rideGuide.href()}
+                  data-funnel="guide_click"
+                  data-funnel-placement="home"
+                >
+                  Combine a split ride <span aria-hidden="true">→</span>
+                </a>
+                <a
+                  class="inline-link"
+                  href={routes.duplicateGuide.href()}
+                  data-funnel="guide_click"
+                  data-funnel-placement="home"
+                >
+                  Resolve a Strava duplicate upload <span aria-hidden="true">→</span>
+                </a>
+              </nav>
             </div>
             <div class="home-questions">
               <details>
@@ -239,8 +265,8 @@ export function HomePage(
               <details>
                 <summary>Is it free?</summary>
                 <p>
-                  Yes, Stitch is free to use, always. Connections are limited during early access.
-                  Try the illustrative example without connecting your account.
+                  Yes. Previewing, downloading, and uploading through Stitch are all free to use,
+                  always. Try the illustrative example without connecting your account.
                 </p>
               </details>
             </div>

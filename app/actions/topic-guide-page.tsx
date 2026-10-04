@@ -62,8 +62,8 @@ export function TopicGuidePage(
                   <span class="overline">BRING EVERY PART TOGETHER</span>
                   <h2>Combine your Strava activities in seconds.</h2>
                   <p>
-                    Free to use, always. Privacy first, from preview to upload. Stitch is in early
-                    access, with limited Strava connections.
+                    Connect Strava, choose activities of the same sport, and preview your stitch.
+                    Free to use, always. Nothing uploads until you confirm.
                   </p>
                   <a
                     class="button button-dark"
