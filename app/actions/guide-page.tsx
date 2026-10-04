@@ -27,9 +27,33 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}
-              <time dateTime={guideUpdated}>21 September 2026</time>
+              <time dateTime={guideUpdated}>4 October 2026</time>
             </p>
           </header>
+          <section class="guide-quick-start" aria-labelledby="quick-start-heading">
+            <h2 id="quick-start-heading">The quick version</h2>
+            <p>
+              Select recordings directly from Strava. There is no need to export individual files
+              before you start.
+            </p>
+            <ol>
+              <li>
+                Connect Strava and select two to eight consecutive activities of the same sport.
+              </li>
+              <li>
+                Review the route and gaps, then download the merged file and check your backups.
+              </li>
+              <li>
+                Keep the download, or follow the preparation steps and explicitly confirm an upload
+                to Strava.
+              </li>
+            </ol>
+            <p>
+              Previewing leaves your originals untouched. If you choose to replace them, you remove
+              them yourself in Strava after checking your backups; kudos and comments do not
+              transfer. <a href="#join-your-activities">Follow the illustrated steps below.</a>
+            </p>
+          </section>
           <figure class="guide-figure">
             <picture>
               <source srcSet="/images/merge-guide.svg" type="image/svg+xml" />
@@ -98,8 +122,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   activities.
                 </p>
                 <aside class="article-note">
-                  <strong>Try the preview first.</strong> Stitch is in early access and Strava
-                  connections are currently limited. The{' '}
+                  <strong>Try the preview first.</strong> Explore the{' '}
                   <a
                     href={routes.demo.href()}
                     data-funnel="example_click"
@@ -107,7 +130,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   >
                     illustrative example
                   </a>{' '}
-                  is available without connecting an account.
+                  without connecting an account, or connect Strava to preview your own activities.
                 </aside>
               </section>
               <section id="choose-a-method">
@@ -460,8 +483,8 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 <h3>Is Stitch free to use?</h3>
                 <p>
                   Yes. Free to use, always. Previewing, downloading, and uploading through Stitch
-                  are all included. During early access, Strava limits how many accounts can
-                  connect. You can explore the example preview without an account.
+                  are all included. You can connect Strava to use your own activities or explore the
+                  example preview without an account.
                 </p>
                 <h3>Can I merge GPX, FIT, or TCX files directly?</h3>
                 <p>

@@ -2086,6 +2086,18 @@ svg {
   color: #596154;
   margin-bottom: 20px;
 }
+.home-guide-links {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.home-guide-links a {
+  width: fit-content;
+}
 .home-questions details {
   padding: 18px 0;
   border-bottom: 1px solid var(--line);
@@ -2131,6 +2143,35 @@ svg {
   font-size: 19px;
   line-height: 1.65;
   color: #596154;
+}
+.guide-quick-start {
+  max-width: 810px;
+  margin-bottom: 38px;
+  padding: 24px;
+  border-left: 3px solid #b4c6af;
+  background: #f4f5ef;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #475042;
+}
+.guide-quick-start h2 {
+  margin: 0 0 10px;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.guide-quick-start ol {
+  padding-left: 22px;
+  margin: 16px 0;
+}
+.guide-quick-start li + li {
+  margin-top: 8px;
+}
+.guide-quick-start a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .article-byline {
   display: flex;

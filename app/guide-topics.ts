@@ -8,15 +8,15 @@ const artwork = {
 export const guideTopics = {
   duplicateGuide: {
     ...artwork,
-    updated: '2026-09-20',
+    updated: '2026-10-04',
     path: '/guides/strava-duplicate-upload',
-    title: 'Fix a Strava Duplicate Upload After Merging | Stitch',
-    heading: 'Why Strava says your merged activity is a duplicate',
+    title: 'Strava Duplicate Upload Error: Causes and Fixes | Stitch',
+    heading: 'Strava duplicate upload errors: causes and fixes',
     label: 'Duplicate upload errors',
     description:
-      'Understand a Strava duplicate upload after merging activities. Check for an existing upload, inspect your backup, and decide safely what to do with originals.',
+      'Seeing “duplicate of an uploading activity” on Strava? Check pending and completed uploads, understand duplicate errors, and safely retry a merged activity.',
     intro:
-      'A merged activity reuses recordings already on Strava, so Strava may flag the upload as a duplicate. First check whether the merged activity already exists. If the originals are causing the conflict, keep a backup and decide whether replacing them is worth losing their social history.',
+      'A duplicate message can appear when you resend a recording or upload a merged activity containing existing data. Start by checking the original upload and your Strava activity list. What you do next depends on whether the upload is still processing, already complete, or rejected as a duplicate.',
   },
   indoorGuide: {
     ...artwork,

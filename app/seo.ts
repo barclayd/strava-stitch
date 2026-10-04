@@ -1,6 +1,6 @@
 // Public search identity is fixed; never derive canonical URLs from request headers or activity data.
 export const publicOrigin = 'https://stravastitch.com'
-export const guideUpdated = '2026-09-21'
+export const guideUpdated = '2026-10-04'
 export const guideHeading = 'How to merge two Strava activities for free'
 export const publicPages = {
   home: {
@@ -39,6 +39,7 @@ export type PageSeo = {
   image: string
   imageAlt: string
   type: 'website' | 'article'
+  modified?: string
   indexable: boolean
   structuredData?: Record<string, unknown>
 }
@@ -58,6 +59,10 @@ export function pageSeo(page: PublicPage, url: URL, personalized = false): PageS
     canonical: publicOrigin + value.path,
     image: publicOrigin + value.image,
     type: article ? 'article' : 'website',
+    modified: article
+      ? (page === 'guide' ? guideUpdated : guideTopics[page as GuideTopic].updated) +
+        'T00:00:00+00:00'
+      : undefined,
     indexable: canIndex(url, personalized),
     structuredData:
       page === 'home'
