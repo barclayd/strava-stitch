@@ -2,7 +2,7 @@ import { createController } from 'remix/router'
 import { Session } from 'remix/session'
 import { getCsrfToken } from 'remix/middleware/csrf'
 import { redirect } from 'remix/response/redirect'
-import { zipSync, strToU8 } from 'fflate'
+import { strToU8 } from 'fflate'
 import * as s from 'remix/data-schema'
 import { routes } from '../../routes.ts'
 import { account, newJob, job, patchJob, claimUpload, type Job } from '../../data/store.ts'
@@ -11,11 +11,13 @@ import {
   merge,
   recording,
   maxPoints,
+  sampleLimitMessage,
   mergedDescription,
   validateRecordingActivity,
   RecordingValidationError,
 } from './merge.ts'
 import { activityFile } from './export.ts'
+import { BackupArchive } from './backup.ts'
 import { StitchPage } from './page.tsx'
 import { track } from '../../data/analytics.ts'
 import type { ServerEvent } from '../../analytics.ts'
@@ -117,10 +119,7 @@ export default createController(routes.stitches, {
           stage = 'recording_validation'
           points += source.time?.data?.length ?? 0
           if (points > maxPoints)
-            throw new RecordingValidationError(
-              'sample_limit',
-              'Choose activities with up to 50,000 recorded samples in total. No samples have been removed.',
-            )
+            throw new RecordingValidationError('sample_limit', sampleLimitMessage)
           records.push(recording(detail, source))
         }
         stage = 'merge_validation'
@@ -205,9 +204,9 @@ export default createController(routes.stitches, {
       const auth = await identity(get(Session)),
         j = auth ? await job(params.id, auth.id) : undefined
       if (!j) return new Response('Not found', { status: 404 })
-      const stitched = activityFile(j.merge.records, j.title)
+      const archive = new BackupArchive()
+      const stitched = archive.addActivity('stitched-activity', j.merge.records, j.title)
       const files: Record<string, Uint8Array> = {
-        [`stitched-activity.${stitched.format}`]: stitched.data,
         'activities.json': strToU8(
           JSON.stringify(
             {
@@ -229,14 +228,13 @@ export default createController(routes.stitches, {
           'Stitch backup\n\nThese files were reconstructed from Strava streams, not original device files. GPS recordings use GPX; recordings without GPS use FIT. Original timestamps and available GPS, elevation, temperature, heart rate and cadence are included, at the precision supported by each format. Recorded distance is included when complete across all selected activities; FIT also includes summary distances. FIT laps mark source boundaries, not original laps. Photos, kudos, comments, original laps, pool lengths, workout sets, measured power and device metadata are not included. FIT timer pauses mark gaps between recordings; original within-activity pause events are unavailable.\n\nactivities.json records the exact Strava sport. Stitch sets it automatically for direct uploads. Check the sport when importing downloaded files yourself, because file-based sport detection varies. Download original files from Strava separately if you need a complete device recording.\n',
         ),
       }
-      for (const r of j.merge.records) {
-        const file = activityFile([r], r.activity.name)
-        files[`original-${r.activity.id}.${file.format}`] = file.data
-      }
-      const zip = zipSync(files)
+      for (const [name, data] of Object.entries(files)) archive.addBytes(name, data)
+      for (const r of j.merge.records)
+        archive.addActivity(`original-${r.activity.id}`, [r], r.activity.name)
+      const zip = archive.finish()
       await patchJob(j.id, j.owner, { backupDownloaded: true })
       track('backup_downloaded', 'preview')
-      return new Response(new Uint8Array(zip), {
+      return new Response(zip, {
         headers: {
           'Content-Type': 'application/zip',
           'Content-Disposition': 'attachment; filename="stitch-backup.zip"',

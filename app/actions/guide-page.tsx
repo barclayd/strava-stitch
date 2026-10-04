@@ -170,7 +170,7 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 <h2>Before you start</h2>
                 <p>
                   Sync each part of your activity to Strava. Stitch supports two to eight activities
-                  of the same sport, with up to 50,000 recorded samples in total. All sport types
+                  of the same sport, with up to 100,000 recorded samples in total. All sport types
                   listed in Strava’s upload API are supported, including runs, trail runs, rides,
                   e-bike rides, swims, hikes, walks, skiing, and indoor workouts.
                 </p>

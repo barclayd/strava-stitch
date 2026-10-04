@@ -155,7 +155,7 @@ Known recording validation failures now use more specific fixed reasons:
 | `manual_activity` | A manually entered activity has no recorded samples |
 | `unsupported_sport` | Stitch does not support the activity's sport |
 | `missing_timeline` | The timeline is missing or has fewer than two samples |
-| `sample_limit` | One activity or the combined selection exceeds 50,000 samples |
+| `sample_limit` | One activity or the combined selection exceeds 100,000 samples; events before the larger-recording change used the previous 50,000-sample cap |
 | `misaligned_streams` | Streams are incomplete, have different lengths, or disagree with their original sample count |
 | `missing_start_time` | The original start time is invalid, lacks a timezone, or is unavailable |
 | `incomplete_summary` | Distance, moving time, or elevation gain is missing, invalid, or negative |
@@ -165,8 +165,8 @@ Known recording validation failures now use more specific fixed reasons:
 | `distance_backwards` | Recorded distance is negative or decreases between samples |
 
 These reasons come from typed validation errors, not exception message matching.
-Unexpected recording errors retain `recording_validation`. Validation rules and
-user-facing messages are unchanged. Only the fixed reason is stored; no sample
+Unexpected recording errors retain `recording_validation`. Diagnostic codes do not
+change validation behavior. Only the fixed reason is stored; no sample
 values, counts, activity identifiers, sport types, or raw exception messages are added.
 The report's full event table already includes this dimension; privacy exclusions
 still apply. Specific reasons start after this change is deployed. Older
