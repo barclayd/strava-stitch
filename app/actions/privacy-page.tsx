@@ -63,10 +63,12 @@ export function PrivacyPage(
         <p>
           We use Cloudflare Analytics Engine to count page views, button clicks, successful Strava
           connections, previews, downloads, and upload outcomes. These events contain fixed page,
-          action, and error labels to help diagnose connection and preview problems. They do not
-          contain your identity, IP address, activity details, descriptions, GPS data, search terms,
-          or full URLs. We do not use tracking cookies or identifiers to follow you between visits.
-          Events are kept for three months.
+          action, and error labels to help diagnose connection and preview problems. We also record
+          a broad device category (mobile, desktop, tablet, or unknown), inferred from browser
+          headers, to understand which experience needs improvement. We do not store those headers
+          in analytics. Events do not contain your identity, IP address, activity details,
+          descriptions, GPS data, search terms, or full URLs. We do not use tracking cookies or
+          identifiers to follow you between visits. Events are kept for three months.
         </p>
         <p>
           We honour your browser’s Do Not Track and Global Privacy Control signals. Cloudflare still

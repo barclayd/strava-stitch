@@ -123,7 +123,7 @@ for (const invalid of invalidRecordings) {
     assert.deepEqual(points, [
       {
         indexes: ['preview_failed'],
-        blobs: ['preview_failed', 'workspace', 'unknown', 'v1', invalid.reason],
+        blobs: ['preview_failed', 'workspace', 'unknown', 'v1', invalid.reason, 'unknown'],
         doubles: [1],
       },
     ])

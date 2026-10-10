@@ -1,4 +1,7 @@
 // Only these fixed labels may leave the application. Never add activity or account data here.
+export const analyticsDevices = ['mobile', 'desktop', 'tablet', 'unknown'] as const
+export type AnalyticsDevice = (typeof analyticsDevices)[number]
+
 export const analyticsOptOutCookie = 'stitch_analytics_opt_out'
 // A shared boolean preference, never a browser identifier. Read on each request/click.
 export const analyticsOptedOut = (cookies?: string | null): boolean =>

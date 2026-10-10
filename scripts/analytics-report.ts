@@ -1,5 +1,5 @@
 import { unstable_readConfig } from 'wrangler'
-import { analyticsSummary, type AnalyticsRow } from './analytics-summary.ts'
+import { analyticsDeviceSummary, analyticsSummary, type AnalyticsRow } from './analytics-summary.ts'
 
 if (process.argv.includes('--help')) {
   console.log(
@@ -35,11 +35,11 @@ if (process.argv.includes('--help')) {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(30000),
-        body: `SELECT blob1 AS event, blob2 AS page, blob3 AS placement, blob5 AS reason, SUM(_sample_interval * double1) AS total
+        body: `SELECT blob1 AS event, blob2 AS page, blob3 AS placement, blob5 AS reason, blob6 AS device, SUM(_sample_interval * double1) AS total
 FROM ${dataset}
 WHERE timestamp >= NOW() - INTERVAL '${days}' DAY AND blob4 = 'v1'
-GROUP BY event, page, placement, reason
-ORDER BY event, page, placement, reason
+GROUP BY event, page, placement, reason, device
+ORDER BY event, page, placement, reason, device
 FORMAT JSON`,
       },
     )
@@ -52,7 +52,8 @@ FORMAT JSON`,
     }
     if (!Array.isArray(result.data)) throw new Error('Cloudflare did not return analytics rows.')
     const rows = result.data,
-      summary = analyticsSummary(rows)
+      summary = analyticsSummary(rows),
+      devices = analyticsDeviceSummary(rows)
     console.log(`Stitch funnel — last ${days} days (event counts, not unique people)`)
     console.log('Real stitch outcomes:')
     console.table(summary.outcomes)
@@ -60,10 +61,29 @@ FORMAT JSON`,
     console.table(summary.acquisition)
     console.log('Demo exploration (separate from real outcomes):')
     console.table(summary.demo)
+    console.log('Device event counts (not_recorded = historical events without a device category):')
+    console.table(devices.counts)
+    const percent = (rate: number | null) => (rate === null ? 'n/a' : `${rate.toFixed(1)}%`)
+    console.log('Device event ratios (%; n/a = no denominator events):')
+    console.table(
+      devices.rates.map((row) => ({
+        device: row.device,
+        'Connected / started': percent(row.connectionCompletion),
+        'Preview success / all results': percent(row.previewSuccess),
+        'Upload starts / previews': percent(row.uploadsPerPreview),
+        'Uploaded / started': percent(row.uploadCompletion),
+      })),
+    )
+    console.log(
+      'These are event ratios, not unique-user conversion rates. Reconnects, retries, reporting boundaries and device changes can put ratios above 100%. Small counts are not reliable experiment results.',
+    )
+    console.log(
+      'Device categories describe the browser making each request and are approximate; some tablets report as desktops. Historical events cannot be assigned a device.',
+    )
     console.log(
       'Downloads count files served, not confirmed saves. Earlier testing traffic cannot be removed retrospectively.',
     )
-    console.log('All events, broken down by page and placement:')
+    console.log('All events, broken down by page, placement, reason and device:')
     console.table(rows)
     if (!rows.length) console.log('No recorded events in this period.')
   } catch (error) {

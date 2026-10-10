@@ -110,7 +110,7 @@ test('OAuth callback records actionable reasons without private response or requ
       assert.deepEqual(f.points, [
         {
           indexes: ['strava_connect_failed'],
-          blobs: ['strava_connect_failed', 'home', 'header', 'v1', reason],
+          blobs: ['strava_connect_failed', 'home', 'header', 'v1', reason, 'unknown'],
           doubles: [1],
         },
       ])
@@ -137,14 +137,21 @@ test('account and session failures keep their stage; successful callbacks still 
   assert.equal(sessionFailure.session.get('athleteId'), undefined)
 
   for (const source of ['header', 'guide_intro']) {
-    const success = fixture()
+    const success = fixture({ 'Sec-CH-UA-Mobile': '?1' })
     success.session.set('oauth', { state, expires: Date.now() + 60000, source })
     const oldId = success.session.id
     assert.equal((await success.request()).status, 303)
     assert.notEqual(success.session.id, oldId)
     assert.equal(success.session.get('athleteId'), tokenResponse.athlete.id)
     assert.equal(success.saved.length, 1)
-    assert.deepEqual(success.points[0].blobs, ['strava_connected', 'workspace', source, 'v1'])
+    assert.deepEqual(success.points[0].blobs, [
+      'strava_connected',
+      'workspace',
+      source,
+      'v1',
+      '',
+      'mobile',
+    ])
   }
 })
 
@@ -160,6 +167,7 @@ test('invalid OAuth state and cancellations never acquire failure reasons or exc
     'header',
     'v1',
     'missing_code',
+    'unknown',
   ])
   assert.equal((await missing.request({ state })).status, 400)
   assert.equal(missing.points.length, 1)
@@ -176,7 +184,14 @@ test('invalid OAuth state and cancellations never acquire failure reasons or exc
 
   const cancelled = fixture()
   assert.equal((await cancelled.request({ state, error: 'access_denied' })).status, 303)
-  assert.deepEqual(cancelled.points[0].blobs, ['strava_connect_cancelled', 'home', 'header', 'v1'])
+  assert.deepEqual(cancelled.points[0].blobs, [
+    'strava_connect_cancelled',
+    'home',
+    'header',
+    'v1',
+    '',
+    'unknown',
+  ])
   assert.equal(fetch.mock.callCount(), 0)
 })
 
