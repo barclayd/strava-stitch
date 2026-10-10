@@ -31,7 +31,8 @@ The report leads with **real stitch outcomes**: previews created, merged activit
 files served, backup bundles served, and completed uploads. Acquisition and upload
 attempts follow, then **demo exploration** in its own table. Demo step clicks from
 both the homepage and the standalone example stay separate from real previews and
-downloads. Every event is also broken down by page and CTA placement. Account and
+downloads. Device counts and event ratios follow. Every event is also broken down
+by page, CTA placement, failure reason and device category. Account and
 dataset settings come from `wrangler.jsonc`.
 Guide introduction buttons use the existing `guide_intro` placement. Their client
 clicks include the specific guide page; OAuth start, success, cancellation, and failure
@@ -48,6 +49,51 @@ no separate registration form: `strava_connected` is the successful onboarding s
 and includes returning users reconnecting. We do not create identifiers to join an
 individual's journey across steps or visits. Ad blockers, opt-outs, closed tabs, and
 background-write failures can reduce counts; analytics is best effort.
+
+### Comparing mobile and desktop
+
+New events include `mobile`, `desktop`, `tablet`, or `unknown`. The report shows
+page views, connection starts/completions, successful/failed previews, and upload
+starts/completions for each category. Historical events without a category appear
+separately as `not_recorded`, never as desktop or new unknown traffic, and are
+excluded from device ratios. Overall totals still include them.
+
+The device ratio table uses these definitions, with counts in the preceding table:
+
+| Report column | Numerator / denominator |
+| --- | --- |
+| Connected / started | `strava_connected` / `strava_connect_started` |
+| Preview success / all results | `preview_created` / (`preview_created` + `preview_failed`) |
+| Upload starts / previews | `upload_started` / `preview_created` |
+| Uploaded / started | `upload_completed` / `upload_started` |
+
+All figures use sampling-weighted event totals within the selected period.
+`n/a` means no denominator events, not a zero conversion rate. These are **event
+ratios, not unique-user conversion rates**: reconnects, retries, closed tabs, events
+spanning the report boundary, and device changes affect them. They can exceed 100%
+and are not clamped. Preview success covers attempts reaching a recorded result,
+not every click or rejected form. Demo interactions do not enter these ratios.
+Use the raw event table to compare failure reasons by device. Wait for more than a
+handful of outcomes before deciding an experience or experiment performs better.
+
+The server infers the category from the request's existing `User-Agent` and
+[`Sec-CH-UA-Mobile`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Sec-CH-UA-Mobile)
+headers; it stores only the fixed category, never either header. A negative mobile
+hint alone does not prove a desktop. Recognizable tablets are kept separate,
+including Android tablets without a mobile marker. Missing/unrecognized headers
+and recognizable automated clients become `unknown`.
+
+Classification is approximate: iPads and other tablets requesting a desktop site
+may look like desktops, and headers can be spoofed. It does not change the UI or
+serve as bot/security detection. We do not collect screen dimensions, request extra
+client hints, introduce cookies, or persist a device category in sessions or jobs.
+The category belongs to the request recording each event: an OAuth callback or the
+status poll first observing an upload completion may come from a different browser
+than the initial action. No cross-device journey is inferred.
+
+This adds one short label to each existing write, with no additional analytics
+requests or storage lookups. Existing privacy signals and testing exclusions apply.
+Device breakdowns begin after deployment; past events cannot be backfilled.
 
 ## Excluding your own browser when testing
 
@@ -118,7 +164,10 @@ An anonymous click endpoint cannot establish that every accepted event came from
 ## Data and privacy
 
 Each row contains `blob1 = event`, `blob2 = page`, `blob3 = placement`,
-`blob4 = schema version (v1)`, and `double1 = 1`. `index1` is the event name and
+`blob4 = schema version (v1)`, `blob5 = failure reason or empty string`,
+`blob6 = device category`, and `double1 = 1`. The device field is additive: existing
+event names, dimension positions and v1 queries remain valid. Older rows have an
+empty device field. `index1` is the event name and
 Cloudflare supplies the timestamp and sampling weight. Page labels are `home`,
 `workspace`, `example`, `preview`, `guide`, `duplicateGuide`, `indoorGuide`,
 `runGuide`, `rideGuide`, `garminGuide`, and `privacy`. These fixed topic labels distinguish guide
@@ -129,7 +178,8 @@ placements and event names are unchanged.
 OAuth keeps the selected placement through the callback so connections can be compared by CTA.
 
 No athlete IDs, job IDs, names, descriptions, GPS, activity types, search terms,
-query strings, full URLs, referrers, or IP addresses are written to the dataset.
+query strings, full URLs, referrers, IP addresses, or raw browser headers are written
+to the dataset.
 
 For `strava_connect_failed`, `blob5` contains an optional fixed failure reason:
 `missing_code`, `token_exchange_failed`, `token_exchange_timeout`, `token_exchange_rejected`,
@@ -181,12 +231,12 @@ The public privacy page explains collection and the [three-month retention](http
 Always account for Cloudflare sampling when querying:
 
 ```sql
-SELECT blob1 AS event, blob2 AS page, blob3 AS placement, blob5 AS reason,
+SELECT blob1 AS event, blob2 AS page, blob3 AS placement, blob5 AS reason, blob6 AS device,
        SUM(_sample_interval * double1) AS total
 FROM strava_stitch_funnel
 WHERE timestamp >= NOW() - INTERVAL '7' DAY AND blob4 = 'v1'
-GROUP BY event, page, placement, reason
-ORDER BY event, page, placement, reason
+GROUP BY event, page, placement, reason, device
+ORDER BY event, page, placement, reason, device
 ```
 
 This query gives daily totals for trends:

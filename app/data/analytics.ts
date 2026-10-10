@@ -11,6 +11,7 @@ import {
   previewFailureReasons,
 } from '../analytics.ts'
 import { runtime } from './runtime.ts'
+import { analyticsDevice } from './analytics-device.ts'
 
 export type Analytics = {
   enabled: boolean
@@ -32,6 +33,7 @@ export function createAnalytics(
     request?.headers.get('DNT') !== '1' &&
     request?.headers.get('Sec-GPC') !== '1' &&
     !analyticsOptedOut(request?.headers.get('Cookie'))
+  const device = enabled ? analyticsDevice(request?.headers) : 'unknown'
   return {
     enabled,
     track(event, page, placement = 'unknown', reason) {
@@ -51,7 +53,8 @@ export function createAnalytics(
             page,
             placement,
             'v1',
-            ...(reason && reasons.some((allowed) => allowed === reason) ? [reason] : []),
+            reason && reasons.some((allowed) => allowed === reason) ? reason : '',
+            device,
           ],
           doubles: [1],
         })
