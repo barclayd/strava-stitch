@@ -236,7 +236,7 @@ Track impressions, clicks, CTR, and average position for a query regex such as
 `(join|combine|merge).*strava.*activit` in Performance. Search Console requires no
 analytics script in Stitch. Indexing and ranking take time and are not guaranteed.
 
-### Ride On activity imports (disabled by default)
+### Ride On activity imports
 
 The private `RideOnStrava` entrypoint also supports owner/grant-checked reads:
 
@@ -244,14 +244,14 @@ The private `RideOnStrava` entrypoint also supports owner/grant-checked reads:
   activity IDs and the next Strava page. Bounds are epoch seconds; pages use
   30 upstream activities before filtering.
 - `GET /import-activity/:athleteId?grant=…&activity=…` returns availability, UTC
-  start date, average speed (m/s), total climbing (m), average power (W), power
-  source and the transient `latlng` stream. It does not store GPS or return
+  start timestamp, local calendar date (`riddenOn`) and the transient `latlng`
+  stream. Speed, elevation and power are not forwarded by this import reader. It does not store GPS or return
   unrelated activity fields. A detail 404 returns `available: false`; a missing
   stream returns an empty trace. Ownership and grant are rechecked after reads.
 - `GET /connection/:athleteId?grant=…&verify=true` verifies revoked access before
   returning connection status. These routes are never mounted on the public router.
 
-`RIDEON_IMPORT_ENABLED` stays `false` in every environment. When enabled, the
+`RIDEON_IMPORT_ENABLED` is `true` in production and `false` locally/staging. The
 existing webhook forwards minimal activity refresh hints through the
 `RIDEON_EVENTS` queue producer to Ride On's existing `ride-monitoring` consumer.
 A failed durable enqueue returns 503 for Strava to retry. The consumer verifies
@@ -261,9 +261,10 @@ The existing Stitch revocation verification remains in place.
 Deploy Ride On's new consumer and migration before enabling event production.
 Production needs no new queue: it reuses the existing monitoring queue. Staging
 uses `ride-monitoring-staging` and needs its own isolated consumer before enablement.
-Keep Ride On's `STRAVA_IMPORT_ENABLED` and Stitch's producer flag off until the
-retention launch constraint is resolved. Requested metrics and route matches
-remain Strava data even when raw GPS is discarded; this implementation does not
-assume permission for permanent retention. Ride On currently uses a seven-day
-cache and tests only synthetic data. The complete public API contract, matching
-thresholds, review semantics and rollout are in Ride On's `docs/strava.md`.
+Ride On retains the local ride date plus identifiers needed for ownership, route
+association, deduplication and deletion. It automatically logs the best saved
+route reaching 50% coverage, with optional correction/dismissal. GPS is transient;
+matching evidence expires after seven days. Date records survive that expiry.
+This is Dan's product decision, not evidence of Strava approval. Disconnect and
+verified source deletion still remove retained dates. The full API contract and
+rollout are documented in Ride On's `docs/strava.md`.

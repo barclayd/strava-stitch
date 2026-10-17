@@ -60,7 +60,7 @@ const context = () => {
     verified: () => verified,
   }
 }
-test('bounded import pages and transient geometry expose only requested ride metrics and verify ownership/generation', async () => {
+test('bounded import pages and transient geometry expose only ride dates and verify ownership/generation', async () => {
   const c = context(),
     original = globalThis.fetch
   const call = (path: string) =>
@@ -70,7 +70,7 @@ test('bounded import pages and transient geometry expose only requested ride met
     owner = 123,
     privateRide = false,
     changeGrant = false,
-    power: number | null = 210
+    localDate: string | undefined = '2026-09-30T23:00:00Z'
   const calls: string[] = []
   globalThis.fetch = async (input) => {
     const url = new URL(String(input))
@@ -95,10 +95,11 @@ test('bounded import pages and transient geometry expose only requested ride met
         athlete: { id: owner },
         sport_type: 'Ride',
         start_date: '2026-10-01T09:00:00Z',
+        start_date_local: localDate,
         private: privateRide,
         average_speed: 8,
         total_elevation_gain: 300,
-        average_watts: power,
+        average_watts: 210,
         device_watts: true,
         name: 'Not retained',
         description: 'Not retained',
@@ -128,32 +129,33 @@ test('bounded import pages and transient geometry expose only requested ride met
     const response = await call(path)
     assert.equal(response.status, 200)
     const text = await response.text()
-    assert.doesNotMatch(text, /test-access|test-refresh|heart_rate|Not retained|description/)
+    assert.doesNotMatch(
+      text,
+      /test-access|test-refresh|heart_rate|Not retained|description|averageSpeed|elevationGain|averagePower|powerSource/,
+    )
     assert.deepEqual(JSON.parse(text), {
       available: true,
       activityId: '456',
       startedAt: '2026-10-01T09:00:00.000Z',
-      averageSpeedMps: 8,
-      elevationGainM: 300,
-      averagePowerWatts: 210,
-      powerSource: 'meter',
+      riddenOn: '2026-09-30',
       points: [
         [51, -1],
         [51.001, -1],
       ],
     })
-    power = null
     streamStatus = 404
     assert.deepEqual(await (await call(path)).json(), {
       available: true,
       activityId: '456',
       startedAt: '2026-10-01T09:00:00.000Z',
-      averageSpeedMps: 8,
-      elevationGainM: 300,
-      averagePowerWatts: null,
-      powerSource: null,
+      riddenOn: '2026-09-30',
       points: [],
     })
+    localDate = '2026-02-30T09:00:00Z'
+    assert.equal((await call(path)).status, 502)
+    localDate = undefined
+    assert.equal((await call(path)).status, 502)
+    localDate = '2026-09-30T23:00:00Z'
     detailStatus = 404
     assert.deepEqual(await (await call(path)).json(), { available: false })
     detailStatus = 429
