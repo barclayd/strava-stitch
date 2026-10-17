@@ -1,19 +1,11 @@
 import { exchangeWithConfig, listActivities, SCOPES, StravaError } from './strava.ts'
 import { runtime } from './runtime.ts'
+import { cyclingSports, importRead } from './ride-on-import.ts'
 
 const privateHeaders = { 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' }
 const json = (value: unknown, status = 200, headers = {}) =>
   Response.json(value, { status, headers: { ...privateHeaders, ...headers } })
-const cycling = new Set([
-  'Ride',
-  'MountainBikeRide',
-  'GravelRide',
-  'VirtualRide',
-  'EBikeRide',
-  'EMountainBikeRide',
-  'Handcycle',
-  'Velomobile',
-])
+const cycling = cyclingSports
 
 // This handler is exposed ONLY by the named WorkerEntrypoint, never the public router.
 // Ride On supplies an athlete ID only after its own OAuth handoff and owner checks.
@@ -82,18 +74,26 @@ export async function rideOnRequest(request: Request): Promise<Response> {
       const saved = await store.account(data.athlete.id)
       return json({ athleteId: String(data.athlete.id), scopes, grantId: saved?.connectionId })
     }
-    const match = /^\/(connection|rides)\/([1-9][0-9]{0,15})$/.exec(url.pathname)
+    const match = /^\/(connection|rides|import-page|import-activity)\/([1-9][0-9]{0,15})$/.exec(
+      url.pathname,
+    )
     if (request.method !== 'GET' || !match || !Number.isSafeInteger(Number(match[2])))
       return json({ error: 'NOT_FOUND' }, 404)
     const id = Number(match[2])
+    if (match[1] === 'connection' && url.searchParams.get('verify') === 'true')
+      await store.verifyDeauthorization(id)
     const account = await store.account(id)
     if (!account) return json({ error: 'STRAVA_REAUTHORISATION_REQUIRED' }, 409)
-    if (url.searchParams.get('grant') !== account.connectionId)
+    if (!account.connectionId || url.searchParams.get('grant') !== account.connectionId)
       return json({ error: 'STRAVA_REAUTHORISATION_REQUIRED' }, 409)
     if (!account.scope.includes('activity:read') && !account.scope.includes('activity:read_all'))
       return json({ error: 'STRAVA_PERMISSION_REQUIRED' }, 403)
     if (match[1] === 'connection')
       return json({ athleteId: String(id), scopes: account.scope, grantId: account.connectionId })
+    if (match[1]?.startsWith('import-')) {
+      const result = await importRead(url, id, account.connectionId)
+      return json(result.body, result.status)
+    }
     const page = url.searchParams.get('page') ?? '1'
     if (!/^[1-9][0-9]{0,3}$/.test(page)) return json({ error: 'BAD_REQUEST' }, 400)
     const activities = await listActivities(id, Number(page))

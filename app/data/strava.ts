@@ -72,7 +72,10 @@ async function credentials(id: number): Promise<Account> {
 }
 export function permittedGet(path: string) {
   return (
-    /^\/athlete\/activities\?per_page=30&page=[1-9]\d{0,3}$/.test(path) ||
+    /^\/athlete\/activities\?per_page=30&page=[1-9]\d{0,3}(?:&after=\d{1,10}&before=\d{1,10})?$/.test(
+      path,
+    ) ||
+    /^\/activities\/[1-9]\d{0,15}\/streams\?keys=latlng&key_by_type=true$/.test(path) ||
     /^\/activities\/\d+(?:\/streams\?keys=time,latlng,altitude,distance,heartrate,cadence,temp&key_by_type=true)?$/.test(
       path,
     ) ||
