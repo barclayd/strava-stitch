@@ -19,6 +19,7 @@
     "ANALYTICS_ENABLED": "false",
     "APP_ORIGIN": "http://localhost:44100",
     "STRAVA_CLIENT_ID": "262735",
+    "RIDEON_IMPORT_ENABLED": "false",
     "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "",
   },
   "secrets": {
@@ -29,6 +30,7 @@
       "STRAVA_WEBHOOK_VERIFY_TOKEN",
     ],
   },
+  "queues": { "producers": [{ "binding": "RIDEON_EVENTS", "queue": "ride-monitoring" }] },
   "r2_buckets": [{ "binding": "MAPS", "bucket_name": "strava-stitch-maps" }],
   "analytics_engine_datasets": [{ "binding": "FUNNEL", "dataset": "strava_stitch_funnel_local" }],
   "durable_objects": {
@@ -63,7 +65,11 @@
         "ANALYTICS_ENABLED": "false",
         "APP_ORIGIN": "https://staging.stravastitch.com",
         "STRAVA_CLIENT_ID": "262735",
+        "RIDEON_IMPORT_ENABLED": "false",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "",
+      },
+      "queues": {
+        "producers": [{ "binding": "RIDEON_EVENTS", "queue": "ride-monitoring-staging" }],
       },
       "r2_buckets": [{ "binding": "MAPS", "bucket_name": "strava-stitch-maps" }],
       "analytics_engine_datasets": [
@@ -103,8 +109,10 @@
         "ANALYTICS_ENABLED": "true",
         "APP_ORIGIN": "https://stravastitch.com",
         "STRAVA_CLIENT_ID": "262735",
+        "RIDEON_IMPORT_ENABLED": "false",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "371550",
       },
+      "queues": { "producers": [{ "binding": "RIDEON_EVENTS", "queue": "ride-monitoring" }] },
       "r2_buckets": [{ "binding": "MAPS", "bucket_name": "strava-stitch-maps" }],
       "analytics_engine_datasets": [{ "binding": "FUNNEL", "dataset": "strava_stitch_funnel" }],
       "secrets": {

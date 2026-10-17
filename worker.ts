@@ -16,6 +16,12 @@ export function createRuntime(env: Env, request?: Request): Runtime {
   return {
     config: readConfig(env),
     analytics: createAnalytics(env, request),
+    publishRideOnEvent:
+      String(env.RIDEON_IMPORT_ENABLED) === 'true'
+        ? async (event) => {
+            await env.RIDEON_EVENTS.send(event)
+          }
+        : undefined,
     store: {
       account: (owner) => athlete(owner).account(),
       saveAccount: (value) => athlete(value.id).saveAccount(value),

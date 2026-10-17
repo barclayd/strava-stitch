@@ -3,12 +3,14 @@ import type { SessionStorage } from 'remix/session'
 import type { AppConfig } from './config.ts'
 import type { Store } from './store.ts'
 import type { Analytics } from './analytics.ts'
+import type { RideOnEvent } from './ride-on-events.ts'
 
 export type Runtime = {
   config: AppConfig
   store: Store
   sessions: SessionStorage
   analytics: Analytics
+  publishRideOnEvent?: (event: RideOnEvent) => Promise<void>
 }
 const context = new AsyncLocalStorage<Runtime>()
 export function runtime() {
