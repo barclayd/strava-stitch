@@ -7,6 +7,8 @@ import { routes } from './app/routes.ts'
 import { createAnalytics, receiveAnalytics } from './app/data/analytics.ts'
 import { basemapPath } from './app/maps.ts'
 import { serveBasemap } from './app/data/maps.ts'
+import { rideOnCallback } from './app/data/ride-on.ts'
+export { RideOnStrava } from './app/cloudflare/ride-on.ts'
 export { AthleteData, BrowserSession } from './app/cloudflare/durable-objects.ts'
 
 export function createRuntime(env: Env, request?: Request): Runtime {
@@ -69,6 +71,7 @@ export default {
       const url = new URL(request.url),
         runtime = createRuntime(env, request)
       if (url.origin !== runtime.config.origin) return unindexedError('Unrecognized host.', 403)
+      if (url.pathname === '/auth/ride-on/callback') return rideOnCallback(request)
       if (url.pathname === basemapPath) return serveBasemap(request, env.MAPS)
       if (url.pathname === routes.analytics.receive.href())
         return receiveAnalytics(request, runtime.analytics)
