@@ -18,13 +18,6 @@ const record = (value: unknown): Record<string, unknown> => {
 }
 const positiveId = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value > 0
-const metric = (value: unknown): number | null => {
-  if (value === undefined || value === null) return null
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
-    throw new Error('Invalid activity metric')
-  return value
-}
-
 // Called only after the private entrypoint has checked the athlete's grant.
 // Raw responses and GPS exist only for this request and are never persisted.
 export async function importRead(url: URL, athleteId: number, grant: string) {
@@ -90,6 +83,14 @@ export async function importRead(url: URL, athleteId: number, grant: string) {
     return { status: 200, body: { available: false } }
   if (typeof a.start_date !== 'string' || !Number.isFinite(Date.parse(a.start_date)))
     throw new Error('Invalid activity date')
+  const localDate = a.start_date_local
+  if (
+    typeof localDate !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}T/.test(localDate) ||
+    !Number.isFinite(Date.parse(localDate)) ||
+    new Date(localDate.slice(0, 10)).toISOString().slice(0, 10) !== localDate.slice(0, 10)
+  )
+    throw new Error('Invalid local activity date')
   let points: [number, number][] = []
   try {
     const streams = record(
@@ -126,10 +127,7 @@ export async function importRead(url: URL, athleteId: number, grant: string) {
       available: true,
       activityId,
       startedAt: new Date(a.start_date).toISOString(),
-      averageSpeedMps: metric(a.average_speed),
-      elevationGainM: metric(a.total_elevation_gain),
-      averagePowerWatts: metric(a.average_watts),
-      powerSource: a.average_watts == null ? null : a.device_watts === true ? 'meter' : 'estimated',
+      riddenOn: localDate.slice(0, 10),
       points,
     },
   }

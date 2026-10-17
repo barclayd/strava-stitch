@@ -109,7 +109,7 @@
         "ANALYTICS_ENABLED": "true",
         "APP_ORIGIN": "https://stravastitch.com",
         "STRAVA_CLIENT_ID": "262735",
-        "RIDEON_IMPORT_ENABLED": "false",
+        "RIDEON_IMPORT_ENABLED": "true",
         "STRAVA_WEBHOOK_SUBSCRIPTION_ID": "371550",
       },
       "queues": { "producers": [{ "binding": "RIDEON_EVENTS", "queue": "ride-monitoring" }] },
