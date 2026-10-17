@@ -35,7 +35,10 @@ export class AthleteRepository {
     this.db.query(
       'INSERT INTO account VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload',
       value.id,
-      seal(value, this.key),
+      seal(
+        { ...value, connectionId: existing?.connectionId ?? value.connectionId ?? randomUUID() },
+        this.key,
+      ),
     )
   }
   forget() {

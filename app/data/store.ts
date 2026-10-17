@@ -3,6 +3,7 @@ import { runtime } from './runtime.ts'
 import type { PhotoManifest } from './photos.ts'
 
 export type Account = {
+  connectionId?: string
   id: number
   firstname: string
   scope: string[]

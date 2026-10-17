@@ -96,6 +96,36 @@ existing connections unreadable. Local prototype data is not migrated on deploym
 
 ## Maintenance
 
+### Ride On shared connection
+
+Ride On reuses Strava client `262735` as part of the same service. The callback
+domain stays `stravastitch.com`; existing Stitch login and webhook URLs remain
+unchanged. Its new `/auth/ride-on/callback` route relays only OAuth result fields
+to the fixed `https://api.ride-on.cc/integrations/strava/callback` destination.
+
+The exported `RideOnStrava` WorkerEntrypoint is private: Ride On binds to it using
+Cloudflare service binding `STRAVA_STITCH` with `service: strava-stitch` and
+`entrypoint: RideOnStrava`. It supports configuration, code exchange, connection
+status and a projection of completed cycling activities. No such read/exchange
+routes are mounted on Stitch's public router. Tokens remain in the existing
+per-athlete encrypted store and refresh through its existing coordination.
+
+Each saved account now has a stable `connectionId`, preserved across refresh and
+re-authorization while the account exists. Forgetting the account removes it;
+reconnecting creates a new ID, invalidating an old Ride On mapping. Existing
+accounts get an ID the next time they are saved. Ride On disconnect only unlinks
+Ride On; Stitch disconnect or verified Strava revocation removes the shared
+credentials. No automatic activity deletion or upload is introduced.
+
+Deploy Stitch production before deploying/enabling Ride On's binding. No new
+secret, Strava callback-domain change or webhook subscription is required. Both
+products share scopes and Strava request limits. Ride On explains Stitch's upload
+permission and stores no activity/GPS payloads from these reads. Its first release
+does not import routes or generate speed defaults. See Ride On's `docs/strava.md`
+for the full API contract and coordinated rollout/rollback procedure.
+
+### Checks
+
 ```sh
 npm test
 npm run typecheck
