@@ -22,7 +22,6 @@ export type Job = {
   uploadId?: number
   activityId?: number
   error?: string
-  backupDownloaded?: boolean
   removalConfirmed?: boolean
   photos?: PhotoManifest
 }
@@ -35,7 +34,6 @@ export type JobPatch = Partial<
     | 'uploadId'
     | 'activityId'
     | 'error'
-    | 'backupDownloaded'
     | 'removalConfirmed'
     | 'photos'
   >

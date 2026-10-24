@@ -24,7 +24,6 @@ export function TopicGuidePage(
           </nav>
           <article>
             <header class="guide-heading">
-              <span class="eyebrow">THE STITCH GUIDE</span>
               <h1>{topic.heading}</h1>
               <p class="guide-deck">{topic.intro}</p>
               <GuideActions csrf={handle.props.csrf} firstname={handle.props.firstname} />
@@ -59,7 +58,6 @@ export function TopicGuidePage(
                   </section>
                 ))}
                 <aside class="guide-cta">
-                  <span class="overline">BRING EVERY PART TOGETHER</span>
                   <h2>Combine your Strava activities in seconds.</h2>
                   <p>
                     Connect Strava, choose activities of the same sport, and preview your stitch.

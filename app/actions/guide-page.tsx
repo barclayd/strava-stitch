@@ -16,18 +16,17 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
         </nav>
         <article>
           <header class="guide-heading">
-            <span class="eyebrow">THE STITCH GUIDE</span>
             <h1>{guideHeading}</h1>
             <p class="guide-deck">
               Turn a split run or ride into one new Strava activity for free. Select two to eight
               recordings of the same sport directly from Strava, without exporting each file first.
-              Preview the join and save your backups before choosing whether to upload.
+              Preview the join before choosing whether to upload.
             </p>
             <GuideActions csrf={handle.props.csrf} firstname={handle.props.firstname} />
             <p class="article-byline">
               By <a href={routes.privacy.href() + '#support'}>Barksoft Ltd.</a>
               <span aria-hidden="true">·</span>Updated{' '}
-              <time dateTime={guideUpdated}>4 October 2026</time>
+              <time dateTime={guideUpdated}>24 October 2026</time>
             </p>
           </header>
           <section class="guide-quick-start" aria-labelledby="quick-start-heading">
@@ -40,18 +39,20 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
               <li>
                 Connect Strava and select two to eight consecutive activities of the same sport.
               </li>
-              <li>
-                Review the route and gaps, then download the merged file and check your backups.
-              </li>
+              <li>Review the route and gaps, then download the merged file.</li>
               <li>
                 Keep the download, or follow the preparation steps and explicitly confirm an upload
                 to Strava.
               </li>
             </ol>
             <p>
-              Previewing leaves your originals untouched. If you choose to replace them, you remove
-              them yourself in Strava after checking your backups; kudos and comments do not
-              transfer. <a href="#join-your-activities">Follow the illustrated steps below.</a>
+              Previewing leaves your originals untouched. If you choose to replace them, you delete
+              them yourself in Strava, and Strava can{' '}
+              <a href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity">
+                restore them for 30 days
+              </a>
+              . Kudos and comments do not transfer.{' '}
+              <a href="#join-your-activities">Follow the illustrated steps below.</a>
             </p>
           </section>
           <figure class="guide-figure">
@@ -320,10 +321,14 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                     </p>
                     <p>
                       Review the gap confirmation and your Strava default activity visibility, then
-                      choose Continue to upload. Download and inspect the backup bundle and save any
-                      available photos before removing originals yourself in Strava. Kudos and
-                      comments cannot be transferred or restored from these backups. See the{' '}
-                      <a href="#duplicates">duplicate-upload steps</a> before removing anything.
+                      choose Continue to upload. Save any photos you want to keep, then delete the
+                      originals yourself in Strava. Strava keeps deleted activities for 30 days, so
+                      you can{' '}
+                      <a href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity">
+                        restore them
+                      </a>{' '}
+                      if you change your mind, although kudos and comments don’t come back. See the{' '}
+                      <a href="#duplicates">duplicate-upload steps</a> for details.
                     </p>
                     <p>
                       Return to Stitch, confirm the originals’ removal, and choose Verify and upload
@@ -391,16 +396,15 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                       <tr>
                         <th scope="row">Photos</th>
                         <td>
-                          Available photos can be saved in a separate photo ZIP. Check the files
-                          before removing originals, then add the photos manually to the merged
-                          activity in Strava. Photos are not included in GPX or FIT files.
+                          Available photos can be saved in a separate photo ZIP. Save any you want
+                          before deleting originals, then add them manually to the merged activity
+                          in Strava. Photos are not included in GPX or FIT files.
                         </td>
                       </tr>
                       <tr>
                         <th scope="row">Kudos and comments</th>
                         <td>
-                          Not transferred or backed up. Deleting originals loses their social
-                          history.
+                          Not transferred, and not brought back if you restore a deleted original.
                         </td>
                       </tr>
                     </tbody>
@@ -442,17 +446,20 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 </p>
                 <p>
                   Stitch never deletes an activity on Strava. Choose Continue to upload to check the
-                  originals and open the preparation steps. Download a backup bundle before removing
-                  anything. Save available photos in the separate photo ZIP and inspect both ZIPs.
-                  You can add those photos manually to the new activity in Strava. These backups
-                  cannot restore kudos or comments and do not include every original device field.
+                  originals and open the preparation steps. Save any photos you want to keep in the
+                  photo ZIP; you can add them manually to the new activity in Strava. The activity
+                  backup bundle is optional and does not include every original device field.
                 </p>
                 <p>
-                  If you decide to proceed, remove the relevant original activities yourself in
-                  Strava. Return to Stitch, confirm their removal, and choose Verify and upload to
-                  Strava. Stitch checks that the originals are no longer available, then starts the
-                  upload. You can also keep the originals and retain the stitched file without
-                  uploading it.
+                  If you decide to proceed, delete the relevant original activities yourself in
+                  Strava. Strava keeps them for 30 days, and you can{' '}
+                  <a href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity">
+                    restore them from Recently Deleted
+                  </a>{' '}
+                  on the Strava website, without their photos, kudos or comments. Return to Stitch,
+                  confirm you deleted them, and choose Verify and upload to Strava. Stitch checks
+                  that the originals are no longer available, then starts the upload. You can also
+                  keep the originals and retain the stitched file without uploading it.
                 </p>
                 <p>
                   Follow the{' '}
@@ -540,7 +547,6 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                 </ul>
               </section>
               <aside class="guide-cta">
-                <span class="overline">BRING EVERY PART TOGETHER</span>
                 <h2>Combine your Strava activities in seconds.</h2>
                 <p>
                   Connect Strava, choose activities of the same sport, and preview your stitch. Free

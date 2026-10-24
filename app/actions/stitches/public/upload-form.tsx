@@ -189,7 +189,6 @@ export const UploadPreparation = clientEntry(
         ]}
       >
         <div class="upload-dialog-heading">
-          <span class="eyebrow">ONE LAST STEP</span>
           <button
             type="button"
             class="dialog-close"
@@ -203,11 +202,11 @@ export const UploadPreparation = clientEntry(
           </h2>
           <p id="upload-preparation-intro">
             {handle.props.state === 'present'
-              ? 'Strava still has one or more of your original activities. To accept the merged recording, Strava needs those originals to be removed first.'
+              ? 'Your originals are still on Strava, and Strava won’t accept the stitch until they’re deleted.'
               : handle.props.state === 'removed'
-                ? 'The selected originals are no longer available on Strava. Save your backup and confirm their removal before uploading.'
-                : 'Save your backup and confirm the originals have been removed. We’ll check with Strava before uploading.'}{' '}
-            Your stitched file is ready to download. This check hasn’t started an upload.
+                ? 'Your originals are no longer available on Strava. Confirm below to upload your stitch.'
+                : 'Confirm you’ve deleted the originals and we’ll check with Strava before uploading.'}{' '}
+            Nothing has been uploaded yet.
           </p>
           {handle.props.error && (
             <p class="alert" role="alert">
@@ -217,23 +216,20 @@ export const UploadPreparation = clientEntry(
         </div>
         <ol class="upload-steps">
           <li>
-            <h3>Save and check your backup</h3>
+            <h3>Keep a copy (optional)</h3>
             <p>
-              Keep the merged file and reconstructed copies of each part. Open the ZIP and check its
-              contents before removing anything.
+              Restored activities come back without their photos, so download any you want to keep.
+              You can add them to your stitch after uploading.
             </p>
             <BackupChecklistBody id={handle.props.id} expires={handle.props.expires} compact />
           </li>
           <li>
             <h3>
               {handle.props.state === 'present'
-                ? 'Remove the originals in Strava'
-                : 'Confirm which originals you removed'}
+                ? 'Delete the originals in Strava'
+                : 'Confirm which originals you deleted'}
             </h3>
-            <p>
-              First check that the merged activity isn’t already on Strava. If you want to replace
-              these parts, remove only the selected originals yourself.
-            </p>
+            <p>Check the stitch isn’t already on Strava, then delete only these activities.</p>
             <div class="upload-source-links">
               {handle.props.sources.map((source, i) => (
                 <a
@@ -247,18 +243,23 @@ export const UploadPreparation = clientEntry(
                 </a>
               ))}
             </div>
-            <p class="upload-loss-note">
-              Deleting originals also removes their photos, comments and kudos from Strava. Saved
-              photos can be added back manually; comments, kudos and every device field cannot be
-              restored. You can keep the originals and use the downloaded stitch instead.
+            <p class="upload-restore-note">
+              Changed your mind? Strava keeps deleted activities for 30 days, and you can restore
+              them from Recently Deleted on the Strava website. Kudos and comments don’t come back.{' '}
+              <a
+                href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity"
+                target="_blank"
+                rel="noreferrer"
+              >
+                How to restore ↗
+              </a>
             </p>
           </li>
           <li>
-            <h3>Verify and upload</h3>
+            <h3>Upload your stitch</h3>
             <p>
-              Confirm below to upload using your Strava account’s default visibility. We’ll check
-              that the originals are gone and send your stitched activity straight to Strava. This
-              preview is available for 24 hours after it was created.
+              We’ll check the originals are gone, then upload using your Strava account’s default
+              visibility. This preview is available for 24 hours after it was created.
             </p>
           </li>
         </ol>
@@ -279,7 +280,7 @@ export const UploadPreparation = clientEntry(
           <input type="hidden" name="confirm" value="upload" />
           <label class="check-line">
             <input type="checkbox" name="removal" value="removed" required />
-            <span>I saved and checked my backup and removed these originals in Strava.</span>
+            <span>I’ve deleted these originals in Strava.</span>
           </label>
           <button
             class="button button-dark wide"

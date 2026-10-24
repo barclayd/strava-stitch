@@ -136,7 +136,7 @@ export class AthleteRepository {
       const metadata = this.metadata(id)
       if (!metadata || metadata.owner !== owner || this.account()?.id !== owner) return undefined
       if (!['ready', 'duplicate', 'failed'].includes(metadata.state)) return undefined
-      if (!metadata.backupDownloaded || !metadata.removalConfirmed) return undefined
+      if (!metadata.removalConfirmed) return undefined
       this.db.query(
         'UPDATE jobs SET metadata=? WHERE id=?',
         seal(

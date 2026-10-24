@@ -261,14 +261,6 @@ export function WorkspaceContent(
             tracks={chosen.map((r) => ({ id: r.id, name: r.name, coordinates: r.coordinates }))}
           />
           <div class="route-summary">
-            <div class="summary-title">
-              <span class="overline">ALL THE PARTS, TOGETHER</span>
-              <h3>
-                {chosen.length
-                  ? `${chosen.length} ${chosen.length === 1 ? 'part' : 'parts'}. One story.`
-                  : 'Merge in seconds.'}
-              </h3>
-            </div>
             <div class="summary-number">
               <strong>
                 {km(metres)}

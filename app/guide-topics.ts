@@ -8,7 +8,7 @@ const artwork = {
 export const guideTopics = {
   duplicateGuide: {
     ...artwork,
-    updated: '2026-10-04',
+    updated: '2026-10-24',
     path: '/guides/strava-duplicate-upload',
     title: 'Strava Duplicate Upload Error: Causes and Fixes | Stitch',
     heading: 'Strava duplicate upload errors: causes and fixes',
@@ -31,7 +31,7 @@ export const guideTopics = {
   },
   runGuide: {
     ...artwork,
-    updated: '2026-09-20',
+    updated: '2026-10-24',
     path: '/guides/combine-strava-runs',
     title: 'Combine Two Strava Runs into One | Stitch',
     heading: 'Combine two Strava runs after an accidental stop',
@@ -55,7 +55,7 @@ export const guideTopics = {
   },
   garminGuide: {
     ...artwork,
-    updated: '2026-09-20',
+    updated: '2026-10-24',
     path: '/guides/merge-garmin-activities-strava',
     title: 'How to Merge Garmin Activities into One Strava Activity | Stitch',
     heading: 'How to merge Garmin activities into one Strava activity',

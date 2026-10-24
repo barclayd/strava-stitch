@@ -136,21 +136,21 @@ export const guideSections: Record<GuideTopic, Section[]> = {
               </p>
             </li>
             <li>
-              <h3>Save and inspect your backups</h3>
+              <h3>Keep copies if you want them</h3>
               <p>
-                Download the merged file and activity backup. Save available photos in the separate
-                photo ZIP. Open and check the files before removing anything. You can keep these
-                downloads without uploading a new activity.
+                Download the merged file. Save any photos you want to keep in the photo ZIP, and
+                download the activity backup if you want reconstructed copies of each part. You can
+                keep these downloads without uploading a new activity.
               </p>
             </li>
             <li>
               <h3>Confirm the upload when ready</h3>
               <p>
                 Review the gaps and your Strava default visibility, then choose Continue to upload.
-                Follow the preparation steps and, if you choose to replace the originals, remove the
-                selected activities yourself in Strava after checking your backups. Confirm their
-                removal and choose Verify and upload to Strava. Stitch checks the originals are
-                gone, then starts the upload without another submit step.
+                Follow the preparation steps and, if you choose to replace the originals, delete the
+                selected activities yourself in Strava. Strava can restore them for 30 days. Confirm
+                you deleted them and choose Verify and upload to Strava. Stitch checks the originals
+                are gone, then starts the upload without another submit step.
               </p>
             </li>
             <li>
@@ -186,8 +186,11 @@ export const guideSections: Record<GuideTopic, Section[]> = {
           </p>
           <p>
             Photos can be saved separately and added back manually. Kudos and comments do not
-            transfer to the merged activity, and deleting originals on Strava loses that social
-            history.
+            transfer to the merged activity. If you delete the originals, Strava can{' '}
+            <a href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity">
+              restore them for 30 days
+            </a>
+            , though without their kudos and comments.
           </p>
         </>
       ),
@@ -333,13 +336,20 @@ export const guideSections: Record<GuideTopic, Section[]> = {
     },
     {
       id: 'backup',
-      title: 'Inspect a backup before deciding to replace originals',
+      title: 'Save what you want before replacing originals',
       body: (
         <>
           <p>
-            Download the merged file and the backup bundle offered by Stitch before uploading. Open
-            the bundle and confirm that it contains the expected activities. Keep original device
-            files too if you have them.
+            Deleted originals aren’t gone straight away. Strava keeps them for 30 days, and you can{' '}
+            <a href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity">
+              restore them from Recently Deleted
+            </a>{' '}
+            on the Strava website. Restored activities come back with their recorded data, but
+            without photos, titles, descriptions, kudos or comments.
+          </p>
+          <p>
+            Stitch’s backup bundle is optional. It holds reconstructed copies of each part, which
+            helps after those 30 days. Keep original device files too if you have them.
           </p>
           <p>
             Stitch’s backup is reconstructed from the data available through Strava. It is not an
@@ -348,10 +358,9 @@ export const guideSections: Record<GuideTopic, Section[]> = {
           </p>
           <p>
             Photos have a separate backup: save the available images in Stitch’s photo gallery, then
-            download the photo ZIP. Open and check the activity and photo ZIPs before removing
-            anything. Photos are not included in GPX or FIT files; add them manually to the new
-            activity in Strava after uploading. Videos are not backed up, and downloaded images may
-            not be at their original camera resolution.
+            download the photo ZIP. Photos are not included in GPX or FIT files; add them manually
+            to the new activity in Strava after uploading. Videos are not backed up, and downloaded
+            images may not be at their original camera resolution.
           </p>
           <p>
             If that history matters more than having one activity, keep the originals and retain the
@@ -367,26 +376,26 @@ export const guideSections: Record<GuideTopic, Section[]> = {
         <>
           <ol class="article-steps">
             <li>
-              <h3>Download and check your backup</h3>
+              <h3>Save anything you want to keep</h3>
               <p>
-                Choose Continue to upload to open the preparation steps. Stitch requires a backup
-                download before you confirm removal of the originals. Save available photos and
-                download their separate ZIP too. Inspect both backups before continuing.
+                Choose Continue to upload to open the preparation steps. Save any photos you want in
+                the photo ZIP. The activity backup is optional.
               </p>
             </li>
             <li>
-              <h3>Choose whether to remove the originals</h3>
+              <h3>Choose whether to delete the originals</h3>
               <p>
-                If you decide to replace them, remove only the relevant source activities yourself
-                in Strava. Stitch never deletes activities for you.
+                If you decide to replace them, delete only the relevant source activities yourself
+                in Strava. Stitch never deletes activities for you. Strava can restore them for 30
+                days if you change your mind.
               </p>
             </li>
             <li>
               <h3>Verify and upload in Stitch</h3>
               <p>
-                Confirm that you saved and checked your backups and removed the originals. Choose
-                Verify and upload to Strava. Stitch checks that the originals are no longer
-                available, then starts the upload using the title and description you reviewed.
+                Confirm that you deleted the originals. Choose Verify and upload to Strava. Stitch
+                checks that the originals are no longer available, then starts the upload using the
+                title and description you reviewed.
               </p>
             </li>
             <li>
@@ -642,9 +651,8 @@ export const guideSections: Record<GuideTopic, Section[]> = {
             account, and uploads happen only after you confirm.
           </p>
           <p>
-            Your originals stay in Strava. If the merged upload is flagged as a duplicate, inspect
-            the backup and follow the{' '}
-            <a href={routes.duplicateGuide.href()}>separate duplicate-upload steps</a> before
+            Your originals stay in Strava. If the merged upload is flagged as a duplicate, follow
+            the <a href={routes.duplicateGuide.href()}>separate duplicate-upload steps</a> before
             deciding whether to replace them.
           </p>
         </>

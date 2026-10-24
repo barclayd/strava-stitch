@@ -11,7 +11,6 @@ export type LocalBackup = {
   photos: SavedPhoto[]
   activitiesDownloaded?: boolean
   photosDownloaded?: boolean
-  checked?: boolean
 }
 const database = 'stitch-photo-backups'
 export const backupChanged = 'stitch:backup-changed'
