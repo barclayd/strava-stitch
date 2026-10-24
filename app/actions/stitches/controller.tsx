@@ -232,7 +232,6 @@ export default createController(routes.stitches, {
       for (const r of j.merge.records)
         archive.addActivity(`original-${r.activity.id}`, [r], r.activity.name)
       const zip = archive.finish()
-      await patchJob(j.id, j.owner, { backupDownloaded: true })
       track('backup_downloaded', 'preview')
       return new Response(zip, {
         headers: {
@@ -253,12 +252,9 @@ export default createController(routes.stitches, {
       }
       if (
         !['ready', 'failed', 'duplicate'].includes(j.state) ||
-        !j.backupDownloaded ||
         get(FormData).get('confirm') !== 'removed'
       )
-        return removalFailure(
-          'Download your backup and confirm you removed the selected originals in Strava.',
-        )
+        return removalFailure('Confirm you deleted the selected originals in Strava.')
       try {
         for (const r of j.merge.records) {
           try {
@@ -300,15 +296,11 @@ export default createController(routes.stitches, {
         return fail(session, 'Review the joins and confirm the upload before continuing.', target)
       if (['ready', 'failed', 'duplicate'].includes(j.state) && !j.removalConfirmed) {
         try {
-          // Save edits before the backup is made, without claiming or starting an upload.
+          // Save edits before checking the originals, without claiming or starting an upload.
           const saved = await patchJob(j.id, j.owner, { title: title.trim(), description }, j.state)
           if (!saved)
             return fail(session, 'This preview changed. Review its latest status.', target)
           const confirmRemoval = form.get('removal') === 'removed'
-          if (confirmRemoval && !saved.backupDownloaded) {
-            session.flash('uploadPreparation', { id: j.id, state: 'unverified' })
-            return fail(session, 'Download and check your backup before uploading.', target)
-          }
           let present = false
           for (const r of j.merge.records) {
             try {

@@ -184,7 +184,6 @@ export const ExampleFlow = clientEntry(
                 </details>
               </div>
               <section class="example-join" aria-labelledby="example-join-heading">
-                <span class="overline">A LITTLE ROOM BETWEEN THE PARTS</span>
                 <h2 id="example-join-heading">Every part, in its place.</h2>
                 <p>Two activities. One timeline. The pause stays exactly where it belongs.</p>
                 <div class="timeline">

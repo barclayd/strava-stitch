@@ -234,7 +234,6 @@ class Client {
 const confirmation = { title: 'One ride', confirm: 'upload', gaps: 'reviewed' }
 
 async function confirmTestRemoval(c: Client, id: string) {
-  await c.request(routes.stitches.backup.href({ id }))
   deleted = true
   try {
     await c.post(routes.stitches.confirmRemoval.href({ id }), { confirm: 'removed' })
@@ -266,8 +265,8 @@ test('the final confirmation verifies all three originals and uploads once witho
   const prepared = await c.page(show)
   assert.match(prepared.text, /<dialog open/)
   assert.match(prepared.text, /Your stitch is ready/)
-  assert.match(prepared.text, /Strava still has one or more/)
-  assert.match(prepared.text, /photos, comments and kudos/)
+  assert.match(prepared.text, /Your originals are still on Strava/)
+  assert.match(prepared.text, /Strava keeps deleted activities for 30 days/)
   assert.match(prepared.text, /value="One whole ride"/)
   assert.match(prepared.text, /Verify and upload to Strava/)
   assert.doesNotMatch(prepared.text, /Check originals and continue|confirm the upload separately/)
@@ -286,9 +285,6 @@ test('the final confirmation verifies all three originals and uploads once witho
   assert.equal(uploads, before)
   assert.doesNotMatch((await c.page(show)).text, /<dialog open/)
   assert.equal((await c.post(path, finalConfirmation, false)).status, 403)
-  await c.post(path, finalConfirmation)
-  assert.ok(!(await job(j.id, 12))?.removalConfirmed)
-  assert.match((await c.page(show)).text, /Download and check your backup/)
   const backup = await c.request(routes.stitches.backup.href({ id: j.id })),
     files = unzipSync(new Uint8Array(await backup.arrayBuffer()))
   assert.equal(JSON.parse(strFromU8(files['activities.json'])).description, draft.description)
@@ -313,7 +309,7 @@ test('the final confirmation verifies all three originals and uploads once witho
     const unavailable = (await c.page(show)).text
     assert.match(unavailable, /No upload was started/)
     assert.match(unavailable, /<dialog open/)
-    assert.doesNotMatch(unavailable, /Strava still has one or more/)
+    assert.doesNotMatch(unavailable, /Your originals are still on Strava/)
   } finally {
     activityStatus = 200
   }
@@ -764,7 +760,6 @@ test('maximum-size GPS previews survive restarts, downloads, backups and confirm
   await repo(3).patchJob(id, 3, { state: 'processing' })
   const saved = await job(id, 3)
   assert.equal(saved?.state, 'complete')
-  assert.equal(saved?.backupDownloaded, true)
   assert.equal(await repo(3).claimUpload(id, 3, 'Again'), undefined)
 })
 

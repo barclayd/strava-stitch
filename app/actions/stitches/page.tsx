@@ -14,6 +14,7 @@ import { StravaConnect } from '../../ui/strava.tsx'
 import { fileFormat, hasPosition, mergedDescription } from './merge.ts'
 import { sportLabel } from '../../data/sports.ts'
 import { PhotoBackup, BackupChecklist } from './public/photo-backup.tsx'
+import { photoCount } from '../../data/photos.ts'
 
 function joinLocation(metres: number | null) {
   if (metres === null)
@@ -63,13 +64,9 @@ export function StitchPage(
           </a>
           <div class="review-heading">
             <div>
-              <span class="eyebrow">
-                {demo
-                  ? 'EXAMPLE PREVIEW'
-                  : j.state === 'complete'
-                    ? 'STITCH COMPLETE'
-                    : 'THE WHOLE PICTURE'}
-              </span>
+              {(demo || j.state === 'complete') && (
+                <span class="eyebrow">{demo ? 'EXAMPLE PREVIEW' : 'STITCH COMPLETE'}</span>
+              )}
               <h1>
                 {j.state === 'complete' ? 'All together. All yours.' : 'Every part, together.'}
               </h1>
@@ -126,7 +123,13 @@ export function StitchPage(
                   description={j.description ?? mergedDescription(m)}
                 />
               )}
-              {!demo && <PhotoBackup id={j.id} expires={j.created + 86400000} />}
+              {!demo && (
+                <PhotoBackup
+                  id={j.id}
+                  expires={j.created + 86400000}
+                  noPhotos={m.records.every((r) => photoCount(r.activity) === 0)}
+                />
+              )}
               <section class="timeline-section">
                 <h2>Every part, in its place.</h2>
                 <div class="timeline">

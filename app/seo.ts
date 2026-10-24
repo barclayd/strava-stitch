@@ -1,6 +1,6 @@
 // Public search identity is fixed; never derive canonical URLs from request headers or activity data.
 export const publicOrigin = 'https://stravastitch.com'
-export const guideUpdated = '2026-10-04'
+export const guideUpdated = '2026-10-24'
 export const guideHeading = 'How to merge two Strava activities for free'
 export const publicPages = {
   home: {

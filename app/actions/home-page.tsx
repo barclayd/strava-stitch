@@ -32,9 +32,6 @@ export function HomePage(
       >
         <main id="main" class="main-content">
           <div class="intro">
-            <div class="eyebrow">
-              <span class="little-line" /> MERGE IN SECONDS
-            </div>
             <h1>
               Combine your
               <br />
@@ -120,7 +117,6 @@ export function HomePage(
           )}
           <section class="how-it-works" id="how-it-works">
             <div>
-              <span class="overline">LESS ADMIN. MORE MOVEMENT.</span>
               <h2>
                 How to combine
                 <br />
@@ -158,8 +154,8 @@ export function HomePage(
                   <h3>Take it all with you</h3>
                   <p>
                     Download GPX for GPS recordings or FIT for activities without GPS. Confirm a
-                    Strava upload to keep the original sport type. If originals need removing, you
-                    do that separately in Strava.
+                    Strava upload to keep the original sport type. If originals need deleting, you
+                    do that in Strava, and Strava can restore them for 30 days.
                   </p>
                 </div>
               </li>
@@ -167,11 +163,7 @@ export function HomePage(
           </section>
           <section class="home-guide" aria-labelledby="home-guide-heading">
             <div>
-              <span class="overline">A GUIDE TO GETTING IT RIGHT</span>
-              <h2 id="home-guide-heading">
-                Two activities. One story.
-                <br />A few things to know.
-              </h2>
+              <h2 id="home-guide-heading">A few things to know.</h2>
               <p>
                 Learn how to merge Strava activities, what happens to pauses and sensor data, and
                 how to handle duplicate uploads.
@@ -250,9 +242,9 @@ export function HomePage(
               <details>
                 <summary>Will Stitch delete my original activities?</summary>
                 <p>
-                  No. Creating a preview leaves your Strava activities intact. If Strava rejects an
-                  upload as a duplicate, you decide whether to remove originals yourself after
-                  downloading a backup.
+                  No. Creating a preview leaves your Strava activities intact. If Strava needs the
+                  originals deleted before accepting your stitch, you delete them yourself, and
+                  Strava keeps deleted activities for 30 days in case you want them back.
                 </p>
               </details>
               <details>

@@ -195,8 +195,7 @@ svg {
   padding: 58px 0 48px;
   position: relative;
 }
-.eyebrow,
-.overline {
+.eyebrow {
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 1.7px;
@@ -207,11 +206,6 @@ svg {
   gap: 8px;
   align-items: center;
   margin-bottom: 17px;
-}
-.little-line {
-  width: 18px;
-  height: 2px;
-  background: #8fa484;
 }
 .intro h1 {
   font-size: clamp(40px, 4.2vw, 60px);
@@ -768,16 +762,10 @@ svg {
 }
 .route-summary {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr 1fr;
   gap: 35px;
   padding: 27px 8px 22px;
   align-items: center;
-}
-.summary-title h3 {
-  font-size: 17px;
-  letter-spacing: -0.45px;
-  font-weight: 500;
-  margin-top: 5px;
 }
 .summary-number strong {
   font-size: 25px;
@@ -1235,6 +1223,7 @@ svg {
 }
 .upload-dialog-heading {
   position: relative;
+  padding-right: 36px;
 }
 .upload-dialog h2 {
   font-size: clamp(25px, 5vw, 31px);
@@ -1287,7 +1276,7 @@ svg {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-.upload-dialog .upload-loss-note {
+.upload-dialog .upload-restore-note {
   padding-left: 12px;
   border-left: 2px solid #c9b78e;
 }
@@ -1649,11 +1638,7 @@ svg {
     display: none;
   }
   .route-summary {
-    grid-template-columns: 1fr 1fr;
     gap: 18px;
-  }
-  .summary-title {
-    grid-column: 1/-1;
   }
   .route-map {
     height: 400px;
@@ -1771,15 +1756,8 @@ svg {
     height: 350px;
   }
   .route-summary {
-    grid-template-columns: 1fr auto auto;
     gap: 22px;
     padding: 23px 3px 20px;
-  }
-  .summary-title {
-    grid-column: auto;
-  }
-  .summary-title h3 {
-    font-size: 16px;
   }
   .summary-number strong {
     font-size: 24px;
@@ -1887,9 +1865,6 @@ svg {
   .prose-page h1 {
     font-size: 44px;
   }
-  .intro .eyebrow {
-    font-size: 9px;
-  }
 }
 @media (max-width: 460px) {
   .site-header,
@@ -1929,13 +1904,6 @@ svg {
   }
   .route-summary {
     gap: 15px;
-    grid-template-columns: 1fr 1fr;
-  }
-  .summary-title {
-    grid-column: 1/-1;
-  }
-  .summary-title h3 {
-    font-size: 17px;
   }
   .summary-number strong {
     font-size: 27px;
@@ -2038,7 +2006,6 @@ svg {
 .back-link {
   color: #6b7562;
 }
-.overline,
 .eyebrow,
 .demo-note,
 .ride-order {
@@ -2433,9 +2400,6 @@ svg {
   gap: 16px;
   margin-bottom: 12px;
 }
-.photo-heading .eyebrow {
-  margin-bottom: 12px;
-}
 .photo-heading h2 {
   margin: 0;
   font-size: 24px;
@@ -2567,14 +2531,6 @@ svg {
   font-size: 12px;
   min-height: 44px;
   white-space: nowrap;
-}
-.backup-checklist .check-line {
-  font-size: 12px;
-  line-height: 1.5;
-}
-.backup-checklist .fine-print {
-  font-size: 11px;
-  line-height: 1.6;
 }
 .backup-checklist .backup-losses {
   font-size: 11px;

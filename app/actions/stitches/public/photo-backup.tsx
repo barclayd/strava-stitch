@@ -12,7 +12,7 @@ import {
   type PhotoList,
 } from './backup-storage.ts'
 
-type Props = { id: string; expires: number; compact?: boolean }
+type Props = { id: string; expires: number; compact?: boolean; noPhotos?: boolean }
 
 function saveFile(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob),
@@ -125,7 +125,6 @@ function backupView(handle: Handle<Props>) {
       await change((v) => {
         v.photosDownloaded =
           complete && allPhotosSaved(v) && JSON.stringify(v.manifest) === fingerprint
-        v.checked = false
       })
     })
   const activities = () =>
@@ -140,7 +139,6 @@ function backupView(handle: Handle<Props>) {
       saveFile(blob, 'stitch-backup.zip')
       await change((v) => {
         v.activitiesDownloaded = true
-        v.checked = false
       })
     })
   return {
@@ -200,10 +198,7 @@ export const PhotoBackup = clientEntry(
           throw new Error('Could not check photos. Keep your originals and try again.')
         const manifest = (await response.json()) as PhotoList
         await view.change((v) => {
-          if (JSON.stringify(v.manifest) !== JSON.stringify(manifest)) {
-            v.photosDownloaded = false
-            v.checked = false
-          }
+          if (JSON.stringify(v.manifest) !== JSON.stringify(manifest)) v.photosDownloaded = false
           v.manifest = manifest
         })
         let failed = false
@@ -258,7 +253,8 @@ export const PhotoBackup = clientEntry(
     })
     return () => {
       const photos = view.value?.photos ?? [],
-        manifest = view.value?.manifest
+        manifest = view.value?.manifest,
+        none = manifest ? manifest.expected === 0 && manifest.complete : handle.props.noPhotos
       if (!photos.length && viewer?.open) viewer.close()
       selected = Math.min(selected, Math.max(0, photos.length - 1))
       const active = new Set(photos.map((p) => p.key))
@@ -275,13 +271,11 @@ export const PhotoBackup = clientEntry(
           id="photo-backup"
           tabIndex={-1}
           aria-labelledby="photo-backup-title"
+          hidden={none && !view.error}
           mix={[view.mounted, initialized]}
         >
           <div class="photo-heading">
-            <div>
-              <span class="eyebrow">KEEP THE MOMENTS</span>
-              <h2 id="photo-backup-title">Your photos, together.</h2>
-            </div>
+            <h2 id="photo-backup-title">Your photos, together.</h2>
             {manifest && (
               <span
                 class="backup-badge"
@@ -297,8 +291,8 @@ export const PhotoBackup = clientEntry(
             )}
           </div>
           <p>
-            Save copies in this browser, then download them to keep. You can add them to your
-            stitched activity in Strava after uploading.
+            Photos stay with the originals, so download any you want to keep. You can add them to
+            your stitched activity in Strava after uploading.
           </p>
           {photos.length > 0 && (
             <div class="photo-grid" data-count={Math.min(photos.length, 5)}>
@@ -461,9 +455,8 @@ export const PhotoBackup = clientEntry(
             </p>
           )}
           <p class="fine-print">
-            Only saved image files appear here. Browser copies are temporary; download and check the
-            ZIP before deleting anything. Strava’s image quality may differ from your camera
-            originals.
+            Browser copies are temporary, so download the ZIP to keep them. Strava’s image quality
+            may differ from your camera originals.
           </p>
           <noscript>
             Enable JavaScript to save and download photos. The activity ZIP does not include photos.
@@ -478,17 +471,12 @@ export function BackupChecklistBody(handle: Handle<Props>) {
   const view = backupView(handle)
   return () => {
     const value = view.value,
-      ready = downloadsReady(value),
-      checked = ready && value?.checked
+      ready = downloadsReady(value)
     const noPhotos = value?.manifest?.expected === 0 && allPhotosSaved(value)
     return (
       <div class="backup-checklist" mix={view.mounted}>
-        <span class="backup-badge" data-ready={checked ? 'true' : 'false'} role="status">
-          {checked
-            ? '✓ Backups checked'
-            : ready
-              ? 'Downloads prepared · check files'
-              : 'Back up before removing'}
+        <span class="backup-badge" data-ready={ready ? 'true' : 'false'} role="status">
+          {ready ? '✓ Copies saved' : 'Optional'}
         </span>
         <ul>
           <li>
@@ -548,34 +536,10 @@ export function BackupChecklistBody(handle: Handle<Props>) {
             {view.error}
           </p>
         )}
-        <label class="check-line">
-          <input
-            type="checkbox"
-            checked={Boolean(checked)}
-            disabled={!ready || Boolean(view.busy)}
-            mix={on('change', (e) => {
-              const confirmed = e.currentTarget.checked
-              void view.run('', () =>
-                view.change((v) => {
-                  v.checked = confirmed && downloadsReady(v)
-                }),
-              )
-            })}
-          />
-          <span>
-            I opened and checked my downloaded files, including any photos I want to keep.
-          </span>
-        </label>
-        <p class="fine-print">
-          {checked
-            ? 'You’re ready to remove the selected originals if you accept the losses below.'
-            : 'Your browser may still ask where to save. Check the files on your device before removing originals.'}
-        </p>
         {!handle.props.compact && (
           <p class="backup-losses">
-            Comments and kudos cannot be restored. Activity files are reconstructed from Strava
-            data, not complete original device files. Photos must be added back manually; videos are
-            not backed up.
+            Activity files are rebuilt from Strava data, not original device files. Photos can be
+            added back manually; videos aren’t included.
           </p>
         )}
       </div>
