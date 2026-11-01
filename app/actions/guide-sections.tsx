@@ -173,9 +173,8 @@ export const guideSections: Record<GuideTopic, Section[]> = {
         <>
           <p>
             Stitch creates a new Strava activity. It does not merge, edit or delete the entries in
-            Garmin Connect. Stitch never deletes activities on Strava either; removing originals
-            there is a separate action you take yourself. Your preview is private to your connected
-            Stitch account and expires after 24 hours.
+            Garmin Connect. Deleting the Strava originals is a separate step you take yourself. Your
+            preview is private to your connected Stitch account and expires after 24 hours.
           </p>
           <p>
             The merged file uses recorded data available through Strava, including timestamps and
@@ -386,8 +385,7 @@ export const guideSections: Record<GuideTopic, Section[]> = {
               <h3>Choose whether to delete the originals</h3>
               <p>
                 If you decide to replace them, delete only the relevant source activities yourself
-                in Strava. Stitch never deletes activities for you. Strava can restore them for 30
-                days if you change your mind.
+                in Strava. Strava can restore them for 30 days if you change your mind.
               </p>
             </li>
             <li>

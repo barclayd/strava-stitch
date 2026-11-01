@@ -104,7 +104,6 @@ export const ExampleFlow = clientEntry(
                 </button>
               ))}
             </div>
-            <span class="flow-reassurance">Privacy first. Always your choice.</span>
           </div>
           <p class="example-step-hint">These are sample activities. No account is needed.</p>
           {/* Keep the panels mounted so selections, map positions and demo edits survive a step change. */}
@@ -167,9 +166,7 @@ export const ExampleFlow = clientEntry(
                     <span>Climbing</span>
                   </div>
                 </div>
-                <p class="fine-print">
-                  Totals from the source activities. Strava may recalculate them after import.
-                </p>
+                <p class="fine-print">Strava may recalculate totals after import.</p>
                 <details class="preservation">
                   <summary>What comes along?</summary>
                   <p>
