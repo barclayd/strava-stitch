@@ -200,14 +200,25 @@ export const UploadPreparation = clientEntry(
           <h2 id="upload-preparation-title" tabIndex={-1} autoFocus>
             Your stitch is ready.
           </h2>
-          <p id="upload-preparation-intro">
-            {handle.props.state === 'present'
-              ? 'Your originals are still on Strava, and Strava won’t accept the stitch until they’re deleted.'
-              : handle.props.state === 'removed'
-                ? 'Your originals are no longer available on Strava. Confirm below to upload your stitch.'
-                : 'Confirm you’ve deleted the originals and we’ll check with Strava before uploading.'}{' '}
-            Nothing has been uploaded yet.
-          </p>
+          <div class="info-banner" id="upload-preparation-intro">
+            <span class="info-banner-icon" aria-hidden="true">
+              i
+            </span>
+            {handle.props.state === 'removed' ? (
+              <div>
+                <strong>Your originals are no longer available on Strava.</strong>
+                <p>Confirm below to upload your stitch.</p>
+              </div>
+            ) : (
+              <div>
+                <strong>Strava doesn’t accept duplicates.</strong>
+                <p>
+                  Delete the originals on Strava before uploading. Don’t worry, every recording is
+                  safe in your stitch.
+                </p>
+              </div>
+            )}
+          </div>
           {handle.props.error && (
             <p class="alert" role="alert">
               {handle.props.error}
@@ -216,11 +227,8 @@ export const UploadPreparation = clientEntry(
         </div>
         <ol class="upload-steps">
           <li>
-            <h3>Keep a copy (optional)</h3>
-            <p>
-              Restored activities come back without their photos, so download any you want to keep.
-              You can add them to your stitch after uploading.
-            </p>
+            <h3>Keep a copy</h3>
+            <p>Photos don’t carry over. Download any you want to add to your stitch later.</p>
             <BackupChecklistBody id={handle.props.id} expires={handle.props.expires} compact />
           </li>
           <li>
@@ -244,8 +252,7 @@ export const UploadPreparation = clientEntry(
               ))}
             </div>
             <p class="upload-restore-note">
-              Changed your mind? Strava keeps deleted activities for 30 days, and you can restore
-              them from Recently Deleted on the Strava website. Kudos and comments don’t come back.{' '}
+              Strava keeps deleted activities for 30 days, but kudos and comments don’t come back.{' '}
               <a
                 href="https://support.strava.com/en-us/articles/15401877-how-do-i-restore-a-deleted-activity"
                 target="_blank"
@@ -257,10 +264,7 @@ export const UploadPreparation = clientEntry(
           </li>
           <li>
             <h3>Upload your stitch</h3>
-            <p>
-              We’ll check the originals are gone, then upload using your Strava account’s default
-              visibility. This preview is available for 24 hours after it was created.
-            </p>
+            <p>Uses your default Strava visibility. Previews expire after 24 hours.</p>
           </li>
         </ol>
         <form
@@ -308,7 +312,6 @@ export const UploadPreparation = clientEntry(
         >
           Back to preview
         </a>
-        <p class="upload-dialog-footnote">Stitch never deletes activities for you.</p>
       </dialog>
     )
   },

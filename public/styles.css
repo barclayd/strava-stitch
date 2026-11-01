@@ -261,10 +261,6 @@ svg {
   border-color: #e8efe2;
   color: #416137;
 }
-.flow-reassurance {
-  font-size: 11px;
-  color: #92978f;
-}
 .example-flow {
   scroll-margin-top: 24px;
 }
@@ -1192,12 +1188,76 @@ svg {
   color: #939e86;
   margin-bottom: 24px;
 }
-.finish-footnote {
-  font-size: 10px;
-  color: #a2ad97;
+.button-secondary {
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+.finish-actions {
+  display: grid;
+  gap: 10px;
+}
+.stats-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding-top: 14px;
   border-top: 1px solid var(--line);
-  padding-top: 19px;
-  margin-top: 25px;
+}
+.stats-footer .button {
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 10px 16px;
+  gap: 12px;
+}
+.success-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 30px 32px;
+  margin-bottom: 36px;
+  border: 1px solid #c8dcb6;
+  border-radius: 14px;
+  background: #e6f1dc;
+  color: #213b1c;
+}
+.success-tick {
+  font-size: 42px;
+  line-height: 1;
+  animation: success-pop 560ms var(--ease) both;
+}
+.success-banner h1 {
+  font-size: 42px;
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -1.8px;
+  margin-bottom: 8px;
+}
+.success-banner p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #3f5c36;
+  overflow-wrap: anywhere;
+}
+.success-action {
+  color: #fff;
+  background: #3d6b2e;
+}
+@keyframes success-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 .upload-form {
   display: grid;
@@ -1233,6 +1293,41 @@ svg {
 }
 .upload-dialog h2:focus {
   outline: none;
+}
+.info-banner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  margin-right: -36px;
+  padding: 16px 18px;
+  border: 1px solid #cbdbe3;
+  border-radius: 10px;
+  background: #edf3f6;
+}
+.info-banner-icon {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #3d6577;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.info-banner strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #1e3642;
+}
+.upload-dialog .info-banner p {
+  color: #3f5561;
 }
 .upload-dialog p {
   font-size: 13px;
@@ -1291,11 +1386,6 @@ svg {
   width: fit-content;
   margin: 20px auto 0;
   font-size: 13px;
-}
-.upload-dialog .upload-dialog-footnote {
-  margin-top: 16px;
-  text-align: center;
-  font-size: 11px;
 }
 .activity-fields {
   display: grid;
@@ -1598,6 +1688,12 @@ svg {
   .button-outline:hover {
     background: #f7f9f3;
   }
+  .button-secondary:hover {
+    background: rgb(36 41 35 / 5%);
+  }
+  .success-action:hover {
+    background: #335a26;
+  }
   .ride-row:hover {
     background: #f8faf5;
   }
@@ -1634,9 +1730,6 @@ svg {
     grid-template-columns: 310px minmax(0, 1fr);
     gap: 20px;
   }
-  .flow-reassurance {
-    display: none;
-  }
   .route-summary {
     gap: 18px;
   }
@@ -1664,7 +1757,8 @@ svg {
   .how-it-works {
     gap: 40px;
   }
-  .review-heading h1 {
+  .review-heading h1,
+  .success-banner h1 {
     font-size: 35px;
   }
 }
@@ -1838,6 +1932,24 @@ svg {
     font-size: 36px;
     letter-spacing: -1.7px;
   }
+  .success-banner {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 18px;
+    padding: 24px;
+    margin-bottom: 25px;
+  }
+  .success-banner h1 {
+    font-size: 34px;
+    letter-spacing: -1.5px;
+  }
+  .success-tick {
+    font-size: 34px;
+  }
+  .success-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: space-between;
+  }
   .review-visual .route-map {
     height: 360px;
   }
@@ -1936,6 +2048,12 @@ svg {
   .review-heading h1 {
     font-size: 31px;
   }
+  .success-banner {
+    padding: 20px;
+  }
+  .success-banner h1 {
+    font-size: 30px;
+  }
   .site-footer > div {
     flex-direction: column;
     align-items: flex-end;
@@ -1974,7 +2092,6 @@ svg {
 /* Secondary text remains readable at small sizes. */
 .intro p,
 .panel-description,
-.flow-reassurance,
 .selected-caption,
 .demo-note,
 .ride-topline,
@@ -1994,7 +2111,6 @@ svg {
 .fine-print,
 .finish-panel > p,
 .check-line,
-.finish-footnote,
 .backup-option > span,
 .backup-option p,
 .timeline-record p,
