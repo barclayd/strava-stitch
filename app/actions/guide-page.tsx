@@ -445,10 +445,10 @@ export function GuidePage(handle: Handle<{ csrf: string; seo: PageSeo; firstname
                   need to be removed before the combined file can be uploaded.
                 </p>
                 <p>
-                  Stitch never deletes an activity on Strava. Choose Continue to upload to check the
-                  originals and open the preparation steps. Save any photos you want to keep in the
-                  photo ZIP; you can add them manually to the new activity in Strava. The activity
-                  backup bundle is optional and does not include every original device field.
+                  Choose Continue to upload to check the originals and open the preparation steps.
+                  Save any photos you want to keep in the photo ZIP; you can add them manually to
+                  the new activity in Strava. The activity backup bundle is optional and does not
+                  include every original device field.
                 </p>
                 <p>
                   If you decide to proceed, delete the relevant original activities yourself in

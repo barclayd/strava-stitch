@@ -290,10 +290,7 @@ export const PhotoBackup = clientEntry(
               </span>
             )}
           </div>
-          <p>
-            Photos stay with the originals, so download any you want to keep. You can add them to
-            your stitched activity in Strava after uploading.
-          </p>
+          <p>Photos don’t carry over. Download any you want to add to your stitch later.</p>
           {photos.length > 0 && (
             <div class="photo-grid" data-count={Math.min(photos.length, 5)}>
               {photos.slice(0, 5).map((p, index) => (
@@ -455,8 +452,8 @@ export const PhotoBackup = clientEntry(
             </p>
           )}
           <p class="fine-print">
-            Browser copies are temporary, so download the ZIP to keep them. Strava’s image quality
-            may differ from your camera originals.
+            Browser copies are temporary. Strava’s image quality may differ from your camera
+            originals.
           </p>
           <noscript>
             Enable JavaScript to save and download photos. The activity ZIP does not include photos.

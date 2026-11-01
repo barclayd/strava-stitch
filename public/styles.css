@@ -261,10 +261,6 @@ svg {
   border-color: #e8efe2;
   color: #416137;
 }
-.flow-reassurance {
-  font-size: 11px;
-  color: #92978f;
-}
 .example-flow {
   scroll-margin-top: 24px;
 }
@@ -1192,12 +1188,72 @@ svg {
   color: #939e86;
   margin-bottom: 24px;
 }
-.finish-footnote {
-  font-size: 10px;
-  color: #a2ad97;
-  border-top: 1px solid var(--line);
-  padding-top: 19px;
-  margin-top: 25px;
+.stats-footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.download-link {
+  padding: 10px 0;
+  margin: -10px 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #526645;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.finish-panel .download-link {
+  display: block;
+  width: fit-content;
+  margin: 8px auto -10px;
+  font-size: 12px;
+}
+.complete-title {
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+}
+.complete-tick {
+  flex: none;
+  width: 0.76em;
+  height: 0.76em;
+  border-radius: 50%;
+  background: #557d48;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: tick-in 360ms var(--ease) both;
+}
+.complete-tick path {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  animation: tick-draw 420ms 200ms var(--ease) forwards;
+}
+.complete-note {
+  overflow-wrap: anywhere;
+}
+@keyframes tick-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes tick-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .complete-tick,
+  .complete-tick path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
 .upload-form {
   display: grid;
@@ -1233,6 +1289,22 @@ svg {
 }
 .upload-dialog h2:focus {
   outline: none;
+}
+.info-banner {
+  margin-right: -36px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  background: #eef3e7;
+}
+.info-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.upload-dialog .info-banner p {
+  color: #4f5a49;
 }
 .upload-dialog p {
   font-size: 13px;
@@ -1291,11 +1363,6 @@ svg {
   width: fit-content;
   margin: 20px auto 0;
   font-size: 13px;
-}
-.upload-dialog .upload-dialog-footnote {
-  margin-top: 16px;
-  text-align: center;
-  font-size: 11px;
 }
 .activity-fields {
   display: grid;
@@ -1598,6 +1665,9 @@ svg {
   .button-outline:hover {
     background: #f7f9f3;
   }
+  .download-link:hover {
+    color: #243d17;
+  }
   .ride-row:hover {
     background: #f8faf5;
   }
@@ -1633,9 +1703,6 @@ svg {
   .workspace {
     grid-template-columns: 310px minmax(0, 1fr);
     gap: 20px;
-  }
-  .flow-reassurance {
-    display: none;
   }
   .route-summary {
     gap: 18px;
@@ -1974,7 +2041,6 @@ svg {
 /* Secondary text remains readable at small sizes. */
 .intro p,
 .panel-description,
-.flow-reassurance,
 .selected-caption,
 .demo-note,
 .ride-topline,
@@ -1994,7 +2060,6 @@ svg {
 .fine-print,
 .finish-panel > p,
 .check-line,
-.finish-footnote,
 .backup-option > span,
 .backup-option p,
 .timeline-record p,

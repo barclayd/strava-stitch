@@ -39,6 +39,13 @@ export function StitchPage(
       format = fileFormat(m.records).toUpperCase(),
       sport = sportLabel(m.records[0].activity.sport_type)
     const download = demo ? routes.demoDownload.href() : routes.stitches.download.href({ id: j.id })
+    const complete = !demo && j.state === 'complete'
+    const stravaActivity = 'https://www.strava.com/activities/' + j.activityId
+    const downloadLink = (
+      <a class="download-link" href={download} download>
+        Download {format} <span aria-hidden="true">↓</span>
+      </a>
+    )
     const tracks = m.records.map((r) => ({
       id: r.activity.id,
       name: r.activity.name,
@@ -63,21 +70,37 @@ export function StitchPage(
             ← Choose activities
           </a>
           <div class="review-heading">
-            <div>
-              {(demo || j.state === 'complete') && (
-                <span class="eyebrow">{demo ? 'EXAMPLE PREVIEW' : 'STITCH COMPLETE'}</span>
-              )}
-              <h1>
-                {j.state === 'complete' ? 'All together. All yours.' : 'Every part, together.'}
-              </h1>
-              <p>
-                {sport} · {m.records.length} activities · {day(m.start)} · Every original timestamp
-                preserved.
-              </p>
-            </div>
-            <a class="button button-outline" href={download} download>
-              Download {format} <span>↓</span>
-            </a>
+            {complete ? (
+              <div>
+                <h1 class="complete-title">
+                  <svg class="complete-tick" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m7 12.5 3.3 3.3L17 9" />
+                  </svg>
+                  Stitch complete.
+                </h1>
+                <p class="complete-note">
+                  {j.title} is now on Strava.{' '}
+                  <a
+                    class="inline-link"
+                    href={stravaActivity}
+                    data-funnel="view_on_strava_click"
+                    data-funnel-placement="preview"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View activity ↗
+                  </a>
+                </p>
+              </div>
+            ) : (
+              <div>
+                {demo && <span class="eyebrow">EXAMPLE PREVIEW</span>}
+                <h1>Every part, together.</h1>
+                <p>
+                  {sport} · {m.records.length} activities · {day(m.start)}
+                </p>
+              </div>
+            )}
           </div>
           <Alert message={error} />
           {m.joins.some((g) => (g.metres ?? 0) > 1000) && (
@@ -114,9 +137,10 @@ export function StitchPage(
                   <span>Climbing</span>
                 </div>
               </div>
-              <p class="fine-print">
-                Totals from the source activities. Strava may recalculate them after import.
-              </p>
+              <div class="stats-footer">
+                <p class="fine-print">Strava may recalculate totals after import.</p>
+                {!complete && downloadLink}
+              </div>
               {demo && (
                 <ExampleDetails
                   title={j.title}
@@ -210,10 +234,7 @@ export function StitchPage(
               <h2>{j.state === 'complete' ? 'Back where it belongs.' : 'Ready when you are.'}</h2>
               {demo ? (
                 <>
-                  <p>
-                    This is an illustrative example. Connect Strava to bring your own activities
-                    together.
-                  </p>
+                  <p>Connect Strava to stitch your own activities.</p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
                     <StravaConnect source="example" />
@@ -221,20 +242,18 @@ export function StitchPage(
                 </>
               ) : j.state === 'complete' ? (
                 <>
-                  <p>
-                    Your stitched activity is on Strava. Open it to review the sport, totals, and
-                    visibility, then add your saved photos using Edit Activity → Media.
-                  </p>
+                  <p>Add your saved photos in Strava with Edit Activity → Media.</p>
                   <a
                     class="button button-dark wide"
-                    href={'https://www.strava.com/activities/' + j.activityId}
+                    href={stravaActivity}
                     data-funnel="view_on_strava_click"
                     data-funnel-placement="preview"
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View on Strava ↗
+                    View on Strava <span aria-hidden="true">↗</span>
                   </a>
+                  {downloadLink}
                 </>
               ) : j.state === 'processing' ? (
                 <UploadStatus id={j.id} />
@@ -255,10 +274,7 @@ export function StitchPage(
                 </>
               ) : !canUpload ? (
                 <>
-                  <p>
-                    Allow uploads to send this activity directly to Strava. Downloads are already
-                    available.
-                  </p>
+                  <p>Allow uploads to send this activity to Strava.</p>
                   <form data-rmx-document action={routes.auth.connect.href()} method="post">
                     <input type="hidden" name="_csrf" value={csrf} />
                     <StravaConnect source="preview" />
@@ -268,10 +284,10 @@ export function StitchPage(
                 <>
                   <p>
                     {j.removalConfirmed
-                      ? `Your originals have been checked. Confirm below to upload your stitch as ${sport}.`
+                      ? `Originals checked. Confirm below to upload as ${sport}.`
                       : j.state === 'duplicate'
-                        ? 'Your stitch is ready. Strava found a duplicate; review the originals before trying again.'
-                        : `Review the recordings and pauses. We’ll check the originals before uploading to Strava as ${sport}.`}
+                        ? 'Strava found a duplicate. Review the originals before trying again.'
+                        : `Uploads to Strava as ${sport}.`}
                   </p>
                   {j.error && j.state !== 'duplicate' && <Alert message={j.error} />}
                   <UploadForm
@@ -305,7 +321,6 @@ export function StitchPage(
                   <BackupChecklist id={j.id} expires={j.created + 86400000} />
                 </div>
               )}
-              <div class="finish-footnote">Originals are never removed by Stitch.</div>
             </aside>
           </div>
         </main>

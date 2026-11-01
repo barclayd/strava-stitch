@@ -18,10 +18,7 @@ export function ExamplePage(handle: Handle<{ csrf: string; example: ExamplePrevi
         <div class="review-heading">
           <div>
             <h1>Every part, together.</h1>
-            <p>
-              Explore a sample ride, review the pause, and make the title and story your own. No
-              account needed.
-            </p>
+            <p>Explore a sample ride, review the pause, and make the title and story your own.</p>
           </div>
         </div>
         <ExampleFlow {...handle.props} initialStep={1} />
