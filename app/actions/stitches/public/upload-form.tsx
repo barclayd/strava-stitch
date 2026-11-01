@@ -200,25 +200,21 @@ export const UploadPreparation = clientEntry(
           <h2 id="upload-preparation-title" tabIndex={-1} autoFocus>
             Your stitch is ready.
           </h2>
-          <div class="info-banner" id="upload-preparation-intro">
-            <span class="info-banner-icon" aria-hidden="true">
-              i
-            </span>
-            {handle.props.state === 'removed' ? (
-              <div>
-                <strong>Your originals are no longer available on Strava.</strong>
-                <p>Confirm below to upload your stitch.</p>
-              </div>
-            ) : (
-              <div>
-                <strong>Strava doesn’t accept duplicates.</strong>
-                <p>
-                  Delete the originals on Strava before uploading. Don’t worry, every recording is
-                  safe in your stitch.
-                </p>
-              </div>
-            )}
-          </div>
+          {handle.props.state === 'removed' ? (
+            <div class="info-banner" id="upload-preparation-intro">
+              <strong>Your originals are no longer on Strava.</strong>
+              <p>Confirm below to upload your stitch.</p>
+            </div>
+          ) : (
+            <div class="info-banner" id="upload-preparation-intro">
+              <strong>One tiny thing before you can upload.</strong>
+              <p>
+                This is a Strava limitation, not ours: apps can’t override existing activities (at
+                least, not yet). For now, you’ll need to delete the originals in Strava. Don’t
+                worry, every recording is safe in your stitch.
+              </p>
+            </div>
+          )}
           {handle.props.error && (
             <p class="alert" role="alert">
               {handle.props.error}

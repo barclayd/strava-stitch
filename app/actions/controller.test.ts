@@ -266,7 +266,8 @@ test('the final confirmation verifies all three originals and uploads once witho
   assert.match(prepared.text, /<dialog open/)
   assert.match(prepared.text, /Your stitch is ready/)
   assert.match(prepared.text, /class="info-banner"/)
-  assert.match(prepared.text, /Strava doesn.t accept duplicates/)
+  assert.match(prepared.text, /One tiny thing before you can upload/)
+  assert.match(prepared.text, /apps can.t override existing activities \(at least, not yet\)/)
   assert.doesNotMatch(prepared.text, /never deletes activities/)
   assert.match(prepared.text, /Strava keeps deleted activities for 30 days/)
   assert.match(prepared.text, /value="One whole ride"/)
@@ -311,8 +312,8 @@ test('the final confirmation verifies all three originals and uploads once witho
     const unavailable = (await c.page(show)).text
     assert.match(unavailable, /No upload was started/)
     assert.match(unavailable, /<dialog open/)
-    assert.match(unavailable, /Strava doesn.t accept duplicates/)
-    assert.doesNotMatch(unavailable, /originals are no longer available/)
+    assert.match(unavailable, /One tiny thing before you can upload/)
+    assert.doesNotMatch(unavailable, /originals are no longer on Strava/)
   } finally {
     activityStatus = 200
   }
@@ -329,7 +330,7 @@ test('the final confirmation verifies all three originals and uploads once witho
       assert.equal(uploads, before)
     }
     await c.post(path, draft)
-    assert.match((await c.page(show)).text, /originals are no longer available/)
+    assert.match((await c.page(show)).text, /originals are no longer on Strava/)
     assert.ok(!(await job(j.id, 12))?.removalConfirmed)
     assert.equal(uploads, before)
     await Promise.all([c.post(path, finalConfirmation), c.post(path, finalConfirmation)])
@@ -418,7 +419,7 @@ test('new sports complete preview, download, backup and confirmed uploads with t
       const statsFooter = page.text.match(/<div class="stats-footer">(.*?)<\/div>/s)![1]
       assert.match(
         statsFooter,
-        new RegExp(`download class="button button-secondary">Download ${format.toUpperCase()}`),
+        new RegExp(`download class="download-link">Download ${format.toUpperCase()}`),
       )
       if (format === 'fit') {
         assert.match(page.text, /No GPS route to preview/)
@@ -609,12 +610,12 @@ test('upload is explicitly confirmed, submitted once with matching edits, and po
   assert.equal((await job(j.id, 1))?.state, 'complete')
   assert.equal((await job(j.id, 1))?.activityId, 500)
   const done = (await c.page(routes.stitches.show.href({ id: j.id }))).text
-  assert.match(done, /class="success-banner"/)
-  assert.match(done, /Stitch complete/)
-  assert.match(done, /href="https:\/\/www\.strava\.com\/activities\/500"/)
-  const finishActions = done.match(/<div class="finish-actions">(.*?)<\/div>/s)![1]
-  assert.match(finishActions, /View on Strava/)
-  assert.match(finishActions, /download class="button button-secondary wide">Download GPX/)
+  const heading = done.match(/<div class="review-heading">(.*?)<\/div>/s)![1]
+  assert.match(heading, /class="complete-title"/)
+  assert.match(heading, /Stitch complete\./)
+  assert.match(heading, /href="https:\/\/www\.strava\.com\/activities\/500"/)
+  const panel = done.match(/<aside class="finish-panel">(.*?)<\/aside>/s)![1]
+  assert.match(panel, /View on Strava.*?download class="download-link">Download GPX/s)
   assert.doesNotMatch(done.match(/<div class="stats-footer">(.*?)<\/div>/s)![1], /Download/)
   await c.post(path, confirmation)
   assert.equal(uploads, before + 1)

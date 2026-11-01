@@ -41,8 +41,8 @@ export function StitchPage(
     const download = demo ? routes.demoDownload.href() : routes.stitches.download.href({ id: j.id })
     const complete = !demo && j.state === 'complete'
     const stravaActivity = 'https://www.strava.com/activities/' + j.activityId
-    const downloadButton = (wide?: boolean) => (
-      <a class={'button button-secondary' + (wide ? ' wide' : '')} href={download} download>
+    const downloadLink = (
+      <a class="download-link" href={download} download>
         Download {format} <span aria-hidden="true">↓</span>
       </a>
     )
@@ -69,28 +69,30 @@ export function StitchPage(
           <a class="back-link" href={routes.home.href()}>
             ← Choose activities
           </a>
-          {complete ? (
-            <section class="success-banner" aria-labelledby="success-title">
-              <span class="success-tick" aria-hidden="true">
-                ✅
-              </span>
+          <div class="review-heading">
+            {complete ? (
               <div>
-                <h1 id="success-title">Stitch complete</h1>
-                <p>{j.title} is now on Strava.</p>
+                <h1 class="complete-title">
+                  <svg class="complete-tick" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="m7 12.5 3.3 3.3L17 9" />
+                  </svg>
+                  Stitch complete.
+                </h1>
+                <p class="complete-note">
+                  {j.title} is now on Strava.{' '}
+                  <a
+                    class="inline-link"
+                    href={stravaActivity}
+                    data-funnel="view_on_strava_click"
+                    data-funnel-placement="preview"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View activity ↗
+                  </a>
+                </p>
               </div>
-              <a
-                class="button success-action"
-                href={stravaActivity}
-                data-funnel="view_on_strava_click"
-                data-funnel-placement="preview"
-                target="_blank"
-                rel="noreferrer"
-              >
-                View on Strava <span aria-hidden="true">↗</span>
-              </a>
-            </section>
-          ) : (
-            <div class="review-heading">
+            ) : (
               <div>
                 {demo && <span class="eyebrow">EXAMPLE PREVIEW</span>}
                 <h1>Every part, together.</h1>
@@ -98,8 +100,8 @@ export function StitchPage(
                   {sport} · {m.records.length} activities · {day(m.start)}
                 </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
           <Alert message={error} />
           {m.joins.some((g) => (g.metres ?? 0) > 1000) && (
             <div class="alert">
@@ -137,7 +139,7 @@ export function StitchPage(
               </div>
               <div class="stats-footer">
                 <p class="fine-print">Strava may recalculate totals after import.</p>
-                {!complete && downloadButton()}
+                {!complete && downloadLink}
               </div>
               {demo && (
                 <ExampleDetails
@@ -241,19 +243,17 @@ export function StitchPage(
               ) : j.state === 'complete' ? (
                 <>
                   <p>Add your saved photos in Strava with Edit Activity → Media.</p>
-                  <div class="finish-actions">
-                    <a
-                      class="button button-dark wide"
-                      href={stravaActivity}
-                      data-funnel="view_on_strava_click"
-                      data-funnel-placement="preview"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View on Strava <span aria-hidden="true">↗</span>
-                    </a>
-                    {downloadButton(true)}
-                  </div>
+                  <a
+                    class="button button-dark wide"
+                    href={stravaActivity}
+                    data-funnel="view_on_strava_click"
+                    data-funnel-placement="preview"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View on Strava <span aria-hidden="true">↗</span>
+                  </a>
+                  {downloadLink}
                 </>
               ) : j.state === 'processing' ? (
                 <UploadStatus id={j.id} />
